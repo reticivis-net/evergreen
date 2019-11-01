@@ -1,0 +1,9 @@
+{
+  "name": "Evergreen New Tab",
+  "description": "A beautiful new tab extension for Chrome",
+  "version": "b0.1",
+  "permissions" : ["management"],
+  "chrome_url_overrides" : {
+    "newtab": "newtab.html"
+  }
+}
