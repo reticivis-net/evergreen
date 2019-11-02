@@ -2,16 +2,18 @@
   "manifest_version": 2,
   "name": "Evergreen New Tab",
   "description": "A beautiful new tab extension for Chrome",
-  "default_locale": "en",
   "version": "0.1",
   "permissions": [
-    "management",
-    "storage"
+    "storage",
+    "http://api.openweathermap.org/",
+    "geolocation"
   ],
   "chrome_url_overrides" : {
     "newtab": "newtab.html"
   },
   "icons": { "32": "evergreen32.png",
     "128": "evergreen128.png",
-    "1000": "evergreen1000.png" }
+    "1000": "evergreen1000.png"
+  },
+  "content_security_policy": "script-src 'self' http://api.openweathermap.org/; object-src 'self'"
 }

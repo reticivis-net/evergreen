@@ -1,4 +1,4 @@
-setInterval(datetime, 500);
+setInterval(datetime, 100);
 
 function datetime() {
     var date = new Date();
@@ -25,3 +25,22 @@ function datetime() {
     $(".date").html(da);
 
 }
+
+function getLocation() {
+    if (navigator.geolocation) {
+        return navigator.geolocation.getCurrentPosition(weather);
+    } else {
+        return false;
+    }
+}
+
+function weather(position) {
+    Weather.getCurrent("St. Louis", function (current) {
+        console.log(current.temperature());
+    });
+}
+
+$(document).ready(function () {
+    Weather.APIKEY = "5b01b9ed56e3751931257dde5e952fae";
+    getLocation();
+});
