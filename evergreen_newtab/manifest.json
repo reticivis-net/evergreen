@@ -4,7 +4,10 @@
   "description": "A beautiful new tab extension for Chrome",
   "default_locale": "en",
   "version": "0.1",
-  "permissions" : ["management"],
+  "permissions": [
+    "management",
+    "storage"
+  ],
   "chrome_url_overrides" : {
     "newtab": "newtab.html"
   },
