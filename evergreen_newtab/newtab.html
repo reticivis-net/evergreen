@@ -10,7 +10,10 @@
     <script src="bootstrap.min.js"></script>
     <script src="fontawesome.js"></script>
     <script src="weather.min.js"></script>
+    <script src="caleandar.min.js"></script>
+    <link href="theme1.css" rel="stylesheet"> <!--caleander-->
     <script src="evergreen.js"></script>
+
     <style>
         .bg {
             background-image: url(https://source.unsplash.com/1920x1080/?nature,ocean,city,space,forest,water,island);
@@ -67,37 +70,90 @@
             width: calc(100% - 30px);
         }
 
-        .footer h3, .footer h4, .footer form {
+        .footer h3, .footer h4 {
             margin-bottom: 0;
         }
 
         .search {
             max-width: 900px;
+            margin-bottom: 0 !important;
         }
 
         .center {
             left: 50%;
             transform: translateX(-50%);
         }
+
+        .logoimg {
+            display: inline-block;
+            height: 1em;
+            margin-right: 5px;
+            margin-top: -7px;
+        }
+
+        .weatherimg {
+            display: inline-block;
+            height: 1em;
+        }
+
+        a.popper {
+            color: inherit;
+            cursor: pointer;
+        }
+
+        .menu-btn {
+            cursor: pointer;
+        }
+
+        a.popper:hover {
+            color: inherit;
+            text-decoration: inherit;
+        }
+
+        a.popper:focus {
+            outline: inherit;
+        }
+
+        .popover {
+            max-width: initial;
+        }
+
+        #blurslider {
+            width: 50%;
+        }
     </style>
+
 </head>
 <body>
 <!--TODO: popper.js popovers in general-->
 <div class="bg"></div>
-<div class="container-fluid body">
+<div id="caltemp" style="display:none;"></div>
+<div class="body">
     <div id="header">
         <div class="row">
-            <div class="col text-left"><h4>Evergreen</h4></div><!--TODO: add evergreen logo-->
-            <div class="col text-center"><h3 class="clock"></h3></div>
-            <div class="col text-right"><h4 class="date">11/1/2019</h4></div>
+            <div class="col text-left"><h4><a class="popper" data-content="content" data-placement="top"
+                                              data-toggle="popover"
+                                              data-trigger="focus" id="evergreenpopover" role="button"
+                                              tabindex="0"><img class="logoimg" src="evergreen128.png"/>Evergreen</a>
+            </h4></div>
+            <!--TODO: add evergreen logo-->
+            <div class="col text-center"><h3><a class="popper" data-content="content" data-placement="top"
+                                                data-toggle="popover"
+                                                data-trigger="focus" id="timepopover" role="button"
+                                                tabindex="0"><span class="clock"></span></a></h3></div>
+            <div class="col text-right"><h4><a class="popper" data-content="content" data-placement="bottom"
+                                               data-toggle="popover"
+                                               data-trigger="focus" id="datepopover" role="button"
+                                               tabindex="0"><span class="date"></span></a></h4></div>
         </div>
     </div>
-
     <div class="footer">
-
-
         <div class="row">
-            <div class="col-3 text-left"><h3 class="weather"></h3></div><!--TODO: popper.js weather thing-->
+            <div class="col-3 text-left"><h3><a class="popper" data-content="content" data-placement="top"
+                                                data-toggle="popover"
+                                                data-trigger="focus" id="weatherpopover" role="button"
+                                                tabindex="0"><span class="wimgcontainer"></span><span
+                    class="weather"></span></a></h3></div><!--TODO: popper.js weather thing-->
             <div class="col-6 text-center">
                 <form action="http://www.google.com/search" method="get">
                     <div class="input-group mb-3 circleround search center">
@@ -110,9 +166,29 @@
                     </div>
                 </form>
             </div>
-            <div class="col-3 text-right"><h3><i class="fas fa-ellipsis-h"></i></h3></div> <!--TODO: menu-->
+            <div class="col-3 text-right"><h3><i class="fas fa-ellipsis-h menu-btn" data-target="#menu"
+                                                 data-toggle="modal"></i></h3></div> <!--TODO: menu-->
         </div>
     </div>
 </div>
-</body>
-</html>
+<!-- Modal -->
+<div class="modal fade" id="menu" role="dialog" tabindex="-1">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><img class="logoimg" src="evergreen128.png"/>Evergreen Options</h5>
+                <button aria-label="Close" class="close" data-dismiss="modal" type="button">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Modal body text goes here.</p>
+                <input class="custom-range" id="blurslider" max="15" min="0" step="1" type="range" value="0"/>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" type="button">Save changes</button>
+                <button class="btn btn-secondary" data-dismiss="modal" type="button">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
