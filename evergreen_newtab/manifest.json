@@ -5,7 +5,7 @@
   "version": "0.1",
   "permissions": [
     "storage",
-    "http://api.openweathermap.org/",
+    "https://api.openweathermap.org/",
     "geolocation"
   ],
   "chrome_url_overrides" : {
@@ -15,5 +15,5 @@
     "128": "evergreen128.png",
     "1000": "evergreen1000.png"
   },
-  "content_security_policy": "script-src 'self' http://api.openweathermap.org/; object-src 'self'"
+  "content_security_policy": "script-src 'self' https://api.openweathermap.org/; object-src 'self'"
 }
