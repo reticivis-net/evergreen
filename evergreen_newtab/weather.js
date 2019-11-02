@@ -48,7 +48,7 @@ Weather.kelvinToCelsius = function (value) {
 };
 
 Weather.getCurrent = function (city, callback) {
-    var url = "http://api.openweathermap.org/data/2.5/forecast?q=" + encodeURIComponent(city) + "&cnt=1";
+    var url = "https://api.openweathermap.org/data/2.5/forecast?q=" + encodeURIComponent(city) + "&cnt=1";
 
     if (Weather.APIKEY) {
         url = url + "&APPID=" + Weather.APIKEY;
@@ -61,7 +61,7 @@ Weather.getCurrent = function (city, callback) {
     });
 };
 Weather.getCurrentLatLong = function (lat, long, callback) {
-    var url = "http://api.openweathermap.org/data/2.5/forecast?lat=" + encodeURIComponent(lat) + "&lon=" + encodeURIComponent(long) + "cnt=1";
+    var url = "https://api.openweathermap.org/data/2.5/forecast?lat=" + encodeURIComponent(lat) + "&lon=" + encodeURIComponent(long) + "&cnt=1";
 
     if (Weather.APIKEY) {
         url = url + "&APPID=" + Weather.APIKEY;
@@ -75,7 +75,7 @@ Weather.getCurrentLatLong = function (lat, long, callback) {
 };
 
 Weather.getForecast = function (city, callback) {
-    var url = "http://api.openweathermap.org/data/2.5/forecast?q=" + encodeURIComponent(city) + "&cnt=1";
+    var url = "https://api.openweathermap.org/data/2.5/forecast?q=" + encodeURIComponent(city) + "&cnt=1";
 
     if (Weather.APIKEY) {
         url = url + "&APPID=" + Weather.APIKEY;
@@ -87,8 +87,8 @@ Weather.getForecast = function (city, callback) {
         callback(new Weather.Forecast(data));
     });
 };
-Weather.getForecastLatLong = function (city, callback) {
-    var url = "http://api.openweathermap.org/data/2.5/forecast?lat=" + encodeURIComponent(lat) + "&lon=" + encodeURIComponent(long) + "cnt=1";
+Weather.getForecastLatLong = function (lat, long, callback) {
+    var url = "https://api.openweathermap.org/data/2.5/forecast?lat=" + encodeURIComponent(lat) + "&lon=" + encodeURIComponent(long) + "&cnt=1";
 
     if (Weather.APIKEY) {
         url = url + "&APPID=" + Weather.APIKEY;

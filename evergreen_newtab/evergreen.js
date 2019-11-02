@@ -1,5 +1,9 @@
 setInterval(datetime, 100);
 
+function round(value, decimals) {
+    return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
+}
+
 function datetime() {
     var date = new Date();
     var h = date.getHours(); // 0 - 23
@@ -35,8 +39,9 @@ function getLocation() {
 }
 
 function weather(position) {
-    Weather.getCurrent("St. Louis", function (current) {
-        console.log(current.temperature());
+    Weather.getCurrentLatLong(position.coords.latitude, position.coords.longitude, function (current) {
+        var weather = Math.round(Weather.kelvinToFahrenheit(current.temperature()));
+        $(".weather").html(`${weather}°`);
     });
 }
 
