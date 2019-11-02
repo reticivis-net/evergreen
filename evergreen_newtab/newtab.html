@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Evergreen New Tab</title>
+    <link href="evergreen32.png" rel="icon"/>
     <link href="bootstrap.min.css" rel="stylesheet">
     <script src="jquery-3.3.1.slim.min.js"></script>
     <script src="popper.min.js"></script>
     <script src="bootstrap.min.js"></script>
     <script src="fontawesome.js"></script>
-    <script src="weather.js"></script>
+    <script src="weather.min.js"></script>
     <script src="evergreen.js"></script>
     <style>
         .bg {
@@ -66,7 +67,7 @@
             width: calc(100% - 30px);
         }
 
-        .footer h3 {
+        .footer h3, .footer h4, .footer form {
             margin-bottom: 0;
         }
 
@@ -81,6 +82,7 @@
     </style>
 </head>
 <body>
+<!--TODO: popper.js popovers in general-->
 <div class="bg"></div>
 <div class="container-fluid body">
     <div id="header">
@@ -92,19 +94,23 @@
     </div>
 
     <div class="footer">
-        <form action="http://www.google.com/search" method="get">
-            <div class="input-group mb-3 circleround search center">
-                <input class="form-control form-control-lg round" name="q" placeholder="Search Google" type="text">
-                <div class="input-group-append round">
-                    <button class="btn btn-primary btn-lg round" type="submit"><i class="fas fa-search"></i></button>
-                </div>
-            </div>
-        </form>
+
 
         <div class="row">
-            <div class="col text-left"><h4>idk what to put here</h4></div>
-            <div class="col text-center"><h3 class="weather"></h3></div>
-            <div class="col text-right"><h3><i class="fas fa-ellipsis-h"></i></h3></div>
+            <div class="col-3 text-left"><h3 class="weather"></h3></div><!--TODO: popper.js weather thing-->
+            <div class="col-6 text-center">
+                <form action="http://www.google.com/search" method="get">
+                    <div class="input-group mb-3 circleround search center">
+                        <input class="form-control form-control-lg round" name="q" placeholder="Search Google"
+                               type="text">
+                        <div class="input-group-append round">
+                            <button class="btn btn-primary btn-lg round" type="submit"><i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="col-3 text-right"><h3><i class="fas fa-ellipsis-h"></i></h3></div> <!--TODO: menu-->
         </div>
     </div>
 </div>

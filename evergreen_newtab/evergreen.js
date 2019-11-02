@@ -46,6 +46,7 @@ function weather(position) {
 }
 
 $(document).ready(function () {
+    $('[data-toggle="popover"]').popover({html: true});
     Weather.APIKEY = "5b01b9ed56e3751931257dde5e952fae";
     getLocation();
 });
