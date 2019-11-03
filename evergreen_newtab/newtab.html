@@ -13,119 +13,9 @@
     <script src="caleandar.min.js"></script>
     <link href="theme1.css" rel="stylesheet"> <!--caleander-->
     <script src="evergreen.js"></script>
-
-    <style>
-        .bg {
-            background-image: url(https://source.unsplash.com/1920x1080/?nature,ocean,city,space,forest,water,island);
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center center;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: -10;
-            /*transform: scale(1.1);*/
-            /*filter:blur(8px);*/
-        }
-
-        body, html {
-            height: 100%;
-            margin: 0;
-            overflow: hidden;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        .container-fluid {
-            z-index: 10;
-        }
-
-        .circleround {
-            border-radius: 50% !important;
-        }
-
-        .round {
-            border-bottom-right-radius: 100px;
-            border-bottom-left-radius: 100px;
-            border-top-right-radius: 100px;
-            border-top-left-radius: 100px;
-        }
-
-        #header .col {
-
-        }
-
-        .body {
-            padding: 15px;
-        }
-
-        .footer {
-            position: fixed;
-            bottom: 15px;
-            width: calc(100% - 30px);
-        }
-
-        .footer h3, .footer h4 {
-            margin-bottom: 0;
-        }
-
-        .search {
-            max-width: 900px;
-            margin-bottom: 0 !important;
-        }
-
-        .center {
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .logoimg {
-            display: inline-block;
-            height: 1em;
-            margin-right: 5px;
-            margin-top: -7px;
-        }
-
-        .weatherimg {
-            display: inline-block;
-            height: 1em;
-        }
-
-        a.popper {
-            color: inherit;
-            cursor: pointer;
-        }
-
-        .menu-btn {
-            cursor: pointer;
-        }
-
-        a.popper:hover {
-            color: inherit;
-            text-decoration: inherit;
-        }
-
-        a.popper:focus {
-            outline: inherit;
-        }
-
-        .popover {
-            max-width: initial;
-        }
-
-        #blurslider {
-            width: 50%;
-        }
-    </style>
-
+    <link href="evergreen.css" rel="stylesheet">
 </head>
 <body>
-<!--TODO: popper.js popovers in general-->
 <div class="bg"></div>
 <div id="caltemp" style="display:none;"></div>
 <div class="body">
@@ -136,7 +26,6 @@
                                               data-trigger="focus" id="evergreenpopover" role="button"
                                               tabindex="0"><img class="logoimg" src="evergreen128.png"/>Evergreen</a>
             </h4></div>
-            <!--TODO: add evergreen logo-->
             <div class="col text-center"><h3><a class="popper" data-content="content" data-placement="top"
                                                 data-toggle="popover"
                                                 data-trigger="focus" id="timepopover" role="button"
@@ -182,11 +71,22 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p>Modal body text goes here.</p>
-                <input class="custom-range" id="blurslider" max="15" min="0" step="1" type="range" value="0"/>
+                <p id="blurval">Blur:</p>
+                <input class="custom-range" id="blurslider" max="15" min="0" step="0.5" type="range" value="0"/>
+                <div class="br"></div>
+                <p>Temperature Unit:</p>
+                <div class="custom-control custom-radio custom-control-inline">
+                    <input class="custom-control-input" id="farradio" name="example" type="radio">
+                    <label class="custom-control-label" for="farradio">Fahrenheit</label>
+                </div>
+                <div class="custom-control custom-radio custom-control-inline">
+                    <input class="custom-control-input" id="celradio" name="example" type="radio">
+                    <label class="custom-control-label" for="celradio">Celsius</label>
+                </div>
+                <div class="br"></div>
+                <p class="text-muted" style="margin-bottom: 0;">Settings autosave to Chrome.</p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" type="button">Save changes</button>
                 <button class="btn btn-secondary" data-dismiss="modal" type="button">Close</button>
             </div>
         </div>

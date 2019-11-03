@@ -1,3 +1,6 @@
+var blur = 0;
+var tempunit = "f";
+
 function round(value, decimals) {
     return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
 }
@@ -28,7 +31,7 @@ function datetime() {
 
 }
 
-function getLocation() {
+function weatherRoutine() {
     if (navigator.geolocation) {
         return navigator.geolocation.getCurrentPosition(weather);
     } else {
@@ -38,7 +41,12 @@ function getLocation() {
 
 function weather(position) {
     Weather.getCurrentLatLong(position.coords.latitude, position.coords.longitude, function (current) {
-        var weather = Math.round(Weather.kelvinToFahrenheit(current.temperature()));
+        if (tempunit == "f") {
+            var weather = Math.round(Weather.kelvinToFahrenheit(current.temperature()));
+        } else {
+            var weather = Math.round(Weather.kelvinToCelsius(current.temperature()));
+        }
+
         $(".weather").html(`${weather}°`);
         console.log(current.conditions());
         var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
@@ -49,15 +57,22 @@ function weather(position) {
 function regularinterval() {
     datetime();
     var now = new Date();
-    var date = `
-    <h4>${now}</h4>
-    `;
+    var date = `<h4>${now}</h4>`; //TODO: maybe make this your own instead of the ISO or whatever thing
     $("#timepopover").attr("data-content", `<div id="tpop">${date}</div>`);
     $("#tpop").html(date);
 }
 
 function sliderblur() {
     sblur(this.value);
+}
+
+function unitchange() {
+    if (this.id === "farradio") {
+        tempunit = "f";
+    } else {
+        tempunit = "c";
+    }
+    weatherRoutine();
 }
 
 function sblur(val) {
@@ -68,12 +83,20 @@ function sblur(val) {
         $(".bg").css("transform", `scale(${1 + 0.1 * (val / 15)})`);
         $(".bg").css("filter", `blur(${val}px)`);
     }
+    $("#blurval").html(`Background blur: ${val}px`);
+    blur = val;
+}
+
+function chstorage() {
+    chrome.storage.sync.set({blurval: blur}, function () {
+    });
+    chrome.storage.sync.set({tempunit: tempunit}, function () {
+    });
 }
 
 $(document).ready(function () {
-    //weather routine
     Weather.APIKEY = "5b01b9ed56e3751931257dde5e952fae";
-    getLocation();
+
     //popovers
     $("#weatherpopover").attr("data-content", `<b>test123</b><img src="evergreen128.png"/>`);
     $("#evergreenpopover").attr("data-content", `<h2><img class="logoimg" src="evergreen128.png"/>Evergreen</h2><h4>New Tab for Chrome</h4><h5>Created by Reticivis</h5>`);
@@ -83,9 +106,31 @@ $(document).ready(function () {
     $("#datepopover").attr("data-content", `<div id="caltemp">${caltemp}</div>`);
     $("#caltemp").remove();
     $('[data-toggle="popover"]').popover({html: true});
+    //blur handler
     var slider = document.getElementById('blurslider');
     slider.addEventListener('input', sliderblur);
+    document.getElementById('farradio').addEventListener('input', unitchange);
+    document.getElementById('celradio').addEventListener('input', unitchange);
+    chrome.storage.sync.get(['blurval'], function (result) {
+        sblur(result["blurval"]);
+        $("#blurslider").attr("value", result["blurval"])
+    });
+    chrome.storage.sync.get(['tempunit'], function (result) {
+        tempunit = result["tempunit"];
+        if (tempunit == undefined) {
+            tempunit = "f";
+        }
+        //weather routine
+        if (tempunit == "f") {
+            $("#farradio").attr("checked", "checked");
+        } else {
+            $("#celradio").attr("checked", "checked");
+        }
+        weatherRoutine();
+    });
     setInterval(regularinterval, 100);
+    setInterval(chstorage, 3000);
+
 });
 
 

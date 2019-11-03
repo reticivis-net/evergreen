@@ -1,0 +1,114 @@
+.bg {
+    background-image: url(https://source.unsplash.com/1920x1080/?nature,ocean,city,space,forest,water,island);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -10;
+    /*transform: scale(1.1);*/
+    /*filter:blur(8px);*/
+}
+
+body, html {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.container-fluid {
+    z-index: 10;
+}
+
+.circleround {
+    border-radius: 50% !important;
+}
+
+.round {
+    border-bottom-right-radius: 100px;
+    border-bottom-left-radius: 100px;
+    border-top-right-radius: 100px;
+    border-top-left-radius: 100px;
+}
+
+#header .col {
+
+}
+
+.body {
+    padding: 15px;
+}
+
+.footer {
+    position: fixed;
+    bottom: 15px;
+    width: calc(100% - 30px);
+}
+
+.footer h3, .footer h4 {
+    margin-bottom: 0;
+}
+
+.search {
+    max-width: 900px;
+    margin-bottom: 0 !important;
+}
+
+.center {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.logoimg {
+    display: inline-block;
+    height: 1em;
+    margin-right: 5px;
+    margin-top: -7px;
+}
+
+.weatherimg {
+    display: inline-block;
+    height: 1em;
+}
+
+a.popper {
+    color: inherit;
+    cursor: pointer;
+}
+
+.menu-btn {
+    cursor: pointer;
+}
+
+a.popper:hover {
+    color: inherit;
+    text-decoration: inherit;
+}
+
+a.popper:focus {
+    outline: inherit;
+}
+
+.popover {
+    max-width: initial;
+}
+
+#blurslider {
+    width: 50%;
+}
+
+.modal-body p {
+    margin-bottom: 3px;
+}
+
+.br {
+    height: 7px;
+}
