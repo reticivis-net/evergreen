@@ -90,6 +90,7 @@ function tempunithandler() {
         tempunit = "c";
     }
     weatherRoutine();
+    $("#autosave").html("Settings will autosave to Chrome...");
 }
 
 function timeformathandler() {
@@ -98,6 +99,7 @@ function timeformathandler() {
     } else {
         timeformat = "24";
     }
+    $("#autosave").html("Settings will autosave to Chrome...");
 }
 
 function dateformathandler() {
@@ -106,6 +108,7 @@ function dateformathandler() {
     } else {
         dateformat = "dm";
     }
+    $("#autosave").html("Settings will autosave to Chrome...");
 
 }
 
@@ -119,20 +122,24 @@ function sblur(val) {
     }
     $("#blurval").html(`Background blur: ${val}px`);
     blur = val;
+    $("#autosave").html("Settings will autosave to Chrome...");
 }
 
+//TODO: REPLACE storage.local with storage.sync
 function chstorage() {
-    chrome.storage.sync.set({blurval: blur});
-    chrome.storage.sync.set({tempunit: tempunit});
-    chrome.storage.sync.set({timeformat: timeformat});
-    chrome.storage.sync.set({dateformat: dateformat});
+    chrome.storage.local.set({blurval: blur});
+    chrome.storage.local.set({tempunit: tempunit});
+    chrome.storage.local.set({timeformat: timeformat});
+    chrome.storage.local.set({dateformat: dateformat});
+    $("#autosave").html("Settings autosaved to Chrome.");
+
 }
 
 function optionsinit() {
     //blur handler
     var slider = document.getElementById('blurslider');
     slider.addEventListener('input', sliderblur);
-    chrome.storage.sync.get(['blurval'], function (result) {
+    chrome.storage.local.get(['blurval'], function (result) {
         if (result["blurval"] == undefined) {
             result["blurval"] = "0";
         }
@@ -143,7 +150,7 @@ function optionsinit() {
     //temperature unit handler
     document.getElementById('farradio').addEventListener('input', tempunithandler);
     document.getElementById('celradio').addEventListener('input', tempunithandler);
-    chrome.storage.sync.get(['tempunit'], function (result) {
+    chrome.storage.local.get(['tempunit'], function (result) {
         tempunit = result["tempunit"];
         if (tempunit == undefined) {
             tempunit = "f";
@@ -159,7 +166,7 @@ function optionsinit() {
     //timeformat handler
     document.getElementById('12radio').addEventListener('input', timeformathandler);
     document.getElementById('24radio').addEventListener('input', timeformathandler);
-    chrome.storage.sync.get(['timeformat'], function (result) {
+    chrome.storage.local.get(['timeformat'], function (result) {
         timeformat = result["timeformat"];
         if (timeformat == undefined) {
             timeformat = "12";
@@ -174,7 +181,7 @@ function optionsinit() {
     //dateformat handler
     document.getElementById('mdradio').addEventListener('input', dateformathandler);
     document.getElementById('dmradio').addEventListener('input', dateformathandler);
-    chrome.storage.sync.get(['dateformat'], function (result) {
+    chrome.storage.local.get(['dateformat'], function (result) {
         dateformat = result["dateformat"];
         if (dateformat == undefined) {
             dateformat = "md";
@@ -202,10 +209,13 @@ $(document).ready(function () {
     $("#caltemp").remove();
 
     $('[data-toggle="popover"]').popover({html: true});
+    $('[data-toggle="tooltip"]').tooltip();
     optionsinit();
     setInterval(regularinterval, 100);
-    setInterval(chstorage, 3000);
-
+    setInterval(chstorage, 10000);
+    setTimeout(function () {
+        $("#autosave").html("Settings autosaved to Chrome.");
+    }, 100)
 });
 
 

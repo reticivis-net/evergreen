@@ -42,7 +42,7 @@
                                                 data-toggle="popover"
                                                 data-trigger="focus" id="weatherpopover" role="button"
                                                 tabindex="0"><span class="wimgcontainer"></span><span
-                    class="weather"></span></a></h3></div><!--TODO: popper.js weather thing-->
+                    class="weather"></span></a></h3></div>
             <div class="col-6 text-center">
                 <form action="http://www.google.com/search" method="get">
                     <div class="input-group mb-3 circleround search center">
@@ -56,7 +56,7 @@
                 </form>
             </div>
             <div class="col-3 text-right"><h3><i class="fas fa-ellipsis-h menu-btn" data-target="#menu"
-                                                 data-toggle="modal"></i></h3></div> <!--TODO: menu-->
+                                                 data-toggle="modal"></i></h3></div>
         </div>
     </div>
 </div>
@@ -105,7 +105,9 @@
                     <label class="custom-control-label" for="dmradio">DD/MM/YYYY</label>
                 </div>
                 <div class="br"></div>
-                <p class="text-muted" style="margin-bottom: 0;">Settings autosave to Chrome.</p>
+                <p class="text-muted" style="margin-bottom: 0;"><span data-toggle="tooltip" id="autosave"
+                                                                      title="Your settings sync to your Google account every 10 seconds.">Settings autosave to Chrome.</span>
+                </p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-dismiss="modal" type="button">Close</button>
