@@ -1,5 +1,5 @@
 .bg {
-    background-image: url(https://source.unsplash.com/1920x1080/?nature,ocean,city,space,forest,water,island);
+    /*background-image: url(https://source.unsplash.com/1920x1080/?nature,ocean,city,space,forest,water,island);*/
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center center;
@@ -12,6 +12,7 @@
     z-index: -10;
     /*transform: scale(1.1);*/
     /*filter:blur(8px);*/
+    transition: background 0.25s linear;
 }
 
 body, html {

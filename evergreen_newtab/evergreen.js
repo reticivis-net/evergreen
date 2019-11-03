@@ -2,9 +2,16 @@ var blur = 0;
 var tempunit = "f";
 var timeformat = "12";
 var dateformat = "md";
+var searchtags = "nature,ocean,city";
 
 function round(value, decimals) {
     return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
+}
+
+function preloadImage(url, callback) {
+    var img = new Image();
+    img.src = url;
+    img.onload = callback;
 }
 
 function httpGetAsync(theUrl, callback) {
@@ -127,6 +134,12 @@ function dateformathandler() {
 
 }
 
+function searchtaghandler() {
+    searchtags = $(this).val();
+    console.log($(this).val());
+    $("#autosave").html("Settings will autosave to Chrome...");
+}
+
 function sblur(val) {
     if (val == 0) {
         $(".bg").css("transform", "initial");
@@ -146,8 +159,22 @@ function chstorage() {
     chrome.storage.local.set({tempunit: tempunit});
     chrome.storage.local.set({timeformat: timeformat});
     chrome.storage.local.set({dateformat: dateformat});
+    chrome.storage.local.set({searchtags: searchtags});
     $("#autosave").html("Settings autosaved to Chrome.");
 
+}
+
+function backgroundhandler() {
+    followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${searchtags}`, function (response) {
+        console.log(response);
+        preloadImage(response, function () {
+            $(".bg").css("background-image", `url(${response})`);
+            console.log(this);
+        });
+
+        //$(".bg").css("background-image", `url(${response})`);
+        chrome.storage.local.set({bgimage: response});
+    });
 }
 
 function optionsinit() {
@@ -208,15 +235,25 @@ function optionsinit() {
             $("#dmradio").attr("checked", "checked");
         }
     });
+    document.getElementById('bgtags').addEventListener('change', searchtaghandler);
+    chrome.storage.local.get(['searchtags'], function (result) {
+        searchtags = result["searchtags"];
+        if (searchtags == undefined) {
+            searchtags = "nature,ocean,city,space";
+        }
+        $("#bgtags").attr("value", searchtags);
+        backgroundhandler();
+    });
 }
 
 $(document).ready(function () {
-    //imghandler
-    followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?nature,ocean,city,space,forest,water,island`, function (response) {
-        console.log(response)
-    });
     Weather.APIKEY = "5b01b9ed56e3751931257dde5e952fae";
+    //imghandler
 
+    chrome.storage.local.get(['bgimage'], function (result) {
+        var bgimage = result["bgimage"];
+        $(".bg").css("background-image", `url(${bgimage})`);
+    });
     //popovers
     $("#weatherpopover").attr("data-content", `<b>test123</b><img src="evergreen128.png"/>`);
     $("#evergreenpopover").attr("data-content", `<h2><img class="logoimg" src="evergreen128.png"/>Evergreen</h2><h4>New Tab for Chrome</h4><h5>Created by Reticivis</h5>`);

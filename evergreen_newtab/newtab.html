@@ -17,6 +17,7 @@
 </head>
 <body>
 <div class="bg"></div>
+<div class="preloadimg" style="display:none;"></div>
 <div id="caltemp" style="display:none;"></div>
 <div class="body">
     <div id="header">
@@ -105,11 +106,18 @@
                     <label class="custom-control-label" for="dmradio">DD/MM/YYYY</label>
                 </div>
                 <div class="br"></div>
+                <p>Background image search tags <span class="text-muted">(Optional)</span>: </p>
+                <input class="form-control" id="bgtags" placeholder="Background search tags" type="text">
+                <p><span class="text-muted" data-toggle="tooltip"
+                         title="Images are randomly sourced from source.unsplash.com using these search tags. Make sure there are no spaces. Example: forest,ocean,city">Seperate search terms by commas with no spaces</span>
+                </p>
+                <div class="br"></div>
+
+            </div>
+            <div class="modal-footer">
                 <p class="text-muted" style="margin-bottom: 0;"><span data-toggle="tooltip" id="autosave"
                                                                       title="Your settings sync to your Google account every 10 seconds.">Settings autosave to Chrome.</span>
                 </p>
-            </div>
-            <div class="modal-footer">
                 <button class="btn btn-secondary" data-dismiss="modal" type="button">Close</button>
             </div>
         </div>
