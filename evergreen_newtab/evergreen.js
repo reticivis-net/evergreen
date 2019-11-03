@@ -25,7 +25,7 @@ function httpGetAsync(theUrl, callback) {
 }
 
 function followredirects(url, callback) {
-    var theUrl = `https://reticivis.net/follow-redirect.php?url=${encodeURIComponent(url)}`; //TODO: CSP uupdate to fix this
+    var theUrl = `https://reticivis.net/follow-redirect.php?url=${encodeURIComponent(url)}`;
     httpGetAsync(theUrl, callback);
 }
 
@@ -78,7 +78,7 @@ function weatherRoutine() {
     }
 }
 
-function weather(position) {
+function weather(position) { //TODO: add openweatherapi HOURLY/WEEKLY thing, youre gonna have to add beyond the weather.js thing using _getJson or something like that
     Weather.getCurrentLatLong(position.coords.latitude, position.coords.longitude, function (current) {
         if (tempunit === "f") {
             var weather = Math.round(Weather.kelvinToFahrenheit(current.temperature()));
@@ -88,6 +88,9 @@ function weather(position) {
 
         $(".weather").html(`${weather}°`);
         console.log(current.conditions());
+        console.log(current.data.list[0].main.temp_max);
+        console.log(current.data.list[0].main.temp_min);
+        console.log(current);
         var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
         $(".wimgcontainer").html(wimg);
     });
@@ -136,7 +139,6 @@ function dateformathandler() {
 
 function searchtaghandler() {
     searchtags = $(this).val();
-    console.log($(this).val());
     $("#autosave").html("Settings will autosave to Chrome...");
 }
 
@@ -153,7 +155,6 @@ function sblur(val) {
     $("#autosave").html("Settings will autosave to Chrome...");
 }
 
-//TODO: REPLACE storage.local with storage.sync
 function chstorage() {
     chrome.storage.local.set({blurval: blur});
     chrome.storage.local.set({tempunit: tempunit});
@@ -166,14 +167,13 @@ function chstorage() {
 
 function backgroundhandler() {
     followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${searchtags}`, function (response) {
-        console.log(response);
         preloadImage(response, function () {
             $(".bg").css("background-image", `url(${response})`);
-            console.log(this);
         });
 
         //$(".bg").css("background-image", `url(${response})`);
         chrome.storage.local.set({bgimage: response});
+        //TODO: add option to only refresh every x minutes
     });
 }
 
