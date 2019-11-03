@@ -7,6 +7,21 @@ function round(value, decimals) {
     return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
 }
 
+function httpGetAsync(theUrl, callback) {
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function () {
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+            callback(xmlHttp.responseText);
+    };
+    xmlHttp.open("GET", theUrl, true); // true for asynchronous
+    xmlHttp.send(null);
+}
+
+function followredirects(url, callback) {
+    var theUrl = `https://reticivis.net/follow-redirect.php?url=${encodeURIComponent(url)}`; //TODO: CSP uupdate to fix this
+    httpGetAsync(theUrl, callback);
+}
+
 function datetime() {
     var date = new Date();
     var h = date.getHours(); // 0 - 23
@@ -196,6 +211,10 @@ function optionsinit() {
 }
 
 $(document).ready(function () {
+    //imghandler
+    followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?nature,ocean,city,space,forest,water,island`, function (response) {
+        console.log(response)
+    });
     Weather.APIKEY = "5b01b9ed56e3751931257dde5e952fae";
 
     //popovers
@@ -217,5 +236,4 @@ $(document).ready(function () {
         $("#autosave").html("Settings autosaved to Chrome.");
     }, 100)
 });
-
 
