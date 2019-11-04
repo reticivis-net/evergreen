@@ -1,5 +1,5 @@
 var blur = 0;
-var tempunit = "f";
+
 var timeformat = "12";
 var dateformat = "md";
 var searchtags = "nature,ocean,city";
@@ -78,25 +78,14 @@ function weatherRoutine() {
     }
 }
 
-function weather(position) { //TODO: add openweatherapi HOURLY/WEEKLY thing, youre gonna have to add beyond the weather.js thing using _getJson or something like that
-    Weather.getCurrentLatLong(position.coords.latitude, position.coords.longitude, function (current) {
-        if (tempunit === "f") {
-            var weather = Math.round(Weather.kelvinToFahrenheit(current.temperature()));
-        } else {
-            var weather = Math.round(Weather.kelvinToCelsius(current.temperature()));
-        }
-
-        $(".weather").html(`${weather}°`);
-        console.log(current.conditions());
-        console.log(current.data.list[0].main.temp_max);
-        console.log(current.data.list[0].main.temp_min);
-        console.log(current);
-        var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
-        $(".wimgcontainer").html(wimg);
-    });
-    Weather.getForecastLatLong(position.coords.latitude, position.coords.longitude, function (forecast) {
-        console.log(forecast);
-    });
+function weather(response) { //TODO: add openweatherapi HOURLY/WEEKLY thing, youre gonna have to add beyond the weather.js thing using _getJson or something like that
+    //var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
+    //$(".wimgcontainer").html(wimg);
+    console.log(response);
+    var skycons = new Skycons({"color": "white"});
+    skycons.add("weatherimage", response.currently.icon);
+    skycons.play();
+    $(".weather").html(`${Math.round(response.currently.temperature)}°`);
 }
 
 function regularinterval() {
@@ -206,7 +195,7 @@ function optionsinit() {
         } else {
             $("#celradio").attr("checked", "checked");
         }
-        weatherRoutine();
+        weatherpos(weathercurrent, weather);
     });
     //timeformat handler
     document.getElementById('12radio').addEventListener('input', timeformathandler);
@@ -252,6 +241,7 @@ function optionsinit() {
 $(document).ready(function () {
 
     //imghandler
+    var canvas = document.querySelector('canvas');
 
     chrome.storage.local.get(['bgimage'], function (result) {
         var bgimage = result["bgimage"];
@@ -274,6 +264,8 @@ $(document).ready(function () {
     setInterval(chstorage, 10000);
     setTimeout(function () {
         $("#autosave").html("Settings autosaved to Chrome.");
-    }, 100)
+    }, 100);
+
+
 });
 
