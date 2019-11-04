@@ -78,7 +78,7 @@ function weatherRoutine() {
     }
 }
 
-function weather(response) { //TODO: add openweatherapi HOURLY/WEEKLY thing, youre gonna have to add beyond the weather.js thing using _getJson or something like that
+function weather(response) { //TODO: add openweatherapi HOURLY/WEEKLY thing, youre gonna have to add beyond the weather.min.js thing using _getJson or something like that
     //var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
     //$(".wimgcontainer").html(wimg);
     console.log(response);
@@ -241,14 +241,14 @@ function optionsinit() {
 $(document).ready(function () {
 
     //imghandler
-    var canvas = document.querySelector('canvas');
-
     chrome.storage.local.get(['bgimage'], function (result) {
         var bgimage = result["bgimage"];
         $(".bg").css("background-image", `url(${bgimage})`);
     });
     //popovers
-    $("#weatherpopover").attr("data-content", `<b>test123</b><img src="evergreen128.png"/>`);
+    $("#weatherpopover").attr("data-content", `
+    
+    `);
     $("#evergreenpopover").attr("data-content", `<h2><img class="logoimg" src="evergreen128.png"/>Evergreen</h2><h4>New Tab for Chrome</h4><h5>Created by Reticivis</h5>`);
     $("#timepopover").attr("data-content", `<div id="tpop"></div>`);
     //calendar
@@ -259,7 +259,8 @@ $(document).ready(function () {
 
     $('[data-toggle="popover"]').popover({html: true});
     $('[data-toggle="tooltip"]').tooltip();
-    optionsinit();
+    //other stuff
+    optionsinit(); //load shit from chrome (also weather)
     setInterval(regularinterval, 100);
     setInterval(chstorage, 10000);
     setTimeout(function () {

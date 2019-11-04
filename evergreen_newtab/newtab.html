@@ -8,11 +8,11 @@
     <script src="jquery-3.4.1.min.js"></script>
     <script src="popper.min.js"></script>
     <script src="bootstrap.min.js"></script>
-    <script src="fontawesome.js"></script>
+    <script src="fontawesome.min.js"></script>
     <script src="caleandar.min.js"></script>
     <link href="theme1.css" rel="stylesheet"> <!--caleander-->
     <script src="skycons.js"></script>
-    <script src="weather.js"></script>
+    <script src="weather.min.js"></script>
     <script src="evergreen.js"></script>
     <link href="evergreen.css" rel="stylesheet">
 </head>
@@ -40,13 +40,14 @@
     </div>
     <div class="footer">
         <div class="row">
-            <div class="col-3 text-left"><h3><a class="popper" data-content="content" data-placement="top"
-                                                data-toggle="popover"
-                                                data-trigger="focus" id="weatherpopover" role="button"
-                                                tabindex="0">
-                <canvas height="32" id="weatherimage" width="32"></canvas>
-                <span
-                    class="weather"></span></a></h3></div> <!--TODO: add detailed weather info-->
+            <div class="col-3 text-left">
+                <h3><a class="popper" data-content="content" data-placement="top"
+                       data-toggle="popover"
+                       data-trigger="focus" id="weatherpopover" role="button"
+                       tabindex="0">
+                    <canvas height="32" id="weatherimage" width="32"></canvas>
+                    <span class="weather"></span></a></h3>
+            </div> <!--TODO: add detailed weather info-->
             <div class="col-6 text-center">
                 <form action="http://www.google.com/search" method="get">
                     <div class="input-group mb-3 circleround search center">
