@@ -14,19 +14,19 @@ function preloadImage(url, callback) {
     img.onload = callback;
 }
 
-function httpGetAsync(theUrl, callback) {
+function httpGetAlocal(theUrl, callback) {
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.onreadystatechange = function () {
         if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
             callback(xmlHttp.responseText);
     };
-    xmlHttp.open("GET", theUrl, true); // true for asynchronous
+    xmlHttp.open("GET", theUrl, true); // true for alocalhronous
     xmlHttp.send(null);
 }
 
 function followredirects(url, callback) {
     var theUrl = `https://reticivis.net/follow-redirect.php?url=${encodeURIComponent(url)}`;
-    httpGetAsync(theUrl, callback);
+    httpGetAlocal(theUrl, callback);
 }
 
 function datetime() {
@@ -74,13 +74,14 @@ function datetime() {
 function weather(response) {
     //var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
     //$(".wimgcontainer").html(wimg);
+    chrome.storage.local.set({"weather": response});
     console.log(response);
     var skycons = new Skycons({"color": "white"});
     skycons.add("weatherimage", response.currently.icon);
     skycons.play();
     var temp = response.currently.temperature;
     if (tempunit === "c") {
-        temp = (temp - 32) * 5 / 9;
+        temp = ftoc(temp);
     }
     $(".weather").html(`${Math.round(temp)}°`);
 }
@@ -103,9 +104,11 @@ function tempunithandler() {
     } else {
         tempunit = "c";
     }
-    //TODO: make the weather thing actually update
-    //TODO: but also throttle the weather API calling to maybe once a minute
-    $("#autosave").html("Settings will autosave to Chrome...");
+    //TODO: but also throttle the weather API calling, you can use storage.local
+    chrome.storage.local.get(["weather"], function (resp) {
+        weather(resp["weather"]);
+    });
+    chstorage();
 }
 
 function timeformathandler() {
@@ -114,7 +117,7 @@ function timeformathandler() {
     } else {
         timeformat = "24";
     }
-    $("#autosave").html("Settings will autosave to Chrome...");
+    chstorage();
 }
 
 function dateformathandler() {
@@ -123,13 +126,13 @@ function dateformathandler() {
     } else {
         dateformat = "dm";
     }
-    $("#autosave").html("Settings will autosave to Chrome...");
+    chstorage();
 
 }
 
 function searchtaghandler() {
     searchtags = $(this).val();
-    $("#autosave").html("Settings will autosave to Chrome...");
+    chstorage();
 }
 
 function sblur(val) {
@@ -142,16 +145,17 @@ function sblur(val) {
     }
     $("#blurval").html(`Background blur: ${val}px`);
     blur = val;
-    $("#autosave").html("Settings will autosave to Chrome...");
+    chstorage();
 }
 
 function chstorage() {
-    chrome.storage.sync.set({blurval: blur});
-    chrome.storage.sync.set({tempunit: tempunit});
-    chrome.storage.sync.set({timeformat: timeformat});
-    chrome.storage.sync.set({dateformat: dateformat});
-    chrome.storage.sync.set({searchtags: searchtags});
-    $("#autosave").html("Settings autosaved to Chrome.");
+    chrome.storage.local.set({
+        blurval: blur,
+        tempunit: tempunit,
+        timeformat: timeformat,
+        dateformat: dateformat,
+        searchtags: searchtags
+    });
 
 }
 
@@ -162,7 +166,7 @@ function backgroundhandler() {
         });
 
         //$(".bg").css("background-image", `url(${response})`);
-        chrome.storage.sync.set({bgimage: response});
+        chrome.storage.local.set({bgimage: response});
         //TODO: add option to only refresh every x minutes
     });
 }
@@ -171,7 +175,7 @@ function optionsinit() {
     //blur handler
     var slider = document.getElementById('blurslider');
     slider.addEventListener('input', sliderblur);
-    chrome.storage.sync.get(['blurval'], function (result) {
+    chrome.storage.local.get(['blurval'], function (result) {
         if (result["blurval"] == undefined) {
             result["blurval"] = "0";
         }
@@ -182,7 +186,7 @@ function optionsinit() {
     //temperature unit handler
     document.getElementById('farradio').addEventListener('input', tempunithandler);
     document.getElementById('celradio').addEventListener('input', tempunithandler);
-    chrome.storage.sync.get(['tempunit'], function (result) {
+    chrome.storage.local.get(['tempunit'], function (result) {
         tempunit = result["tempunit"];
         if (tempunit == undefined) {
             tempunit = "f";
@@ -198,7 +202,7 @@ function optionsinit() {
     //timeformat handler
     document.getElementById('12radio').addEventListener('input', timeformathandler);
     document.getElementById('24radio').addEventListener('input', timeformathandler);
-    chrome.storage.sync.get(['timeformat'], function (result) {
+    chrome.storage.local.get(['timeformat'], function (result) {
         timeformat = result["timeformat"];
         if (timeformat == undefined) {
             timeformat = "12";
@@ -213,7 +217,7 @@ function optionsinit() {
     //dateformat handler
     document.getElementById('mdradio').addEventListener('input', dateformathandler);
     document.getElementById('dmradio').addEventListener('input', dateformathandler);
-    chrome.storage.sync.get(['dateformat'], function (result) {
+    chrome.storage.local.get(['dateformat'], function (result) {
         dateformat = result["dateformat"];
         if (dateformat == undefined) {
             dateformat = "md";
@@ -226,7 +230,7 @@ function optionsinit() {
         }
     });
     document.getElementById('bgtags').addEventListener('change', searchtaghandler);
-    chrome.storage.sync.get(['searchtags'], function (result) {
+    chrome.storage.local.get(['searchtags'], function (result) {
         searchtags = result["searchtags"];
         if (searchtags == undefined) {
             searchtags = "nature,ocean,city,space";
@@ -237,9 +241,8 @@ function optionsinit() {
 }
 
 $(document).ready(function () {
-
     //imghandler
-    chrome.storage.sync.get(['bgimage'], function (result) {
+    chrome.storage.local.get(['bgimage'], function (result) {
         var bgimage = result["bgimage"];
         $(".bg").css("background-image", `url(${bgimage})`);
     });
@@ -261,10 +264,6 @@ $(document).ready(function () {
     //other stuff
     optionsinit(); //load shit from chrome (also weather)
     setInterval(regularinterval, 100);
-    setInterval(chstorage, 10000);
-    setTimeout(function () {
-        $("#autosave").html("Settings autosaved to Chrome.");
-    }, 100);
 
 
 });
