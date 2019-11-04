@@ -94,6 +94,9 @@ function weather(position) { //TODO: add openweatherapi HOURLY/WEEKLY thing, you
         var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
         $(".wimgcontainer").html(wimg);
     });
+    Weather.getForecastLatLong(position.coords.latitude, position.coords.longitude, function (forecast) {
+        console.log(forecast);
+    });
 }
 
 function regularinterval() {
@@ -247,7 +250,7 @@ function optionsinit() {
 }
 
 $(document).ready(function () {
-    Weather.APIKEY = "5b01b9ed56e3751931257dde5e952fae";
+
     //imghandler
 
     chrome.storage.local.get(['bgimage'], function (result) {
