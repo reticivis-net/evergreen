@@ -113,3 +113,7 @@ a.popper:focus {
 .br {
     height: 7px;
 }
+
+.modal-footer {
+    justify-content: space-between;
+}

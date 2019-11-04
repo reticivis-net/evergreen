@@ -25,14 +25,12 @@ function weatherpos(weatherfunc, callback) {
     });
 }
 
+function ftoc(f) {
+    return (f - 32) * (5 / 9);
+}
+
 function weathercurrent(lat, long, callback) {
-    var unit;
-    if (tempunit === "f") {
-        unit = "us";
-    } else {
-        unit = "si";
-    }
-    var url = `https://api.darksky.net/forecast/${encodeURIComponent(apikey)}/${encodeURIComponent(lat)},${encodeURIComponent(long)}?units=${unit}`;
+    var url = `https://api.darksky.net/forecast/${encodeURIComponent(apikey)}/${encodeURIComponent(lat)},${encodeURIComponent(long)}?units=us`;
     jsonp(url, callback);
 }
 

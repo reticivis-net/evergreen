@@ -70,22 +70,19 @@ function datetime() {
 
 }
 
-function weatherRoutine() {
-    if (navigator.geolocation) {
-        return navigator.geolocation.getCurrentPosition(weather);
-    } else {
-        return false;
-    }
-}
 
-function weather(response) { //TODO: add openweatherapi HOURLY/WEEKLY thing, youre gonna have to add beyond the weather.js thing using _getJson or something like that
+function weather(response) {
     //var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
     //$(".wimgcontainer").html(wimg);
     console.log(response);
     var skycons = new Skycons({"color": "white"});
     skycons.add("weatherimage", response.currently.icon);
     skycons.play();
-    $(".weather").html(`${Math.round(response.currently.temperature)}°`);
+    var temp = response.currently.temperature;
+    if (tempunit === "c") {
+        temp = (temp - 32) * 5 / 9;
+    }
+    $(".weather").html(`${Math.round(temp)}°`);
 }
 
 function regularinterval() {
@@ -106,7 +103,8 @@ function tempunithandler() {
     } else {
         tempunit = "c";
     }
-    weatherRoutine();
+    //TODO: make the weather thing actually update
+    //TODO: but also throttle the weather API calling to maybe once a minute
     $("#autosave").html("Settings will autosave to Chrome...");
 }
 
@@ -148,11 +146,11 @@ function sblur(val) {
 }
 
 function chstorage() {
-    chrome.storage.local.set({blurval: blur});
-    chrome.storage.local.set({tempunit: tempunit});
-    chrome.storage.local.set({timeformat: timeformat});
-    chrome.storage.local.set({dateformat: dateformat});
-    chrome.storage.local.set({searchtags: searchtags});
+    chrome.storage.sync.set({blurval: blur});
+    chrome.storage.sync.set({tempunit: tempunit});
+    chrome.storage.sync.set({timeformat: timeformat});
+    chrome.storage.sync.set({dateformat: dateformat});
+    chrome.storage.sync.set({searchtags: searchtags});
     $("#autosave").html("Settings autosaved to Chrome.");
 
 }
@@ -164,7 +162,7 @@ function backgroundhandler() {
         });
 
         //$(".bg").css("background-image", `url(${response})`);
-        chrome.storage.local.set({bgimage: response});
+        chrome.storage.sync.set({bgimage: response});
         //TODO: add option to only refresh every x minutes
     });
 }
@@ -173,7 +171,7 @@ function optionsinit() {
     //blur handler
     var slider = document.getElementById('blurslider');
     slider.addEventListener('input', sliderblur);
-    chrome.storage.local.get(['blurval'], function (result) {
+    chrome.storage.sync.get(['blurval'], function (result) {
         if (result["blurval"] == undefined) {
             result["blurval"] = "0";
         }
@@ -184,7 +182,7 @@ function optionsinit() {
     //temperature unit handler
     document.getElementById('farradio').addEventListener('input', tempunithandler);
     document.getElementById('celradio').addEventListener('input', tempunithandler);
-    chrome.storage.local.get(['tempunit'], function (result) {
+    chrome.storage.sync.get(['tempunit'], function (result) {
         tempunit = result["tempunit"];
         if (tempunit == undefined) {
             tempunit = "f";
@@ -200,7 +198,7 @@ function optionsinit() {
     //timeformat handler
     document.getElementById('12radio').addEventListener('input', timeformathandler);
     document.getElementById('24radio').addEventListener('input', timeformathandler);
-    chrome.storage.local.get(['timeformat'], function (result) {
+    chrome.storage.sync.get(['timeformat'], function (result) {
         timeformat = result["timeformat"];
         if (timeformat == undefined) {
             timeformat = "12";
@@ -215,7 +213,7 @@ function optionsinit() {
     //dateformat handler
     document.getElementById('mdradio').addEventListener('input', dateformathandler);
     document.getElementById('dmradio').addEventListener('input', dateformathandler);
-    chrome.storage.local.get(['dateformat'], function (result) {
+    chrome.storage.sync.get(['dateformat'], function (result) {
         dateformat = result["dateformat"];
         if (dateformat == undefined) {
             dateformat = "md";
@@ -228,7 +226,7 @@ function optionsinit() {
         }
     });
     document.getElementById('bgtags').addEventListener('change', searchtaghandler);
-    chrome.storage.local.get(['searchtags'], function (result) {
+    chrome.storage.sync.get(['searchtags'], function (result) {
         searchtags = result["searchtags"];
         if (searchtags == undefined) {
             searchtags = "nature,ocean,city,space";
@@ -241,7 +239,7 @@ function optionsinit() {
 $(document).ready(function () {
 
     //imghandler
-    chrome.storage.local.get(['bgimage'], function (result) {
+    chrome.storage.sync.get(['bgimage'], function (result) {
         var bgimage = result["bgimage"];
         $(".bg").css("background-image", `url(${bgimage})`);
     });
@@ -249,6 +247,7 @@ $(document).ready(function () {
     $("#weatherpopover").attr("data-content", `
     
     `);
+    document.getElementById("bg-change").onclick = backgroundhandler;
     $("#evergreenpopover").attr("data-content", `<h2><img class="logoimg" src="evergreen128.png"/>Evergreen</h2><h4>New Tab for Chrome</h4><h5>Created by Reticivis</h5>`);
     $("#timepopover").attr("data-content", `<div id="tpop"></div>`);
     //calendar
