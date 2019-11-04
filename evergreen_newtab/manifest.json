@@ -23,5 +23,5 @@
     },
     "default_title": "Evergreen New Tab"
   },
-  "content_security_policy": "script-src 'self' https://api.openweathermap.org/ https://reticivis.net/; object-src 'self';"
+  "content_security_policy": "script-src 'self' https://api.darksky.net/; object-src 'self';"
 }

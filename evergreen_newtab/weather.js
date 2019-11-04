@@ -1,23 +1,34 @@
-var apikey = "5b01b9ed56e3751931257dde5e952fae";
+//the weather.js is shit and the api is shit and im mad so here's my own library lol
+var apikey = "9b844f9ec461fb26f16bb808550c5aca";
 
-function httpGetAsync(url, callback) {
-    var xmlHttp = new XMLHttpRequest();
-    xmlHttp.onreadystatechange = function () {
-        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-            callback(xmlHttp.responseText);
-    };
-    xmlHttp.open("GET", url, true); // true for asynchronous
-    xmlHttp.send(null);
+function jsonp(url, callback) {
+    $.ajax({
+        url: url,
+        type: "POST",
+        dataType: 'jsonp',
+        success: callback
+    });
 }
 
-function jsonrequest(url, callback) {
-    httpGetAsync(url, function (response) {
-        var json = JSON.parse(response);
-        callback(json);
+function geoloc(callback) {
+    if (navigator.geolocation) {
+        return navigator.geolocation.getCurrentPosition(callback);
+    } else {
+        return false;
+    }
+}
+
+function weatherpos(weatherfunc, callback) {
+    geoloc(function (position) {
+        weatherfunc(position.coords.latitude, position.coords.longitude, callback);
     });
 }
 
 function weathercurrent(lat, long, callback) {
-    var url = `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(lat)}&long=${encodeURIComponent(long)}&appid=${encodeURIComponent(apikey)}`;
-    jsonrequest(url, callback);
+    var url = `https://api.darksky.net/forecast/${encodeURIComponent(apikey)}/${encodeURIComponent(lat)},${encodeURIComponent(long)}`;
+    jsonp(url, callback);
 }
+
+weatherpos(weathercurrent, function (weather) {
+    console.log(weather);
+});
