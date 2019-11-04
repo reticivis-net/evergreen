@@ -78,7 +78,7 @@ function weatherRoutine() {
     }
 }
 
-function weather(response) { //TODO: add openweatherapi HOURLY/WEEKLY thing, youre gonna have to add beyond the weather.min.js thing using _getJson or something like that
+function weather(response) { //TODO: add openweatherapi HOURLY/WEEKLY thing, youre gonna have to add beyond the weather.js thing using _getJson or something like that
     //var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
     //$(".wimgcontainer").html(wimg);
     console.log(response);
