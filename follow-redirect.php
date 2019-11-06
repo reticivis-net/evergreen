@@ -15,5 +15,6 @@ function getRedirectUrl($url)
 
 header('Access-Control-Allow-Origin: *');
 echo getRedirectUrl($_GET["url"]);
+echo " ";
 //reticivis.net/follow-redirect.php?url=...
 //follows redirects

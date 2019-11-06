@@ -8,13 +8,31 @@ function round(value, decimals) {
     return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
 }
 
+function getDataUri(url, callback) {
+    var image = new Image();
+
+    image.onload = function () {
+        var canvas = document.createElement('canvas');
+        canvas.width = this.naturalWidth; // or 'width' if you want a special/scaled size
+        canvas.height = this.naturalHeight; // or 'height' if you want a special/scaled size
+
+        canvas.getContext('2d').drawImage(this, 0, 0);
+
+        // ... or get as Data URI
+        callback(canvas.toDataURL('image/png'));
+        canvas.remove();
+    };
+
+    image.src = url;
+}
+
 function preloadImage(url, callback) {
     var img = new Image();
     img.src = url;
     img.onload = callback;
 }
 
-function httpGetAlocal(theUrl, callback) {
+function httpGetAsync(theUrl, callback) {
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.onreadystatechange = function () {
         if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
@@ -26,7 +44,7 @@ function httpGetAlocal(theUrl, callback) {
 
 function followredirects(url, callback) {
     var theUrl = `https://reticivis.net/follow-redirect.php?url=${encodeURIComponent(url)}`;
-    httpGetAlocal(theUrl, callback);
+    httpGetAsync(theUrl, callback);
 }
 
 function datetime() {
@@ -84,6 +102,9 @@ function weather(response) {
         temp = ftoc(temp);
     }
     $(".weather").html(`${Math.round(temp)}°`);
+    $("#weatherh3").tooltip('hide')
+        .attr('data-original-title', response.currently.summary)
+        .tooltip('show');
 }
 
 function regularinterval() {
@@ -160,8 +181,11 @@ function chstorage() {
 }
 
 function backgroundhandler() {
+    console.log("background handler start");
     followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${searchtags}`, function (response) {
+        console.log("redirect followed");
         preloadImage(response, function () {
+            console.log("image preloaded");
             $(".bg").css("background-image", `url(${response})`);
         });
 
@@ -251,7 +275,7 @@ $(document).ready(function () {
     
     `);
     document.getElementById("bg-change").onclick = backgroundhandler;
-    $("#evergreenpopover").attr("data-content", `<h2><img class="logoimg" src="evergreen128.png"/>Evergreen</h2><h4>New Tab for Chrome</h4><h5>Created by Reticivis</h5>`);
+    $("#evergreenpopover").attr("data-content", `<h2 class="display-4"><img class="logoimg" src="evergreen128.png"/>Evergreen</h2><h4>New Tab for Chrome</h4><h5>Created by Reticivis</h5>`);
     $("#timepopover").attr("data-content", `<div id="tpop"></div>`);
     //calendar
     caleandar(document.getElementById('caltemp'));
@@ -261,6 +285,7 @@ $(document).ready(function () {
 
     $('[data-toggle="popover"]').popover({html: true});
     $('[data-toggle="tooltip"]').tooltip();
+    $('#weatherh3').tooltip();
     //other stuff
     optionsinit(); //load shit from chrome (also weather)
     setInterval(regularinterval, 100);

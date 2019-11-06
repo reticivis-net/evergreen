@@ -117,3 +117,7 @@ a.popper:focus {
 .modal-footer {
     justify-content: space-between;
 }
+
+.nodisplay {
+    display: none;
+}

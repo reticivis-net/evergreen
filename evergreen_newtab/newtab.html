@@ -41,12 +41,16 @@
     <div class="footer">
         <div class="row">
             <div class="col-3 text-left">
-                <h3><a class="popper" data-content="content" data-placement="top"
-                       data-toggle="popover"
-                       data-trigger="focus" id="weatherpopover" role="button"
-                       tabindex="0">
+                <h3><span data-placement="right" data-toggle="tooltip" id="weatherh3" title=""><a class="popper"
+                                                                                                  data-content="content"
+                                                                                                  data-placement="top"
+                                                                                                  data-toggle="popover"
+                                                                                                  data-trigger="focus"
+                                                                                                  id="weatherpopover"
+                                                                                                  role="button"
+                                                                                                  tabindex="0">
                     <canvas height="32" id="weatherimage" width="32"></canvas>
-                    <span class="weather"></span></a></h3>
+                    <span class="weather"></span></a></span></h3>
             </div> <!--TODO: add detailed weather info-->
             <div class="col-6 text-center">
                 <form action="http://www.google.com/search" method="get">
@@ -119,7 +123,8 @@
                 <button class="btn btn-primary" data-dismiss="modal" id="bg-change" type="button">Change Background
                 </button>
                 <div class="br"></div>
-                <p>If you want to support the development of Evergreen, donate to me here:</p>
+
+                <p>If you want to support the development and upkeep of Evergreen, donate to me via PayPal here:</p>
                 <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
                     <input name="cmd" type="hidden" value="_donations"/>
                     <input name="business" type="hidden" value="EPQEEJYZYZA3C"/>
