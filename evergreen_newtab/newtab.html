@@ -15,6 +15,7 @@
     <script src="weather.js"></script>
     <script src="evergreen.js"></script>
     <link href="evergreen.css" rel="stylesheet">
+    <link href="climacons.css" rel="stylesheet">
 </head>
 <body>
 <div class="bg"></div>
@@ -42,14 +43,13 @@
         <div class="row">
             <div class="col-3 text-left">
                 <h3><span data-placement="right" data-toggle="tooltip" id="weatherh3" title=""><a class="popper"
-                                                                                                  data-content="content"
                                                                                                   data-placement="top"
-                                                                                                  data-toggle="popover"
-                                                                                                  data-trigger="focus"
+
+
                                                                                                   id="weatherpopover"
                                                                                                   role="button"
-                                                                                                  tabindex="0">
-                    <canvas height="32" id="weatherimage" width="32"></canvas>
+                                                                                                  tabindex="0"><!--data-trigger="focus"-->
+                    <span aria-hidden="true" class="climacon showers"></span>
                     <span class="weather"></span></a></span></h3>
             </div> <!--TODO: add detailed weather info-->
             <div class="col-6 text-center">
@@ -144,4 +144,18 @@
             </div>
         </div>
     </div>
+</div>
+<div class="weatherdiv">
+    <h5><span class="wdaily">${response.daily.summary}</span></h5>
+    <span class="wdailycontent"></span>
+    <h5><span class="whourly">${response.hourly.summary}</span></h5>
+    <span class="whourlycontent">
+        <div class="weatherblock">
+            <h6><b>5pm</b></h6>
+            <p>70°</p>
+            <p class="rainp">30%</p>
+        </div>
+        <div class="weatherblock">one one one one</div>
+    </span>
+    <h5><span class="wminutely">${response.minutely.summary}</span></h5>
 </div>

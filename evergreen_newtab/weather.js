@@ -34,4 +34,3 @@ function weathercurrent(lat, long, callback) {
     jsonp(url, callback);
 }
 
-

@@ -121,3 +121,35 @@ a.popper:focus {
 .nodisplay {
     display: none;
 }
+
+.weatherblock {
+    /*height:70px;*/
+    /*width:60px;*/
+    overflow: hidden;
+    display: inline-block;
+    border-radius: 5px;
+    background-color: var(--secondary);
+    padding: 5px;
+    margin: 3px;
+    text-align: center;
+}
+
+.weatherblock p {
+    margin-bottom: 1px;
+}
+
+.rainp {
+    color: #3498DB;
+}
+
+.weatherdiv {
+    display: none;
+}
+
+.low {
+    color: #ccc;
+}
+
+.high {
+    color: #fff;
+}

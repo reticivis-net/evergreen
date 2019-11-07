@@ -57,6 +57,9 @@ function datetime() {
         if (h === 0) {
             h = 12;
         }
+        if (h == 12) {
+            session = "PM";
+        }
         if (h > 12) {
             h = h - 12;
             session = "PM";
@@ -88,6 +91,47 @@ function datetime() {
 
 }
 
+function localeHourString(epoch) {
+    var d = new Date(0);
+    d.setUTCSeconds(epoch);
+    var date = d;
+    var h = date.getHours(); // 0 - 23
+    if (timeformat === "12") {
+        var session = "AM";
+        if (h === 0) {
+            h = 12;
+        }
+        if (h == 12) {
+            session = "PM";
+        }
+        if (h > 12) {
+            h = h - 12;
+            session = "PM";
+        }
+
+        var time = h + " " + session;
+
+    } else {
+        h = (h < 10) ? "0" + h : h;
+
+        var time = h;
+    }
+    return time;
+}
+
+function dayofepoch(epoch) {
+    var weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    var d = new Date(0);
+    d.setUTCSeconds(epoch);
+    return weekdays[d.getDay()]
+}
+
+function tunit(temp) { //for general use to have one function for every temperature
+    if (tempunit === "c") {
+        temp = ftoc(temp);
+    }
+    return Math.round(temp);
+}
 
 function weather(response) {
     //var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
@@ -98,19 +142,50 @@ function weather(response) {
     skycons.add("weatherimage", response.currently.icon);
     skycons.play();
     var temp = response.currently.temperature;
-    if (tempunit === "c") {
-        temp = ftoc(temp);
-    }
-    $(".weather").html(`${Math.round(temp)}°`);
+    $(".wdaily").html(response.daily.summary);
+    $(".whourly").html(response.hourly.summary);
+    $(".wminutely").html(response.minutely.summary);
+    $(".whourlycontent").html(" ");
+    response.hourly.data.slice(0, 7).forEach(function (hour, i) {
+        $(".whourlycontent").append(`
+        <div class="weatherblock">
+            <div class="hourlycon${i}"></div>
+            <h6>${localeHourString(hour.time)}</h6>
+            <p>${tunit(hour.temperature)}°</p>
+            <p class="rainp">${Math.round(hour.precipProbability)}%</p>
+        </div>
+        `);
+
+    });
+    response.daily.data.slice(0, 7).forEach(function (hour) {
+        $(".wdailycontent").append(`
+        <div class="weatherblock">
+            <h6>${dayofepoch(hour.time)}</h6>
+            <p><span class="low">${tunit(hour.temperatureLow)}°</span> <span class="high">${tunit(hour.temperatureHigh)}°</span> </p>
+            <p class="rainp">${Math.round(hour.precipProbability)}%</p>
+        </div>
+        `);
+    });
+    console.log($(".weatherdiv").html());
+    $("#weatherpopover").popover("hide");
+    $("#weatherpopover").attr("data-content", $(".weatherdiv").html());
+    $('#weatherpopover').popover({html: true});
+    $(".weather").html(`${tunit(temp)}°`);
+    //$("#weatherpopover").popover("hide");
     $("#weatherh3").tooltip('hide')
-        .attr('data-original-title', response.currently.summary)
-        .tooltip('show');
+        .attr('data-original-title', response.currently.summary);
+    $(document).tooltip({
+        selector: '.tt'
+    });
 }
 
 function regularinterval() {
     datetime();
     var now = new Date();
-    var date = `<h4>${now}</h4>`; //TODO: maybe make this your own instead of the ISO or whatever thing
+    var weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    var date = `<h4 style="margin:0;">${weekdays[now.getDay()]} ${months[now.getMonth()]} ${("0" + now.getDate()).slice(-2)} ${now.getFullYear()} ${now.toLocaleTimeString()}</h4>`; //TODO: maybe make this your own instead of the ISO or whatever thing
     $("#timepopover").attr("data-content", `<div id="tpop">${date}</div>`);
     $("#tpop").html(date);
 }
@@ -138,6 +213,9 @@ function timeformathandler() {
     } else {
         timeformat = "24";
     }
+    chrome.storage.local.get(["weather"], function (resp) {
+        weather(resp["weather"]);
+    }); // i have to do this since the weather popup uses the time format
     chstorage();
 }
 
@@ -272,7 +350,12 @@ $(document).ready(function () {
     });
     //popovers
     $("#weatherpopover").attr("data-content", `
-    
+    <b class="wdaily"></b>
+    <span class="wdailycontent"></span>
+    <b class="whourly"></b>
+    <span class="whourlycontent"></span>
+    <b class="wminutely"></b>
+    <span class="wminutelycontent"></span>
     `);
     document.getElementById("bg-change").onclick = backgroundhandler;
     $("#evergreenpopover").attr("data-content", `<h2 class="display-4"><img class="logoimg" src="evergreen128.png"/>Evergreen</h2><h4>New Tab for Chrome</h4><h5>Created by Reticivis</h5>`);
