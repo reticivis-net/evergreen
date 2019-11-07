@@ -114,7 +114,7 @@ function localeHourString(epoch) {
     } else {
         h = (h < 10) ? "0" + h : h;
 
-        var time = h;
+        var time = h + ":00";
     }
     return time;
 }
@@ -133,40 +133,51 @@ function tunit(temp) { //for general use to have one function for every temperat
     return Math.round(temp);
 }
 
+function climacon(prop) {
+    var climacons = {
+        "clear-day": "sun",
+        "clear-night": "moon",
+        "rain": "rain",
+        "snow": "snow",
+        "sleet": "sleet",
+        "wind": "wind",
+        "cloudy": "cloud",
+        "partly-cloudy-day": "cloud sun",
+        "partly-cloudy-night": "cloud moon"
+    };
+    if (climacons[prop] !== undefined) return climacons[prop];
+    else return "cloud";
+}
+
 function weather(response) {
     //var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
     //$(".wimgcontainer").html(wimg);
     chrome.storage.local.set({"weather": response});
-    console.log(response);
-    var skycons = new Skycons({"color": "white"});
-    skycons.add("weatherimage", response.currently.icon);
-    skycons.play();
     var temp = response.currently.temperature;
     $(".wdaily").html(response.daily.summary);
     $(".whourly").html(response.hourly.summary);
     $(".wminutely").html(response.minutely.summary);
     $(".whourlycontent").html(" ");
+    $("#weatherimage").html(`<span aria-hidden="true" class="climacon ${climacon(response.currently.icon)}"></span>`);
     response.hourly.data.slice(0, 7).forEach(function (hour, i) {
         $(".whourlycontent").append(`
         <div class="weatherblock">
-            <div class="hourlycon${i}"></div>
-            <h6>${localeHourString(hour.time)}</h6>
+            <h6>${localeHourString(hour.time)} <span aria-hidden="true" class="popover-climacon climacon ${climacon(hour.icon)}"></span></h6>
             <p>${tunit(hour.temperature)}°</p>
             <p class="rainp">${Math.round(hour.precipProbability)}%</p>
         </div>
         `);
 
     });
-    response.daily.data.slice(0, 7).forEach(function (hour) {
+    response.daily.data.slice(0, 7).forEach(function (day) {
         $(".wdailycontent").append(`
         <div class="weatherblock">
-            <h6>${dayofepoch(hour.time)}</h6>
-            <p><span class="low">${tunit(hour.temperatureLow)}°</span> <span class="high">${tunit(hour.temperatureHigh)}°</span> </p>
-            <p class="rainp">${Math.round(hour.precipProbability)}%</p>
+            <h6>${dayofepoch(day.time)} <span aria-hidden="true" class="popover-climacon climacon ${climacon(day.icon)}"></span></h6>
+            <p><span class="low">${tunit(day.temperatureLow)}°</span> <span class="high">${tunit(day.temperatureHigh)}°</span> </p>
+            <p class="rainp">${Math.round(day.precipProbability)}%</p>
         </div>
         `);
     });
-    console.log($(".weatherdiv").html());
     $("#weatherpopover").popover("hide");
     $("#weatherpopover").attr("data-content", $(".weatherdiv").html());
     $('#weatherpopover').popover({html: true});
@@ -259,11 +270,8 @@ function chstorage() {
 }
 
 function backgroundhandler() {
-    console.log("background handler start");
     followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${searchtags}`, function (response) {
-        console.log("redirect followed");
         preloadImage(response, function () {
-            console.log("image preloaded");
             $(".bg").css("background-image", `url(${response})`);
         });
 

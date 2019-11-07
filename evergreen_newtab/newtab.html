@@ -48,8 +48,10 @@
 
                                                                                                   id="weatherpopover"
                                                                                                   role="button"
-                                                                                                  tabindex="0"><!--data-trigger="focus"-->
-                    <span aria-hidden="true" class="climacon showers"></span>
+                                                                                                  data-trigger="focus"
+                                                                                                  tabindex="0"
+                ><!--data-trigger="focus"-->
+                    <span id="weatherimage"></span>
                     <span class="weather"></span></a></span></h3>
             </div> <!--TODO: add detailed weather info-->
             <div class="col-6 text-center">
@@ -146,6 +148,8 @@
     </div>
 </div>
 <div class="weatherdiv">
+    <p class="pfix text-muted"><a class="text-muted" href="https://darksky.net/poweredby/">Weather Powered by Dark
+        Sky</a> | <a class="text-muted" href="https://twitter.com/AdamWhitcroft">Climacons by Adam Whitcroft</a></p>
     <h5><span class="wdaily">${response.daily.summary}</span></h5>
     <span class="wdailycontent"></span>
     <h5><span class="whourly">${response.hourly.summary}</span></h5>
@@ -157,5 +161,5 @@
         </div>
         <div class="weatherblock">one one one one</div>
     </span>
-    <h5><span class="wminutely">${response.minutely.summary}</span></h5>
+    <h5 class="pfix"><span class="wminutely">${response.minutely.summary}</span></h5>
 </div>

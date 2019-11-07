@@ -153,3 +153,11 @@ a.popper:focus {
 .high {
     color: #fff;
 }
+
+.popover-climacon {
+    font-size: 120%;
+}
+
+.pfix {
+    margin-bottom: 0;
+}
