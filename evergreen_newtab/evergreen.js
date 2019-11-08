@@ -217,7 +217,6 @@ function tempunithandler() {
     } else {
         tempunit = "c";
     }
-    //TODO: but also throttle the weather API calling, you can use storage.local
     chrome.storage.local.get(["weather"], function (resp) {
         weather(resp["weather"]);
     });
@@ -283,7 +282,6 @@ function backgroundhandler() {
             bgimage: response,
             lastbgrefresh: new Date().getTime() / 1000
         });
-        //TODO: add option to only refresh every x minutes
     });
 }
 
