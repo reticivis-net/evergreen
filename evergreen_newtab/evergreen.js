@@ -407,7 +407,7 @@ $(document).ready(function () {
     //popovers
     document.getElementById("bg-change").onclick = backgroundhandler;
     document.getElementById("save").onclick = chstorage;
-    $("#evergreenpopover").attr("data-content", `<h2 class="display-4"><img class="logoimg" src="evergreen128.png"/>Evergreen</h2><h4>New Tab for Chrome</h4><h5>Created by Reticivis</h5>`);
+    $("#evergreenpopover").attr("data-content", `<h2 class="display-4"><img class="logoimg" src="evergreen128.png"/>Evergreen</h2><h4>New Tab for Chrome</h4><h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`);
     $("#timepopover").attr("data-content", `<div id="tpop"></div>`);
     //calendar
     caleandar(document.getElementById('caltemp'));
