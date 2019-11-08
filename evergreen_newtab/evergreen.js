@@ -5,6 +5,8 @@ var dateformat = "md";
 var searchtags = "nature,ocean,city";
 var refreshtime = 0;
 
+var promotional = false; // use the same BG for promotionial purposes
+
 function round(value, decimals) {
     return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
 }
@@ -272,17 +274,19 @@ function chstorage() {
 }
 
 function backgroundhandler() {
-    followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${searchtags}`, function (response) {
-        preloadImage(response, function () {
-            $(".bg").css("background-image", `url(${response})`);
-        });
+    if (!promotional) {
+        followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${searchtags}`, function (response) {
+            preloadImage(response, function () {
+                $(".bg").css("background-image", `url(${response})`);
+            });
 
-        //$(".bg").css("background-image", `url(${response})`);
-        chrome.storage.local.set({
-            bgimage: response,
-            lastbgrefresh: new Date().getTime() / 1000
+            //$(".bg").css("background-image", `url(${response})`);
+            chrome.storage.local.set({
+                bgimage: response,
+                lastbgrefresh: new Date().getTime() / 1000
+            });
         });
-    });
+    }
 }
 
 function refreshinphandler() {
@@ -400,10 +404,15 @@ function optionsinit() {
 
 $(document).ready(function () {
     //imghandler
-    chrome.storage.local.get(['bgimage', "lastbgrefresh"], function (result) {
-        var bgimage = result["bgimage"];
-        $(".bg").css("background-image", `url(${bgimage})`);
-    });
+    if (promotional) {
+        $(".bg").css("background-image", `url(https://images.unsplash.com/photo-1440558929809-1412944a6225?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1920&q=80)`);
+    } else {
+        chrome.storage.local.get(['bgimage', "lastbgrefresh"], function (result) {
+            var bgimage = result["bgimage"];
+            $(".bg").css("background-image", `url(${bgimage})`);
+        });
+    }
+
     //popovers
     document.getElementById("bg-change").onclick = backgroundhandler;
     document.getElementById("save").onclick = chstorage;
@@ -422,7 +431,12 @@ $(document).ready(function () {
     $('#weatherh3').tooltip();
     //other stuff
     optionsinit(); //load shit from chrome (also weather)
-    setInterval(regularinterval, 100);
+    if (promotional) {
+        regularinterval();
+    } else {
+        setInterval(regularinterval, 100);
+    }
+
     $('#menu').on('hidden.bs.modal', function () {
         $("#savetext").html("");
     });
