@@ -102,7 +102,7 @@ a.popper:focus {
     max-width: initial;
 }
 
-#blurslider {
+#blurslider, #textslider {
     width: 50%;
 }
 
@@ -114,7 +114,7 @@ a.popper:focus {
     height: 7px;
 }
 
-.modal-footer {
+#menu .modal-footer {
     justify-content: space-between;
 }
 
@@ -160,4 +160,30 @@ a.popper:focus {
 
 .pfix {
     margin-bottom: 0;
+}
+
+.text-break {
+    margin: 0 7px;
+
+}
+
+.bug-report:hover {
+    color: #bbb;
+    text-decoration: inherit;
+}
+
+.bug-report {
+    color: inherit;
+}
+
+.text-size {
+    font-size: 100%;
+}
+
+.weatherpopover *, .weatherh3 * {
+    vertical-align: middle;
+}
+
+#bgrefresh {
+    width: 100px;
 }

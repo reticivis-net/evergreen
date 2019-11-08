@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Evergreen New Tab</title>
@@ -10,13 +11,15 @@
     <script src="bootstrap.min.js"></script>
     <script src="fontawesome.min.js"></script>
     <script src="caleandar.min.js"></script>
-    <link href="theme1.css" rel="stylesheet"> <!--caleander-->
+    <link href="theme1.css" rel="stylesheet">
+    <!--caleander-->
     <script src="skycons.min.js"></script>
     <script src="weather.js"></script>
     <script src="evergreen.js"></script>
     <link href="evergreen.css" rel="stylesheet">
     <link href="climacons.css" rel="stylesheet">
 </head>
+
 <body>
 <div class="bg"></div>
 <div class="preloadimg" style="display:none;"></div>
@@ -24,19 +27,22 @@
 <div class="body">
     <div id="header">
         <div class="row">
-            <div class="col text-left"><h4><a class="popper" data-content="content" data-placement="top"
-                                              data-toggle="popover"
-                                              data-trigger="focus" id="evergreenpopover" role="button"
-                                              tabindex="0"><img class="logoimg" src="evergreen128.png"/>Evergreen</a>
-            </h4></div>
-            <div class="col text-center"><h3><a class="popper" data-content="content" data-placement="top"
-                                                data-toggle="popover"
-                                                data-trigger="focus" id="timepopover" role="button"
-                                                tabindex="0"><span class="clock"></span></a></h3></div>
-            <div class="col text-right"><h4><a class="popper" data-content="content" data-placement="bottom"
-                                               data-toggle="popover"
-                                               data-trigger="focus" id="datepopover" role="button"
-                                               tabindex="0"><span class="date"></span></a></h4></div>
+            <div class="col text-left">
+                <h4><a class="popper" data-content="content" data-placement="top"
+                       data-toggle="popover"
+                       data-trigger="focus" id="evergreenpopover" role="button"
+                       tabindex="0"><img class="logoimg" src="evergreen128.png"/>Evergreen</a>
+                </h4></div>
+            <div class="col text-center">
+                <h3><a class="popper" data-content="content" data-placement="top"
+                       data-toggle="popover"
+                       data-trigger="focus" id="timepopover" role="button"
+                       tabindex="0"><span class="clock"></span></a></h3></div>
+            <div class="col text-right">
+                <h4><a class="popper" data-content="content" data-placement="bottom"
+                       data-toggle="popover"
+                       data-trigger="focus" id="datepopover" role="button"
+                       tabindex="0"><span class="date"></span></a></h4></div>
         </div>
     </div>
     <div class="footer">
@@ -44,8 +50,6 @@
             <div class="col-3 text-left">
                 <h3><span data-placement="right" data-toggle="tooltip" id="weatherh3" title=""><a class="popper"
                                                                                                   data-placement="top"
-
-
                                                                                                   id="weatherpopover"
                                                                                                   role="button"
                                                                                                   data-trigger="focus"
@@ -53,7 +57,8 @@
                 ><!--data-trigger="focus"-->
                     <span id="weatherimage"></span>
                     <span class="weather"></span></a></span></h3>
-            </div> <!--TODO: add detailed weather info-->
+            </div>
+            <!--TODO: add detailed weather info-->
             <div class="col-6 text-center">
                 <form action="http://www.google.com/search" method="get">
                     <div class="input-group mb-3 circleround search center">
@@ -66,8 +71,9 @@
                     </div>
                 </form>
             </div>
-            <div class="col-3 text-right"><h3><i class="fas fa-ellipsis-h menu-btn" data-target="#menu"
-                                                 data-toggle="modal"></i></h3></div>
+            <div class="col-3 text-right">
+                <h3><i class="fas fa-ellipsis-h menu-btn" data-target="#menu"
+                       data-toggle="modal"></i></h3></div>
         </div>
     </div>
 </div>
@@ -82,11 +88,10 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p id="blurval">Blur:</p>
+                <p id="blurval"><i class="fas fa-image"></i> Blur:</p>
                 <input class="custom-range" id="blurslider" max="15" min="0" step="0.5" type="range" value="0"/>
                 <div class="br"></div>
-                <p>Temperature Unit:</p>
-
+                <p><i class="fas fa-temperature-low"></i> Temperature Unit:</p>
                 <div class="custom-control custom-radio custom-control-inline">
                     <input class="custom-control-input" id="farradio" name="tempunit" type="radio">
                     <label class="custom-control-label" for="farradio">Fahrenheit</label>
@@ -96,7 +101,7 @@
                     <label class="custom-control-label" for="celradio">Celsius</label>
                 </div>
                 <div class="br"></div>
-                <p>Time Format:</p>
+                <p><i class="fas fa-clock"></i> Time Format:</p>
                 <div class="custom-control custom-radio custom-control-inline">
                     <input class="custom-control-input" id="12radio" name="timeform" type="radio">
                     <label class="custom-control-label" for="12radio">12 hour time</label>
@@ -106,7 +111,7 @@
                     <label class="custom-control-label" for="24radio">24 hour time</label>
                 </div>
                 <div class="br"></div>
-                <p>Date Format:</p>
+                <p><i class="fas fa-calendar-day"></i> Date Format:</p>
                 <div class="custom-control custom-radio custom-control-inline">
                     <input class="custom-control-input" id="mdradio" name="dateform" type="radio">
                     <label class="custom-control-label" for="mdradio">MM/DD/YYYY</label>
@@ -116,17 +121,27 @@
                     <label class="custom-control-label" for="dmradio">DD/MM/YYYY</label>
                 </div>
                 <div class="br"></div>
-                <p>Background image search tags <span class="text-muted">(Optional)</span>: </p>
+                <p><i class="fas fa-image"></i> Background image search tags <span class="text-muted">(Optional)</span>:
+                </p>
                 <input class="form-control" id="bgtags" placeholder="Background search tags" type="text">
-                <p><span class="text-muted" data-toggle="tooltip"
-                         title="Images are randomly sourced from source.unsplash.com using these search tags. Make sure there are no spaces. Example: forest,ocean,city">Seperate search terms by commas with no spaces</span>
+                <p class="pfix"><span class="text-muted" data-toggle="tooltip"
+                                      title="Images are randomly sourced from source.unsplash.com using these search tags. Make sure there are no spaces. Example: forest,ocean,city">Seperate search terms by commas with no spaces</span>
                 </p>
                 <div class="br"></div>
-                <button class="btn btn-primary" data-dismiss="modal" id="bg-change" type="button">Change Background
+                <p><i class="fas fa-images"></i> Time to wait before getting new image (in minutes) <span
+                        class="text-muted">(Optional)</span>:
+                </p>
+                <input class="form-control" data-toggle="tooltip" id="bgrefresh" max="1440" min="0"
+                       placeholder="Time in minutes"
+                       title="Evergreen won't download a new background if a new one has been downloaded this many minutes ago. Saves data. Set to 0 to disable."
+                       type="number" value="0">
+                <div class="br"></div>
+                <button class="btn btn-primary" data-dismiss="modal" id="bg-change" type="button"><i
+                        class="fas fa-images"></i> Change Background
                 </button>
                 <div class="br"></div>
-
-                <p>If you want to support the development and upkeep of Evergreen, donate to me via PayPal here:</p>
+                <p><i class="fab fa-paypal"></i> If you want to support the development and upkeep of Evergreen, donate
+                    to me via PayPal here:</p>
                 <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
                     <input name="cmd" type="hidden" value="_donations"/>
                     <input name="business" type="hidden" value="EPQEEJYZYZA3C"/>
@@ -136,30 +151,56 @@
                            title="PayPal - The safer, easier way to pay online!" type="image"/>
                     <img alt="" border="0" height="1" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1"/>
                 </form>
+                <div class="br"></div>
+                <p>Email <a class="bug-report" href="mailto:evergreennewtab@gmail.com?Subject=Evergreen" target="_top">evergreennewtab@gmail.com</a>
+                    for any inquiries. Quick links below:</p>
+                <p><a class="bug-report" href="mailto:evergreennewtab@gmail.com?Subject=Evergreen%20Bug%20Report"
+                      target="_top"><i class="fas fa-bug"></i> Bug Report</a> <span class="text-break"></span> <a
+                        class="bug-report" href="mailto:evergreennewtab@gmail.com?Subject=Evergreen%20Feature%20Request"
+                        target="_top"><i
+                        class="fas fa-plus"></i> Feature Request</a></p>
 
             </div>
             <div class="modal-footer">
-                <p class="text-muted" style="margin-bottom: 0;"><span data-toggle="tooltip" id="autosave"
-                                                                      title="Your settings automatically save to Chrome locally.">Settings autosave to Chrome.</span>
-                </p>
+                <div>
+                    <button class="btn btn-primary" id="save" type="button">Save Changes</button>
+                    <span class="text-muted" id="savetext" style="margin-left:10px;"></span>
+                </div>
+                <button class="btn btn-secondary" data-dismiss="modal" type="button">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="welcome" role="dialog" tabindex="-1">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"><img class="logoimg" src="evergreen128.png"/>Welcome to Evergreen!</h4>
+                <button aria-label="Close" class="close" data-dismiss="modal" type="button">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Thank you for using Evergreen! This page now replaces Chrome's New Tab page.</p>
+                <p>Options and support are in the lower right corner.</p>
+                <p>Click on any text to show more info, such as the weather in the lower left.</p>
+            </div>
+            <div class="modal-footer">
                 <button class="btn btn-secondary" data-dismiss="modal" type="button">Close</button>
             </div>
         </div>
     </div>
 </div>
 <div class="weatherdiv">
-    <p class="pfix text-muted"><a class="text-muted" href="https://darksky.net/poweredby/">Weather Powered by Dark
-        Sky</a> | <a class="text-muted" href="https://twitter.com/AdamWhitcroft">Climacons by Adam Whitcroft</a></p>
-    <h5><span class="wdaily">${response.daily.summary}</span></h5>
-    <span class="wdailycontent"></span>
-    <h5><span class="whourly">${response.hourly.summary}</span></h5>
-    <span class="whourlycontent">
-        <div class="weatherblock">
-            <h6><b>5pm</b></h6>
-            <p>70°</p>
-            <p class="rainp">30%</p>
-        </div>
-        <div class="weatherblock">one one one one</div>
+    <div class="weatherpopover">
+        <p class="pfix text-muted"><a class="text-muted" href="https://darksky.net/poweredby/">Weather Powered by Dark
+            Sky</a> | <a class="text-muted" href="https://twitter.com/AdamWhitcroft">Climacons by Adam Whitcroft</a></p>
+        <h5><span class="wdaily">${response.daily.summary}</span></h5>
+        <span class="wdailycontent"></span>
+        <h5><span class="whourly">${response.hourly.summary}</span></h5>
+        <span class="whourlycontent">
     </span>
-    <h5 class="pfix"><span class="wminutely">${response.minutely.summary}</span></h5>
+        <h5 class="pfix"><span class="wminutely">${response.minutely.summary}</span></h5>
+    </div>
+
 </div>

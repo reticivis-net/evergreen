@@ -3,6 +3,7 @@ var blur = 0;
 var timeformat = "12";
 var dateformat = "md";
 var searchtags = "nature,ocean,city";
+var refreshtime = 0;
 
 function round(value, decimals) {
     return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
@@ -152,19 +153,22 @@ function climacon(prop) {
 function weather(response) {
     //var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
     //$(".wimgcontainer").html(wimg);
-    chrome.storage.local.set({"weather": response});
+    chrome.storage.local.set({
+        "weather": response
+    });
     var temp = response.currently.temperature;
     $(".wdaily").html(response.daily.summary);
     $(".whourly").html(response.hourly.summary);
     $(".wminutely").html(response.minutely.summary);
-    $(".whourlycontent").html(" ");
+    $(".whourlycontent").html("");
+    $(".wdailycontent").html("");
     $("#weatherimage").html(`<span aria-hidden="true" class="climacon ${climacon(response.currently.icon)}"></span>`);
     response.hourly.data.slice(0, 7).forEach(function (hour, i) {
         $(".whourlycontent").append(`
         <div class="weatherblock">
-            <h6>${localeHourString(hour.time)} <span aria-hidden="true" class="popover-climacon climacon ${climacon(hour.icon)}"></span></h6>
+            <h6 class="pfix">${localeHourString(hour.time)} <span aria-hidden="true" class="popover-climacon climacon ${climacon(hour.icon)}"></span></h6>
             <p>${tunit(hour.temperature)}°</p>
-            <p class="rainp">${Math.round(hour.precipProbability)}%</p>
+            <p class="rainp">${Math.round(hour.precipProbability * 100)}%</p>
         </div>
         `);
 
@@ -172,15 +176,17 @@ function weather(response) {
     response.daily.data.slice(0, 7).forEach(function (day) {
         $(".wdailycontent").append(`
         <div class="weatherblock">
-            <h6>${dayofepoch(day.time)} <span aria-hidden="true" class="popover-climacon climacon ${climacon(day.icon)}"></span></h6>
+            <h6 class="pfix">${dayofepoch(day.time)} <span aria-hidden="true" class="popover-climacon climacon ${climacon(day.icon)}"></span></h6>
             <p><span class="low">${tunit(day.temperatureLow)}°</span> <span class="high">${tunit(day.temperatureHigh)}°</span> </p>
-            <p class="rainp">${Math.round(day.precipProbability)}%</p>
+            <p class="rainp">${Math.round(day.precipProbability * 100)}%</p>
         </div>
         `);
     });
     $("#weatherpopover").popover("hide");
     $("#weatherpopover").attr("data-content", $(".weatherdiv").html());
-    $('#weatherpopover').popover({html: true});
+    $('#weatherpopover').popover({
+        html: true
+    });
     $(".weather").html(`${tunit(temp)}°`);
     //$("#weatherpopover").popover("hide");
     $("#weatherh3").tooltip('hide')
@@ -196,7 +202,7 @@ function regularinterval() {
     var weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-    var date = `<h4 style="margin:0;">${weekdays[now.getDay()]} ${months[now.getMonth()]} ${("0" + now.getDate()).slice(-2)} ${now.getFullYear()} ${now.toLocaleTimeString()}</h4>`; //TODO: maybe make this your own instead of the ISO or whatever thing
+    var date = `<h4 style="margin:0;">${weekdays[now.getDay()]} ${months[now.getMonth()]} ${("0" + now.getDate()).slice(-2)} ${now.getFullYear()} ${now.toLocaleTimeString()}</h4>`;
     $("#timepopover").attr("data-content", `<div id="tpop">${date}</div>`);
     $("#tpop").html(date);
 }
@@ -215,7 +221,6 @@ function tempunithandler() {
     chrome.storage.local.get(["weather"], function (resp) {
         weather(resp["weather"]);
     });
-    chstorage();
 }
 
 function timeformathandler() {
@@ -227,7 +232,6 @@ function timeformathandler() {
     chrome.storage.local.get(["weather"], function (resp) {
         weather(resp["weather"]);
     }); // i have to do this since the weather popup uses the time format
-    chstorage();
 }
 
 function dateformathandler() {
@@ -236,13 +240,11 @@ function dateformathandler() {
     } else {
         dateformat = "dm";
     }
-    chstorage();
 
 }
 
 function searchtaghandler() {
     searchtags = $(this).val();
-    chstorage();
 }
 
 function sblur(val) {
@@ -253,9 +255,8 @@ function sblur(val) {
         $(".bg").css("transform", `scale(${1 + 0.1 * (val / 15)})`);
         $(".bg").css("filter", `blur(${val}px)`);
     }
-    $("#blurval").html(`Background blur: ${val}px`);
+    $("#blurval").html(`<i class="fas fa-image"></i> Background blur: ${val}px`);
     blur = val;
-    chstorage();
 }
 
 function chstorage() {
@@ -264,8 +265,10 @@ function chstorage() {
         tempunit: tempunit,
         timeformat: timeformat,
         dateformat: dateformat,
-        searchtags: searchtags
+        searchtags: searchtags,
+        refreshtime: refreshtime
     });
+    $("#savetext").html("Saved.");
 
 }
 
@@ -276,9 +279,16 @@ function backgroundhandler() {
         });
 
         //$(".bg").css("background-image", `url(${response})`);
-        chrome.storage.local.set({bgimage: response});
+        chrome.storage.local.set({
+            bgimage: response,
+            lastbgrefresh: new Date().getTime() / 1000
+        });
         //TODO: add option to only refresh every x minutes
     });
+}
+
+function refreshinphandler() {
+    refreshtime = $(this).val();
 }
 
 function optionsinit() {
@@ -296,7 +306,7 @@ function optionsinit() {
     //temperature unit handler
     document.getElementById('farradio').addEventListener('input', tempunithandler);
     document.getElementById('celradio').addEventListener('input', tempunithandler);
-    chrome.storage.local.get(['tempunit'], function (result) {
+    chrome.storage.local.get(['tempunit', 'lastweather'], function (result) {
         tempunit = result["tempunit"];
         if (tempunit == undefined) {
             tempunit = "f";
@@ -307,7 +317,32 @@ function optionsinit() {
         } else {
             $("#celradio").attr("checked", "checked");
         }
-        weatherpos(weathercurrent, weather);
+
+        if (result["lastweather"] == undefined) { // most likely happens on first install
+            console.log("getting new weather info");
+            weatherpos(weathercurrent, weather);
+            chrome.storage.local.set({
+                lastweather: new Date().getTime() / 1000
+            });
+        } else { // there is a date of the last time we got the weather
+            var sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
+            var timetowait = 60 * 10; // only get weather every 10 mins
+            if (sincelastdownload > timetowait) { // if its been longer than 10 mins, get the weather again
+                console.log("getting new weather info");
+                weatherpos(weathercurrent, weather);
+                chrome.storage.local.set({
+                    lastweather: new Date().getTime() / 1000
+                });
+            } else { // otherwise, use the saved info to possibly prevent the weather api limit
+                console.log("using saved weather info");
+
+                chrome.storage.local.get(["weather"], function (resp) {
+                    weather(resp["weather"]);
+                });
+            }
+        }
+        console.log(sincelastdownload, timetowait);
+
     });
     //timeformat handler
     document.getElementById('12radio').addEventListener('input', timeformathandler);
@@ -340,32 +375,40 @@ function optionsinit() {
         }
     });
     document.getElementById('bgtags').addEventListener('change', searchtaghandler);
-    chrome.storage.local.get(['searchtags'], function (result) {
+    chrome.storage.local.get(['searchtags', "lastbgrefresh", "refreshtime"], function (result) {
         searchtags = result["searchtags"];
         if (searchtags == undefined) {
             searchtags = "nature,ocean,city,space";
         }
+        refreshtime = result["refreshtime"];
+        if (refreshtime == undefined) {
+            refreshtime = 0;
+        }
+        $("#bgrefresh").attr("value", refreshtime);
         $("#bgtags").attr("value", searchtags);
-        backgroundhandler();
+        if (refreshtime != 0) {
+            var sincelastdownload = (new Date().getTime() / 1000) - result["lastbgrefresh"];
+            var timetowait = refreshtime * 60;
+            if (sincelastdownload > timetowait) {
+                backgroundhandler();
+            }
+        } else {
+            backgroundhandler();
+        }
+
     });
+    document.getElementById('bgrefresh').addEventListener('change', refreshinphandler);
 }
 
 $(document).ready(function () {
     //imghandler
-    chrome.storage.local.get(['bgimage'], function (result) {
+    chrome.storage.local.get(['bgimage', "lastbgrefresh"], function (result) {
         var bgimage = result["bgimage"];
         $(".bg").css("background-image", `url(${bgimage})`);
     });
     //popovers
-    $("#weatherpopover").attr("data-content", `
-    <b class="wdaily"></b>
-    <span class="wdailycontent"></span>
-    <b class="whourly"></b>
-    <span class="whourlycontent"></span>
-    <b class="wminutely"></b>
-    <span class="wminutelycontent"></span>
-    `);
     document.getElementById("bg-change").onclick = backgroundhandler;
+    document.getElementById("save").onclick = chstorage;
     $("#evergreenpopover").attr("data-content", `<h2 class="display-4"><img class="logoimg" src="evergreen128.png"/>Evergreen</h2><h4>New Tab for Chrome</h4><h5>Created by Reticivis</h5>`);
     $("#timepopover").attr("data-content", `<div id="tpop"></div>`);
     //calendar
@@ -374,13 +417,25 @@ $(document).ready(function () {
     $("#datepopover").attr("data-content", `<div id="caltemp">${caltemp}</div>`);
     $("#caltemp").remove();
 
-    $('[data-toggle="popover"]').popover({html: true});
+    $('[data-toggle="popover"]').popover({
+        html: true
+    });
     $('[data-toggle="tooltip"]').tooltip();
     $('#weatherh3').tooltip();
     //other stuff
     optionsinit(); //load shit from chrome (also weather)
     setInterval(regularinterval, 100);
-
-
+    $('#menu').on('hidden.bs.modal', function () {
+        $("#savetext").html("");
+    });
+    // FIRST INSTALL
+    chrome.storage.local.get(['firstinstall'], function (result) {
+        result = result["firstinstall"];
+        if (result == undefined || result === true) {
+            $("#welcome").modal();
+        }
+        chrome.storage.local.set({
+            firstinstall: false
+        });
+    });
 });
-
