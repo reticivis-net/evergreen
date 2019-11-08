@@ -321,29 +321,25 @@ function optionsinit() {
         }
 
         if (result["lastweather"] == undefined) { // most likely happens on first install
-            console.log("getting new weather info");
             weatherpos(weathercurrent, weather);
             chrome.storage.local.set({
                 lastweather: new Date().getTime() / 1000
             });
         } else { // there is a date of the last time we got the weather
             var sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
-            var timetowait = 60 * 10; // only get weather every 10 mins
-            if (sincelastdownload > timetowait) { // if its been longer than 10 mins, get the weather again
-                console.log("getting new weather info");
+            var timetowait = 10 * 60; // only get weather every 10 mins
+            if (sincelastdownload > timetowait && navigator.onLine) { // if its been longer than 10 mins, get the weather again
                 weatherpos(weathercurrent, weather);
                 chrome.storage.local.set({
                     lastweather: new Date().getTime() / 1000
                 });
             } else { // otherwise, use the saved info to possibly prevent the weather api limit
-                console.log("using saved weather info");
 
                 chrome.storage.local.get(["weather"], function (resp) {
                     weather(resp["weather"]);
                 });
             }
         }
-        console.log(sincelastdownload, timetowait);
 
     });
     //timeformat handler
