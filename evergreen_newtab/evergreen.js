@@ -161,7 +161,11 @@ function weather(response) {
     var temp = response.currently.temperature;
     $(".wdaily").html(response.daily.summary);
     $(".whourly").html(response.hourly.summary);
-    $(".wminutely").html(response.minutely.summary);
+    if (response.minutely) { // not all regions have minutely
+        $(".wminutely").html(response.minutely.summary);
+    } else {
+        $(".wminutely").html(response.currently.summary);
+    }
     $(".whourlycontent").html("");
     $(".wdailycontent").html("");
     $("#weatherimage").html(`<span aria-hidden="true" class="climacon ${climacon(response.currently.icon)}"></span>`);
