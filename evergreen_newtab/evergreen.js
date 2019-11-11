@@ -189,6 +189,7 @@ function weather(response) {
     }
     $(".whourlycontent").html("");
     $(".wdailycontent").html("");
+    $(".walerts").html("");
     $("#weatherimage").html(`<span aria-hidden="true" class="climacon ${climacon(response.currently.icon)}"></span>`);
     response.hourly.data.slice(0, 7).forEach(function (hour, i) {
         $(".whourlycontent").append(`
@@ -213,6 +214,7 @@ function weather(response) {
         </div>
         `);
     });
+
     if (response.alerts) {
         response.alerts.forEach(function (alert, i) {
             var regionstring = "";
