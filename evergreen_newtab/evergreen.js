@@ -204,10 +204,21 @@ function weather(response) {
 
     });
     response.daily.data.slice(0, 7).forEach(function (day, i) {
+        var accum = "";
+        if (day.precipAccumulation) {
+            accum = day.precipAccumulation;
+            if (accum > 0.05) {
+                if (tempunit == "f") accum += "in";
+                else accum = round(accum * 2.54, 2) + "cm";
+                accum = `<p class="rainp pfix">${accum} of ${day.precipType}</p>`;
+            } else {
+                accum = "";
+            }
+        }
         $(".wdailycontent").append(`
         <div class="weatherblock popovertt">
             <span class="data">day-${i}</span>
-            <span class="data ttcontent">${day.summary}</span>
+            <span class="data ttcontent"><p class="pfix">${day.summary}</p>${accum}</span>
             <h6 class="pfix">${dayofepoch(day.time)} <span aria-hidden="true" class="popover-climacon climacon ${climacon(day.icon)}"></span></h6>
             <p><span class="low">${tunit(day.temperatureLow)}°</span> <span class="high">${tunit(day.temperatureHigh)}°</span> </p>
             <p class="rainp">${Math.round(day.precipProbability * 100)}%</p>
@@ -284,6 +295,7 @@ function tempunithandler() {
     } else {
         tempunit = "c";
     }
+    debugp("reloading weather div with cached info");
     chrome.storage.local.get(["weather"], function (resp) {
         weather(resp["weather"]);
     });
@@ -295,6 +307,7 @@ function timeformathandler() {
     } else {
         timeformat = "24";
     }
+    debugp("reloading weather div with cached info");
     chrome.storage.local.get(["weather"], function (resp) {
         weather(resp["weather"]);
     }); // i have to do this since the weather popup uses the time format
