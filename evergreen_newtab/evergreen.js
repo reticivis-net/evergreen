@@ -6,6 +6,14 @@ var searchtags = "nature,ocean,city";
 var refreshtime = 0;
 
 var promotional = false; // use the same BG for promotionial purposes
+var development = true;
+debugp("Evergreen in development mode");
+
+function debugp(string) {
+    if (development) {
+        console.log(string);
+    }
+}
 
 function round(value, decimals) {
     return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
@@ -152,12 +160,25 @@ function climacon(prop) {
     else return "cloud";
 }
 
+function updateweather(showafter) {
+    $("#weatherpopover").popover("hide");
+    $("#weatherpopover").attr("data-content", $(".weatherdiv").html());
+    $('#weatherpopover').popover({
+        html: true
+    });
+    if (showafter) {
+        $("#weatherpopover").popover("show");
+    }
+
+}
+
 function weather(response) {
     //var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
     //$(".wimgcontainer").html(wimg);
     chrome.storage.local.set({
         "weather": response
     });
+    debugp(response);
     var temp = response.currently.temperature;
     $(".wdaily").html(response.daily.summary);
     $(".whourly").html(response.hourly.summary);
@@ -171,7 +192,9 @@ function weather(response) {
     $("#weatherimage").html(`<span aria-hidden="true" class="climacon ${climacon(response.currently.icon)}"></span>`);
     response.hourly.data.slice(0, 7).forEach(function (hour, i) {
         $(".whourlycontent").append(`
-        <div class="weatherblock">
+        <div class="weatherblock popovertt" data-content="test123">
+            <span class="data">hour-${i}</span>
+            <span class="data ttcontent"><p class="pfix">${hour.summary}</p><p class="pfix">Feels like ${tunit(hour.apparentTemperature)}°</p></span>
             <h6 class="pfix">${localeHourString(hour.time)} <span aria-hidden="true" class="popover-climacon climacon ${climacon(hour.icon)}"></span></h6>
             <p>${tunit(hour.temperature)}°</p>
             <p class="rainp">${Math.round(hour.precipProbability * 100)}%</p>
@@ -179,20 +202,55 @@ function weather(response) {
         `);
 
     });
-    response.daily.data.slice(0, 7).forEach(function (day) {
+    response.daily.data.slice(0, 7).forEach(function (day, i) {
         $(".wdailycontent").append(`
-        <div class="weatherblock">
+        <div class="weatherblock popovertt">
+            <span class="data">day-${i}</span>
+            <span class="data ttcontent">${day.summary}</span>
             <h6 class="pfix">${dayofepoch(day.time)} <span aria-hidden="true" class="popover-climacon climacon ${climacon(day.icon)}"></span></h6>
             <p><span class="low">${tunit(day.temperatureLow)}°</span> <span class="high">${tunit(day.temperatureHigh)}°</span> </p>
             <p class="rainp">${Math.round(day.precipProbability * 100)}%</p>
         </div>
         `);
     });
-    $("#weatherpopover").popover("hide");
-    $("#weatherpopover").attr("data-content", $(".weatherdiv").html());
-    $('#weatherpopover').popover({
-        html: true
+    if (response.alerts) {
+        response.alerts.forEach(function (alert, i) {
+            var regionstring = "";
+            alert.regions.forEach(function (region) {
+                regionstring = regionstring.concat(`<p class="pfix">${region}</p>`);
+            });
+            $(".walerts").append(`
+        <h6 class="pfix">
+            <a href="${alert.uri}">
+                <span class="popovertt">
+                    WEATHER ${alert.severity.toUpperCase()}. EXPIRES ${dayofepoch(alert.expires).toUpperCase()} ${localeHourString(alert.expires)}. 
+                    <span class="data ttcontent"><div class="text-left"><p class="pfix">${alert.description.replace(/\*/g, "</p><p class='pfix' style=\"margin-top:3px;\">")}</p></div></span>
+                </span>
+            </a>
+            <a href="${alert.uri}">
+                <span class="popovertt">
+                    AFFECTS ${alert.regions.length} REGIONS
+                    <span class="data ttcontent">${regionstring}</span>
+                </span>
+            </a>
+        </h6>
+        `);
+        });
+    }
+    $("#weatherpopover").on('shown.bs.popover', function () {
+        $("body").tooltip({
+            selector: '.popovertt',
+            html: true,
+            title: function () {
+                return $($(this).find(".ttcontent")[0]).html();
+            },
+            trigger: "hover"
+        });
     });
+    $("#weatherpopover").on("hidden.bs.popover", function () {
+        $(".tooltip").tooltip("hide");
+    });
+    updateweather(false);
     $(".weather").html(`${tunit(temp)}°`);
     //$("#weatherpopover").popover("hide");
     $("#weatherh3").tooltip('hide')
@@ -200,6 +258,7 @@ function weather(response) {
     $(document).tooltip({
         selector: '.tt'
     });
+    debugp("weather loaded");
 }
 
 function regularinterval() {
@@ -279,7 +338,9 @@ function chstorage() {
 
 function backgroundhandler() {
     if (!promotional) {
+        debugp("changing BG...");
         followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${searchtags}`, function (response) {
+            debugp("redirect followed");
             preloadImage(response, function () {
                 $(".bg").css("background-image", `url(${response})`);
             });
@@ -289,6 +350,7 @@ function backgroundhandler() {
                 bgimage: response,
                 lastbgrefresh: new Date().getTime() / 1000
             });
+            debugp("BG changed");
         });
     }
 }
@@ -334,14 +396,15 @@ function optionsinit() {
             var timetowait = 10 * 60; // only get weather every 10 mins
             if (sincelastdownload > timetowait && navigator.onLine) { // if its been longer than 10 mins, get the weather again
                 weatherpos(weathercurrent, weather);
+                debugp("downloading new weather info");
                 chrome.storage.local.set({
                     lastweather: new Date().getTime() / 1000
                 });
             } else { // otherwise, use the saved info to possibly prevent the weather api limit
-
                 chrome.storage.local.get(["weather"], function (resp) {
                     weather(resp["weather"]);
                 });
+                debugp("using cached weather info");
             }
         }
 
@@ -393,6 +456,8 @@ function optionsinit() {
             var timetowait = refreshtime * 60;
             if (sincelastdownload > timetowait) {
                 backgroundhandler();
+            } else {
+                debugp(`been less than ${refreshtime} mins, using same BG`);
             }
         } else {
             backgroundhandler();
@@ -450,4 +515,5 @@ $(document).ready(function () {
             firstinstall: false
         });
     });
+    debugp("evergreen fully initiated");
 });

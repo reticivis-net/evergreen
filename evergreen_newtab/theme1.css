@@ -63,8 +63,8 @@
 
 .cld-day.today .cld-number {
     display: inline-block;
-    height: 20px;
-    width: 20px;
+    height: auto;
+    width: auto;
     border-radius: 50px;
     background: #666;
     color: #fff;

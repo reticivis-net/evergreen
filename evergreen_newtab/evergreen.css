@@ -187,3 +187,11 @@ a.popper:focus {
 #bgrefresh {
     width: 100px;
 }
+
+.data {
+    display: none;
+}
+
+.tooltip-inner {
+    max-width: 600px;
+}
