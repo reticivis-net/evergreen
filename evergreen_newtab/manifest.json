@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "Evergreen New Tab [DEV]",
+  "name": "Evergreen New Tab",
   "short_name": "Evergreen",
   "description": "A beautiful and minimalistic new tab extension for Chrome",
   "version": "1.1",
@@ -12,15 +12,15 @@
     "newtab": "newtab.html"
   },
   "icons": {
-    "32": "evergreendev32.png",
-    "128": "evergreendev128.png",
-    "1000": "evergreendev1000.png"
+    "32": "evergreen32.png",
+    "128": "evergreen128.png",
+    "1000": "evergreen1000.png"
   },
   "browser_action": {
     "default_icon": {
-      "32": "evergreendev32.png",
-      "128": "evergreendev128.png",
-      "1000": "evergreendev1000.png"
+      "32": "evergreen32.png",
+      "128": "evergreen128.png",
+      "1000": "evergreen1000.png"
     },
     "default_title": "Evergreen New Tab"
   },
