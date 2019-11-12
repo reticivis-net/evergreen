@@ -6,7 +6,11 @@ var searchtags = "nature,ocean,city";
 var refreshtime = 0;
 
 var promotional = false; // use the same BG for promotionial purposes
-var development = true;
+var development = true; // enables debug prints
+
+var version = "1.1";
+
+var weatherpage = 0;
 debugp("Evergreen in development mode");
 
 function debugp(string) {
@@ -164,21 +168,20 @@ function updateweather(showafter) {
     $("#weatherpopover").popover("hide");
     $("#weatherpopover").attr("data-content", $(".weatherdiv").html());
     $('#weatherpopover').popover({
-        html: true
+        html: true,
+        trigger: "focus"
     });
     if (showafter) {
         $("#weatherpopover").popover("show");
     }
-
 }
 
-function weather(response) {
-    //var wimg = `<img class=\"weatherimg\" src=\"https://openweathermap.org/img/wn/${current.data.list[0].weather[0].icon}.png\"/>`;
-    //$(".wimgcontainer").html(wimg);
+function weather(response, showafter = false) {
+    debugp(response);
     chrome.storage.local.set({
         "weather": response
     });
-    debugp(response);
+    debugp(`Weather page ${weatherpage}`);
     var temp = response.currently.temperature;
     $(".wdaily").html(response.daily.summary);
     $(".whourly").html(response.hourly.summary);
@@ -191,18 +194,27 @@ function weather(response) {
     $(".wdailycontent").html("");
     $(".walerts").html("");
     $("#weatherimage").html(`<span aria-hidden="true" class="climacon ${climacon(response.currently.icon)}"></span>`);
-    response.hourly.data.slice(0, 7).forEach(function (hour, i) {
+    response.hourly.data.slice(weatherpage * 7, 7 + weatherpage * 7).forEach(function (hour, i) {
+        var paginationtime = "";
+        if (weatherpage > 0) {
+            paginationtime = "<p class=\"pfix\">" + dayofepoch(hour.time) + " " + localeHourString(hour.time) + "</p>";
+        }
         $(".whourlycontent").append(`
         <div class="weatherblock popovertt" data-content="test123">
             <span class="data">hour-${i}</span>
-            <span class="data ttcontent"><p class="pfix">${hour.summary}</p><p class="pfix">Feels like ${tunit(hour.apparentTemperature)}°</p></span>
+            <span class="data ttcontent">${paginationtime}<p class="pfix">${hour.summary}</p><p class="pfix">Feels like ${tunit(hour.apparentTemperature)}°</p></span>
             <h6 class="pfix">${localeHourString(hour.time)} <span aria-hidden="true" class="popover-climacon climacon ${climacon(hour.icon)}"></span></h6>
             <p>${tunit(hour.temperature)}°</p>
             <p class="rainp">${Math.round(hour.precipProbability * 100)}%</p>
         </div>
         `);
-
     });
+    if (weatherpage > 0) {
+        $(".whourlycontent").append("<a class=\"btn btn-sm btn-primary btn-circle weather-pagination-left\"><i class=\"fas fa-chevron-left\"></i></a>");
+    }
+    if (weatherpage < 6) {
+        $(".whourlycontent").append("<a class=\"btn btn-sm btn-primary btn-circle weather-pagination-right\"><i class=\"fas fa-chevron-right\"></i></a>");
+    }
     response.daily.data.slice(0, 7).forEach(function (day, i) {
         var accum = "";
         if (day.precipAccumulation) {
@@ -259,11 +271,38 @@ function weather(response) {
             },
             trigger: "hover"
         });
+        //weather pagination
+        $(".weather-pagination-left").on('click', function (event) {
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            if (weatherpage > 0) {
+                weatherpage = weatherpage - 1;
+                $(".popover").css("transition-duration", "0");
+                chrome.storage.local.get(["weather"], function (resp) {
+                    weather(resp["weather"], true);
+                });
+            }
+        });
+        $(".weather-pagination-right").on('click', function (event) {
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+
+            if (weatherpage < 6) {
+                weatherpage = weatherpage + 1;
+                $(".popover").css("transition-duration", "0");
+                chrome.storage.local.get(["weather"], function (resp) {
+
+                    weather(resp["weather"], true);
+                });
+            }
+        });
     });
     $("#weatherpopover").on("hidden.bs.popover", function () {
         $(".tooltip").tooltip("hide");
+        $(".weather-pagination-right").unbind();
+        $(".weather-pagination-left").unbind();
     });
-    updateweather(false);
+    updateweather(showafter);
     $(".weather").html(`${tunit(temp)}°`);
     //$("#weatherpopover").popover("hide");
     $("#weatherh3").tooltip('hide')
@@ -271,7 +310,6 @@ function weather(response) {
     $(document).tooltip({
         selector: '.tt'
     });
-    debugp("weather loaded");
 }
 
 function regularinterval() {
@@ -483,6 +521,13 @@ function optionsinit() {
 }
 
 $(document).ready(function () {
+    //htmlinclude
+    $(".htmlinclude").each(function (i, obj) {
+        obj = $(obj);
+        var include = obj.attr("html-include");
+        $(obj).load(include);
+        debugp(`included ${include}`)
+    });
     //imghandler
     if (promotional) {
         $(".bg").css("background-image", `url(https://images.unsplash.com/photo-1440558929809-1412944a6225?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1920&q=80)`);
@@ -496,6 +541,9 @@ $(document).ready(function () {
     //popovers
     document.getElementById("bg-change").onclick = backgroundhandler;
     document.getElementById("save").onclick = chstorage;
+    $("#changelog-button")[0].onclick = function () {
+        $("#changelog").modal();
+    };
     $("#evergreenpopover").attr("data-content", `<h2 class="display-4"><img class="logoimg" src="evergreen128.png"/>Evergreen</h2><h4>New Tab for Chrome</h4><h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`);
     $("#timepopover").attr("data-content", `<div id="tpop"></div>`);
     //calendar
@@ -530,5 +578,19 @@ $(document).ready(function () {
             firstinstall: false
         });
     });
+    // changelog showing
+    chrome.storage.local.get(['version'], function (result) {
+        result = result["version"];
+        if (result == undefined) {
+            result = version;
+        }
+        if (result != version) {
+            $("#changelog").modal();
+        }
+        chrome.storage.local.set({
+            version: version
+        });
+    });
+
     debugp("evergreen fully initiated");
 });

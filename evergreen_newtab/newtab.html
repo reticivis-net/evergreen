@@ -87,6 +87,7 @@
                 </button>
             </div>
             <div class="modal-body">
+                <a class="btn btn-primary btn-circle"><i class="fas fa-chevron-right"></i></a>
                 <p id="blurval"><i class="fas fa-image"></i> Blur:</p>
                 <input class="custom-range" id="blurslider" max="15" min="0" step="0.5" type="range" value="0"/>
                 <div class="br"></div>
@@ -158,7 +159,10 @@
                         class="bug-report" href="mailto:evergreennewtab@gmail.com?Subject=Evergreen%20Feature%20Request"
                         target="_top"><i
                         class="fas fa-plus"></i> Feature Request</a></p>
-
+                <div class="br"></div>
+                <button class="btn btn-primary" data-dismiss="modal" id="changelog-button" type="button">
+                    <i class="fas fa-plus"></i> Show Changelog
+                </button>
             </div>
             <div class="modal-footer">
                 <div>
@@ -191,8 +195,26 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="changelog" role="dialog" tabindex="-1">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"><img class="logoimg" src="evergreen128.png"/>Evergreen Changelog</h4>
+                <button aria-label="Close" class="close" data-dismiss="modal" type="button">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="htmlinclude" html-include="changelog.html"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal" type="button">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="weatherdiv">
-    <div class="weatherpopover">
+    <div class="weatherpopover" data-animation="false">
         <p class="pfix text-muted"><a class="text-muted" href="https://darksky.net/poweredby/">Weather Powered by Dark
             Sky</a> | <a class="text-muted" href="https://twitter.com/AdamWhitcroft">Climacons by Adam Whitcroft</a></p>
         <h5><span class="wdaily">${response.daily.summary}</span></h5>

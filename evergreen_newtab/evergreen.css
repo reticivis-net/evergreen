@@ -195,3 +195,16 @@ a.popper:focus {
 .tooltip-inner {
     max-width: 600px;
 }
+
+.btn-circle {
+    border-radius: 700px;
+    text-align: center;
+    vertical-align: middle;
+    height: 30px;
+    width: 30px;
+    margin: 0 2px;
+}
+
+.btn-circle svg {
+    vertical-align: -.125em;
+}
