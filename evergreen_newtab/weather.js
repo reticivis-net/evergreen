@@ -7,7 +7,9 @@ function jsonp(url, callback) {
         url: url,
         type: "POST",
         dataType: 'jsonp',
-        success: callback
+        success: function (result) {
+            callback(result);
+        }
     });
 }
 
