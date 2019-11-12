@@ -8,7 +8,7 @@ var refreshtime = 0;
 var promotional = false; // use the same BG for promotionial purposes
 var development = true; // enables debug prints
 
-var version = "1.1.2";
+var version = "1.1.3";
 
 var weatherpage = 0;
 debugp("Evergreen in development mode");
