@@ -152,13 +152,13 @@ function climacon(prop) {
     var climacons = {
         "clear-day": "sun",
         "clear-night": "moon",
-        "rain": "rain",
-        "snow": "snow",
-        "sleet": "sleet",
+        "rain": "cloud-rain",
+        "snow": "snowflake",
+        "sleet": "cloud-meatball",
         "wind": "wind",
         "cloudy": "cloud",
-        "partly-cloudy-day": "cloud sun",
-        "partly-cloudy-night": "cloud moon"
+        "partly-cloudy-day": "cloud-sun",
+        "partly-cloudy-night": "cloud-moon"
     };
     if (climacons[prop] !== undefined) return climacons[prop];
     else return "cloud";
@@ -169,7 +169,7 @@ function updateweather(showafter) {
     $("#weatherpopover").attr("data-content", $(".weatherdiv").html());
     $('#weatherpopover').popover({
         html: true,
-        trigger: "focus"
+        trigger: "click"
     });
     if (showafter) {
         //$("#weatherpopover")[0].focus();
@@ -195,7 +195,7 @@ function weather(response, showafter = false) {
     $(".whourlycontent").html("");
     $(".wdailycontent").html("");
     $(".walerts").html("");
-    $("#weatherimage").html(`<span aria-hidden="true" class="climacon ${climacon(response.currently.icon)}"></span>`);
+    $("#weatherimage").html(`<i class="fas fa-${climacon(response.currently.icon)}"></i>`);
     response.hourly.data.slice(weatherpage * 7, 7 + weatherpage * 7).forEach(function (hour, i) {
         var paginationtime = "";
         if (weatherpage > 0) {
@@ -205,7 +205,7 @@ function weather(response, showafter = false) {
         <div class="weatherblock popovertt" data-content="test123">
             <span class="data">hour-${i}</span>
             <span class="data ttcontent">${paginationtime}<p class="pfix">${hour.summary}</p><p class="pfix">Feels like ${tunit(hour.apparentTemperature)}°</p></span>
-            <h6 class="pfix">${localeHourString(hour.time)} <span aria-hidden="true" class="popover-climacon climacon ${climacon(hour.icon)}"></span></h6>
+            <h6 class="pfix">${localeHourString(hour.time)} <i class="fas fa-${climacon(hour.icon)}"></i></h6>
             <p>${tunit(hour.temperature)}°</p>
             <p class="rainp">${Math.round(hour.precipProbability * 100)}%</p>
         </div>
@@ -233,7 +233,7 @@ function weather(response, showafter = false) {
         <div class="weatherblock popovertt">
             <span class="data">day-${i}</span>
             <span class="data ttcontent"><p class="pfix">${day.summary}</p>${accum}</span>
-            <h6 class="pfix">${dayofepoch(day.time)} <span aria-hidden="true" class="popover-climacon climacon ${climacon(day.icon)}"></span></h6>
+            <h6 class="pfix">${dayofepoch(day.time)} <i class="fas fa-${climacon(day.icon)}"></i></h6>
             <p><span class="low">${tunit(day.temperatureLow)}°</span> <span class="high">${tunit(day.temperatureHigh)}°</span> </p>
             <p class="rainp">${Math.round(day.precipProbability * 100)}%</p>
         </div>

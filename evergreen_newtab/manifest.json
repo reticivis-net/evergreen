@@ -3,7 +3,7 @@
   "name": "Evergreen New Tab",
   "short_name": "Evergreen",
   "description": "A beautiful and minimalistic new tab extension for Chrome",
-  "version": "1.1.3",
+  "version": "1.2",
   "permissions": [
     "storage",
     "geolocation"

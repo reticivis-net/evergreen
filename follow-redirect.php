@@ -18,3 +18,4 @@ echo getRedirectUrl($_GET["url"]);
 echo " ";
 //reticivis.net/follow-redirect.php?url=...
 //follows redirects
+//for evergreen
