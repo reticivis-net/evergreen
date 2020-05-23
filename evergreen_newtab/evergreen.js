@@ -1,3 +1,5 @@
+//TODO: add option to download baxkgeound image
+
 var blur = 0;
 
 var timeformat = "12";
