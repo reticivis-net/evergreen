@@ -1,5 +1,3 @@
-//TODO: add option to download baxkgeound image
-
 var blur = 0;
 
 var timeformat = "12";
@@ -8,9 +6,9 @@ var searchtags = "nature,ocean,city";
 var refreshtime = 0;
 
 var promotional = false; // use the same BG for promotionial purposes
-var development = true; // enables debug prints
+var development = false; // enables debug prints
 
-var version = "1.1.3";
+var version = chrome.runtime.getManifest().version;
 
 var weatherpage = 0;
 debugp("Evergreen in development mode");
@@ -151,19 +149,36 @@ function tunit(temp) { //for general use to have one function for every temperat
 }
 
 function climacon(prop) {
-    var climacons = {
-        "clear-day": "sun",
-        "clear-night": "moon",
-        "rain": "cloud-rain",
-        "snow": "snowflake",
-        "sleet": "cloud-meatball",
-        "wind": "wind",
-        "cloudy": "cloud",
-        "partly-cloudy-day": "cloud-sun",
-        "partly-cloudy-night": "cloud-moon"
-    };
-    if (climacons[prop] !== undefined) return climacons[prop];
-    else return "cloud";
+    if (iconset === "climacons") {
+        var climacons = {
+            "clear-day": "sun",
+            "clear-night": "moon",
+            "rain": "rain",
+            "snow": "snow",
+            "sleet": "sleet",
+            "wind": "wind",
+            "cloudy": "cloud",
+            "partly-cloudy-day": "cloud sun",
+            "partly-cloudy-night": "cloud moon"
+        };
+        if (climacons[prop] !== undefined) return `<span aria-hidden="true" class="climacon ${climacons[prop]}"></span>`;
+        else return `<span aria-hidden="true" class="climacon cloud"></span>`;
+    } else {
+        var climacons = {
+            "clear-day": "sun",
+            "clear-night": "moon",
+            "rain": "cloud-rain",
+            "snow": "snowflake",
+            "sleet": "cloud-meatball",
+            "wind": "wind",
+            "cloudy": "cloud",
+            "partly-cloudy-day": "cloud-sun",
+            "partly-cloudy-night": "cloud-moon"
+        };
+        if (climacons[prop] !== undefined) return `<i class="fas fa-${climacons[prop]}"></i>`;
+        else return `<i class="fas fa-cloud"></i>`;
+    }
+
 }
 
 function updateweather(showafter) {
@@ -197,7 +212,7 @@ function weather(response, showafter = false) {
     $(".whourlycontent").html("");
     $(".wdailycontent").html("");
     $(".walerts").html("");
-    $("#weatherimage").html(`<i class="fas fa-${climacon(response.currently.icon)}"></i>`);
+    $("#weatherimage").html(`${climacon(response.currently.icon)}`);
     response.hourly.data.slice(weatherpage * 7, 7 + weatherpage * 7).forEach(function (hour, i) {
         var paginationtime = "";
         if (weatherpage > 0) {
@@ -207,7 +222,7 @@ function weather(response, showafter = false) {
         <div class="weatherblock popovertt" data-content="test123">
             <span class="data">hour-${i}</span>
             <span class="data ttcontent">${paginationtime}<p class="pfix">${hour.summary}</p><p class="pfix">Feels like ${tunit(hour.apparentTemperature)}°</p></span>
-            <h6 class="pfix">${localeHourString(hour.time)} <i class="fas fa-${climacon(hour.icon)}"></i></h6>
+            <h6 class="pfix">${localeHourString(hour.time)} ${climacon(hour.icon)}</h6>
             <p>${tunit(hour.temperature)}°</p>
             <p class="rainp">${Math.round(hour.precipProbability * 100)}%</p>
         </div>
@@ -235,7 +250,7 @@ function weather(response, showafter = false) {
         <div class="weatherblock popovertt">
             <span class="data">day-${i}</span>
             <span class="data ttcontent"><p class="pfix">${day.summary}</p>${accum}</span>
-            <h6 class="pfix">${dayofepoch(day.time)} <i class="fas fa-${climacon(day.icon)}"></i></h6>
+            <h6 class="pfix">${dayofepoch(day.time)} ${climacon(day.icon)}</h6>
             <p><span class="low">${tunit(day.temperatureLow)}°</span> <span class="high">${tunit(day.temperatureHigh)}°</span> </p>
             <p class="rainp">${Math.round(day.precipProbability * 100)}%</p>
         </div>
@@ -328,10 +343,12 @@ function regularinterval() {
 }
 
 function sliderblur() {
+    $("#savereminder").removeClass("nodisplay");
     sblur(this.value);
 }
 
 function tempunithandler() {
+    $("#savereminder").removeClass("nodisplay");
     if (this.id === "farradio") {
         tempunit = "f";
     } else {
@@ -343,7 +360,21 @@ function tempunithandler() {
     });
 }
 
+function iconsethandler() {
+    $("#savereminder").removeClass("nodisplay");
+    if (this.id === "cradio") {
+        iconset = "climacons";
+    } else {
+        iconset = "fontawesome";
+    }
+    debugp("reloading weather div with cached info");
+    chrome.storage.local.get(["weather"], function (resp) {
+        weather(resp["weather"]);
+    });
+}
+
 function timeformathandler() {
+    $("#savereminder").removeClass("nodisplay");
     if (this.id === "12radio") {
         timeformat = "12";
     } else {
@@ -356,6 +387,7 @@ function timeformathandler() {
 }
 
 function dateformathandler() {
+    $("#savereminder").removeClass("nodisplay");
     if (this.id === "mdradio") {
         dateformat = "md";
     } else {
@@ -365,10 +397,17 @@ function dateformathandler() {
 }
 
 function searchtaghandler() {
+    $("#savereminder").removeClass("nodisplay");
     searchtags = $(this).val();
 }
 
 function sblur(val) {
+    $("#savereminder").removeClass("nodisplay");
+    sblurmain(val);
+
+}
+
+function sblurmain(val) {
     if (val == 0) {
         $(".bg").css("transform", "initial");
         $(".bg").css("filter", "initial");
@@ -380,6 +419,11 @@ function sblur(val) {
     blur = val;
 }
 
+function refreshinphandler() {
+    $("#savereminder").removeClass("nodisplay");
+    refreshtime = $(this).val();
+}
+
 function chstorage() {
     chrome.storage.local.set({
         blurval: blur,
@@ -387,8 +431,10 @@ function chstorage() {
         timeformat: timeformat,
         dateformat: dateformat,
         searchtags: searchtags,
-        refreshtime: refreshtime
+        refreshtime: refreshtime,
+        iconset: iconset
     });
+    $("#savereminder").addClass("nodisplay");
     $("#savetext").html("Saved.");
 
 }
@@ -412,26 +458,31 @@ function backgroundhandler() {
     }
 }
 
-function refreshinphandler() {
-    refreshtime = $(this).val();
+function downloadbg() {
+    chrome.storage.local.get(['bgimage'], function (response) {
+        let url = response['bgimage'].split("?")[0];
+        debugp(url);
+        window.location = url;
+    });
 }
 
 function optionsinit() {
-    //blur handler
-    var slider = document.getElementById('blurslider');
-    slider.addEventListener('input', sliderblur);
+
+
     chrome.storage.local.get(['blurval'], function (result) {
         if (result["blurval"] == undefined) {
             result["blurval"] = "0";
         }
         blur = result["blurval"];
-        sblur(result["blurval"]);
-        $("#blurslider").attr("value", result["blurval"])
+        sblurmain(result["blurval"], false);
+        $("#blurslider").attr("value", result["blurval"]);
+        //blur handler
+        var slider = document.getElementById('blurslider');
+        slider.addEventListener('input', sliderblur);
     });
     //temperature unit handler
-    document.getElementById('farradio').addEventListener('input', tempunithandler);
-    document.getElementById('celradio').addEventListener('input', tempunithandler);
-    chrome.storage.local.get(['tempunit', 'lastweather'], function (result) {
+
+    chrome.storage.local.get(['tempunit', 'lastweather', 'iconset'], function (result) {
         tempunit = result["tempunit"];
         if (tempunit == undefined) {
             tempunit = "f";
@@ -442,7 +493,15 @@ function optionsinit() {
         } else {
             $("#celradio").attr("checked", "checked");
         }
-
+        iconset = result['iconset'];
+        if (iconset == undefined) {
+            iconset = "climacons";
+        }
+        if (iconset == "climacons") {
+            $("#cradio").attr("checked", "checked");
+        } else {
+            $("#faradio").attr("checked", "checked");
+        }
         if (result["lastweather"] == undefined) { // most likely happens on first install
             weatherpos(weathercurrent, weather);
             chrome.storage.local.set({
@@ -464,11 +523,14 @@ function optionsinit() {
                 debugp("using cached weather info");
             }
         }
+        document.getElementById('farradio').addEventListener('input', tempunithandler);
+        document.getElementById('celradio').addEventListener('input', tempunithandler);
+        document.getElementById('cradio').addEventListener('input', iconsethandler);
+        document.getElementById('faradio').addEventListener('input', iconsethandler);
 
     });
     //timeformat handler
-    document.getElementById('12radio').addEventListener('input', timeformathandler);
-    document.getElementById('24radio').addEventListener('input', timeformathandler);
+
     chrome.storage.local.get(['timeformat'], function (result) {
         timeformat = result["timeformat"];
         if (timeformat == undefined) {
@@ -480,10 +542,11 @@ function optionsinit() {
         } else {
             $("#24radio").attr("checked", "checked");
         }
+        document.getElementById('12radio').addEventListener('input', timeformathandler);
+        document.getElementById('24radio').addEventListener('input', timeformathandler);
     });
     //dateformat handler
-    document.getElementById('mdradio').addEventListener('input', dateformathandler);
-    document.getElementById('dmradio').addEventListener('input', dateformathandler);
+
     chrome.storage.local.get(['dateformat'], function (result) {
         dateformat = result["dateformat"];
         if (dateformat == undefined) {
@@ -495,8 +558,10 @@ function optionsinit() {
         } else {
             $("#dmradio").attr("checked", "checked");
         }
+        document.getElementById('mdradio').addEventListener('input', dateformathandler);
+        document.getElementById('dmradio').addEventListener('input', dateformathandler);
     });
-    document.getElementById('bgtags').addEventListener('change', searchtaghandler);
+
     chrome.storage.local.get(['searchtags', "lastbgrefresh", "refreshtime"], function (result) {
         searchtags = result["searchtags"];
         if (searchtags == undefined) {
@@ -519,9 +584,11 @@ function optionsinit() {
         } else {
             backgroundhandler();
         }
+        document.getElementById('bgtags').addEventListener('change', searchtaghandler);
+        document.getElementById('bgrefresh').addEventListener('change', refreshinphandler);
 
     });
-    document.getElementById('bgrefresh').addEventListener('change', refreshinphandler);
+    $("#savereminder").addClass("nodisplay");
 }
 
 $(document).ready(function () {
@@ -544,6 +611,7 @@ $(document).ready(function () {
 
     //popovers
     document.getElementById("bg-change").onclick = backgroundhandler;
+    document.getElementById("bg-download").onclick = downloadbg;
     document.getElementById("save").onclick = chstorage;
     $("#changelog-button")[0].onclick = function () {
         $("#changelog").modal();
@@ -607,4 +675,3 @@ $(document).ready(function () {
     });
     debugp("evergreen fully initiated");
 });
-//TODO: fix the weather popover not dismissing when manually shown via weather buttons thank

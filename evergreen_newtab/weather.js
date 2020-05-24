@@ -1,6 +1,7 @@
 //the weather.js is shit and the api is shit and im mad so here's my own library lol
 var apikey = "9b844f9ec461fb26f16bb808550c5aca";
 var tempunit = "f";
+var iconset = "climacons";
 
 function jsonp(url, callback) {
     $.ajax({

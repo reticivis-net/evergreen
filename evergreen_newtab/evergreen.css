@@ -119,7 +119,7 @@ a.popper:focus {
 }
 
 .nodisplay {
-    display: none;
+    display: none !important;
 }
 
 .weatherblock {
@@ -154,7 +154,7 @@ a.popper:focus {
     color: #fff;
 }
 
-.popover-climacon {
+.popover .climacon, .tooltip .climacon {
     font-size: 120%;
 }
 
