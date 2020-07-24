@@ -1,2 +1,0 @@
-TODO: change evergreen dev to evergreen in manifest
-TODO: change evergreendev icons to evergreen icons in manifest
