@@ -18,7 +18,7 @@ function debugp(string) {
 }
 
 function round(value, decimals) {
-    return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
+    return Number(`${Math.round(`${value}e${decimals}`)}e-${decimals}`);
 }
 
 function getDataUri(url, callback) {
@@ -270,9 +270,9 @@ function weather(response, showafter = false) {
     var cur = response.currently;
     $(".wminutelycontent").html(`
     <h5 class="pfix"><i class="fas fa-thermometer-half"></i> Feels like: ${tunit(cur.apparentTemperature)}°</h5>
-    <h5 class="pfix"><i class="fas fa-sun"></i> UV Index: ${cur.uvIndex}</h5>
+    <h5 class="pfix"><i class="fas fa-sun"></i> UV Index: ${Math.round(cur.uvIndex)}</h5>
     <h5 class="pfix"><i class="fas fa-wind"></i> Wind Speed: ${sunit(cur.windSpeed)} ${tempunit == "c" ? "km/h" : "mph"}</h5>
-    <h5 class="pfix"><i class="fas fa-tint"></i> Humidity: ${cur.humidity * 100}%</h5>
+    <h5 class="pfix"><i class="fas fa-tint"></i> Humidity: ${Math.round(cur.humidity * 100)}%</h5>
     `);
 
     if (response.alerts) {
@@ -438,7 +438,6 @@ function backgroundhandler() {
     if (!promotional) {
         debugp("changing BG...");
         followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${searchtags}`, function (response) {
-            console.log(response);
             debugp("redirect followed");
             preloadImage(response, function () {
                 $(".bg").css("background-image", `url(${response})`);
