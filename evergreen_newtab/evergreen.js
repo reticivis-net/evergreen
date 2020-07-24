@@ -9,8 +9,6 @@ var promotional = false; // use the same BG for promotionial purposes
 var development = false; // enables debug prints
 
 var version = chrome.runtime.getManifest().version;
-
-var weatherpage = 0;
 debugp("Evergreen in development mode");
 
 function debugp(string) {
@@ -57,9 +55,18 @@ function httpGetAsync(theUrl, callback) {
     xmlHttp.send(null);
 }
 
+/*
 function followredirects(url, callback) {
     var theUrl = `https://reticivis.net/follow-redirect.php?url=${encodeURIComponent(url)}`;
     httpGetAsync(theUrl, callback);
+}*/
+function followredirects(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.onload = function () {
+        callback(this.responseURL); //cant fucking believe i was using a web server to do this for like a year
+    }
+    xhr.open('HEAD', url, true);
+    xhr.send();
 }
 
 function datetime() {
@@ -148,6 +155,13 @@ function tunit(temp) { //for general use to have one function for every temperat
     return Math.round(temp);
 }
 
+function sunit(speed) { // cleaner to define it here
+    if (tempunit === "c") {
+        speed = speed * 1.609344;
+    }
+    return Math.round(speed);
+}
+
 function climacon(prop) {
     if (iconset === "climacons") {
         var climacons = {
@@ -200,22 +214,25 @@ function weather(response, showafter = false) {
     chrome.storage.local.set({
         "weather": response
     });
-    debugp(`Weather page ${weatherpage}`);
     var temp = response.currently.temperature;
-    $(".wdaily").html(response.daily.summary);
-    $(".whourly").html(response.hourly.summary);
+    $(".wdaily").html("<i class=\"fas fa-calendar-week\"></i> " + response.daily.summary);
+    $(".whourly").html("<i class=\"fas fa-calendar-day\"></i> " + response.hourly.summary);
     if (response.minutely) { // not all regions have minutely
-        $(".wminutely").html(response.minutely.summary);
+        $(".wminutely").html("<i class=\"fas fa-clock\"></i> " + response.minutely.summary);
     } else {
-        $(".wminutely").html(response.currently.summary);
+        $(".wminutely").html("<i class=\"fas fa-clock\"></i> " + response.currently.summary);
     }
     $(".whourlycontent").html("");
     $(".wdailycontent").html("");
     $(".walerts").html("");
     $("#weatherimage").html(`${climacon(response.currently.icon)}`);
-    response.hourly.data.slice(weatherpage * 7, 7 + weatherpage * 7).forEach(function (hour, i) {
+    // weatherpage * 7, 7 + weatherpage * 7
+    let todaydate = new Date().getDate();
+    let nextday = false;
+    response.hourly.data.slice().forEach(function (hour, i) {
         var paginationtime = "";
-        if (weatherpage > 0) {
+        if (new Date(hour.time * 1000).getDate() !== todaydate || nextday) {
+            nextday = true;
             paginationtime = "<p class=\"pfix\">" + dayofepoch(hour.time) + " " + localeHourString(hour.time) + "</p>";
         }
         $(".whourlycontent").append(`
@@ -228,13 +245,7 @@ function weather(response, showafter = false) {
         </div>
         `);
     });
-    if (weatherpage > 0) {
-        $(".whourlycontent").append("<a class=\"btn btn-sm btn-primary btn-circle weather-pagination-left\"><i class=\"fas fa-chevron-left\"></i></a>");
-    }
-    if (weatherpage < 6) {
-        $(".whourlycontent").append("<a class=\"btn btn-sm btn-primary btn-circle weather-pagination-right\"><i class=\"fas fa-chevron-right\"></i></a>");
-    }
-    response.daily.data.slice(0, 7).forEach(function (day, i) {
+    response.daily.data.slice().forEach(function (day, i) {
         var accum = "";
         if (day.precipAccumulation) {
             accum = day.precipAccumulation;
@@ -256,6 +267,13 @@ function weather(response, showafter = false) {
         </div>
         `);
     });
+    var cur = response.currently;
+    $(".wminutelycontent").html(`
+    <h5 class="pfix"><i class="fas fa-thermometer-half"></i> Feels like: ${tunit(cur.apparentTemperature)}°</h5>
+    <h5 class="pfix"><i class="fas fa-sun"></i> UV Index: ${cur.uvIndex}</h5>
+    <h5 class="pfix"><i class="fas fa-wind"></i> Wind Speed: ${sunit(cur.windSpeed)} ${tempunit == "c" ? "km/h" : "mph"}</h5>
+    <h5 class="pfix"><i class="fas fa-tint"></i> Humidity: ${cur.humidity * 100}%</h5>
+    `);
 
     if (response.alerts) {
         response.alerts.forEach(function (alert, i) {
@@ -288,32 +306,9 @@ function weather(response, showafter = false) {
             title: function () {
                 return $($(this).find(".ttcontent")[0]).html();
             },
-            trigger: "hover"
-        });
-        //weather pagination
-        $(".weather-pagination-left").on('click', function (event) {
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-            if (weatherpage > 0) {
-                weatherpage = weatherpage - 1;
-                $(".popover").css("transition-duration", "0");
-                chrome.storage.local.get(["weather"], function (resp) {
-                    weather(resp["weather"], true);
-                });
-            }
-        });
-        $(".weather-pagination-right").on('click', function (event) {
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-
-            if (weatherpage < 6) {
-                weatherpage = weatherpage + 1;
-                $(".popover").css("transition-duration", "0");
-                chrome.storage.local.get(["weather"], function (resp) {
-
-                    weather(resp["weather"], true);
-                });
-            }
+            trigger: "hover",
+            placement: "top",
+            boundary: "window"
         });
     });
     $("#weatherpopover").on("hidden.bs.popover", function () {
@@ -443,6 +438,7 @@ function backgroundhandler() {
     if (!promotional) {
         debugp("changing BG...");
         followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${searchtags}`, function (response) {
+            console.log(response);
             debugp("redirect followed");
             preloadImage(response, function () {
                 $(".bg").css("background-image", `url(${response})`);

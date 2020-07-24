@@ -180,7 +180,7 @@ a.popper:focus {
     font-size: 100%;
 }
 
-.weatherpopover *, .weatherh3 * {
+.weatherblock * {
     vertical-align: middle;
 }
 
@@ -207,4 +207,32 @@ a.popper:focus {
 
 .btn-circle svg {
     vertical-align: -.125em;
+}
+
+.whourlycontent {
+    overflow-x: scroll;
+    width: 500px;
+    display: block;
+    white-space: nowrap;
+    scrollbar-color: dark;
+    margin-bottom: 5px;
+}
+
+::-webkit-scrollbar {
+    background-color: #202324;
+    color: #aba499;
+    height: 15px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #454a4d;
+}
+
+::-webkit-scrollbar-track, ::-webkit-scrollbar-thumb {
+    border-radius: 15px !important;
+}
+
+.form-control, .form-control:focus {
+    background: var(--secondary);
+    color: #ccc;
 }
