@@ -1,8 +1,16 @@
+//TODO: make extra weather info nicer?
+//TODO: add icons by weather advisories and make them red
+//TODO: offline warning
+//TODO: show when weather info was cached
+//TODO: autosave
+//TODO: dev icon and name and version in evergreen popover\
+//TODO: find some way to make text visible when background too bright
+
 var blur = 0;
 
 var timeformat = "12";
 var dateformat = "md";
-var searchtags = "nature,ocean,city";
+var searchtags = "wallpapers,backgrounds";
 var refreshtime = 0;
 
 var promotional = false; // use the same BG for promotionial purposes
