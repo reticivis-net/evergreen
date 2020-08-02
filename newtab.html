@@ -11,6 +11,7 @@
     <script src="bootstrap.min.js"></script>
     <script src="fontawesome.min.js"></script>
     <script src="caleandar.min.js"></script>
+    <script src="fastaveragecolor.min.js"></script>
     <link href="theme1.css" rel="stylesheet">
     <!--caleander-->
     <script src="skycons.min.js"></script>
@@ -28,32 +29,33 @@
     <div id="header">
         <div class="row">
             <div class="col text-left">
-                <h4><a class="popper" data-content="content" data-placement="top"
-                       data-toggle="popover"
-                       data-trigger="focus" id="evergreenpopover" role="button"
-                       tabindex="0"><img class="logoimg" src="evergreen128.png"/>Evergreen</a>
+                <h4 class="dynamic-text"><a class="popper" data-content="content" data-placement="top"
+                                            data-toggle="popover"
+                                            data-trigger="focus" id="evergreenpopover" role="button"
+                                            tabindex="0"><img class="logoimg" src="evergreen128.png"/>Evergreen</a>
                 </h4></div>
             <div class="col text-center">
-                <h3><a class="popper" data-content="content" data-placement="top"
-                       data-toggle="popover"
-                       data-trigger="focus" id="timepopover" role="button"
-                       tabindex="0"><span class="clock"></span></a></h3></div>
+                <h3 class="dynamic-text"><a class="popper" data-content="content" data-placement="top"
+                                            data-toggle="popover"
+                                            data-trigger="focus" id="timepopover" role="button"
+                                            tabindex="0"><span class="clock"></span></a></h3></div>
             <div class="col text-right">
-                <h4><a class="popper" data-content="content" data-placement="bottom"
-                       data-toggle="popover"
-                       data-trigger="focus" id="datepopover" role="button"
-                       tabindex="0"><span class="date"></span></a></h4></div>
+                <h4 class="dynamic-text"><a class="popper" data-content="content" data-placement="bottom"
+                                            data-toggle="popover"
+                                            data-trigger="focus" id="datepopover" role="button"
+                                            tabindex="0"><span class="date"></span></a></h4></div>
         </div>
     </div>
     <div class="footer">
         <div class="row">
             <div class="col-3 text-left">
-                <h3><span data-placement="right" data-toggle="tooltip" id="weatherh3" title=""><a class="popper"
-                                                                                                  data-placement="top"
-                                                                                                  data-trigger="focus"
-                                                                                                  id="weatherpopover"
-                                                                                                  role="button"
-                                                                                                  tabindex="0"
+                <h3 class="dynamic-text"><span data-placement="right" data-toggle="tooltip" id="weatherh3" title=""><a
+                        class="popper"
+                        data-placement="top"
+                        data-trigger="focus"
+                        id="weatherpopover"
+                        role="button"
+                        tabindex="0"
                 ><!--data-trigger="focus"-->
                     <span id="weatherimage"></span>
                     <span class="weather"></span></a></span></h3>
@@ -71,8 +73,8 @@
                 </form>
             </div>
             <div class="col-3 text-right">
-                <h3><i class="fas fa-ellipsis-h menu-btn" data-target="#menu"
-                       data-toggle="modal"></i></h3></div>
+                <h3 class="dynamic-text"><i class="fas fa-ellipsis-h menu-btn" data-target="#menu"
+                                            data-toggle="modal"></i></h3></div>
         </div>
     </div>
 </div>
@@ -87,8 +89,6 @@
                 </button>
             </div>
             <div class="modal-body">
-                <div id="savereminder"><h4 class="text-danger"><b><i class="fas fa-exclamation-circle"></i> Save your
-                    changes!</b></h4></div>
                 <p id="blurval"><i class="fas fa-image"></i> Blur:</p>
                 <input class="custom-range" id="blurslider" max="15" min="0" step="0.5" type="range" value="0"/>
                 <div class="br"></div>
@@ -140,7 +140,7 @@
                 <div class="br"></div>
                 <p><i class="fas fa-image"></i> Background image search tags <span class="text-muted">(Optional)</span>:
                 </p>
-                <input class="form-control" id="bgtags" placeholder="Background search tags" type="text">
+                <input class="form-control" id="bgtags" placeholder="nature,architecture" type="text">
                 <p class="pfix"><span class="text-muted" data-toggle="tooltip"
                                       title="Images are randomly sourced from source.unsplash.com using these search tags. Make sure there are no spaces. Example: forest,ocean,city">Seperate search terms by commas with no spaces</span>
                 </p>
@@ -190,8 +190,8 @@
 
             <div class="modal-footer">
                 <div>
-                    <button class="btn btn-success" id="save" type="button">Save Changes</button>
-                    <span class="text-muted" id="savetext" style="margin-left:10px;"></span>
+                    <button class="btn btn-success" id="save" type="button">Force Save</button>
+                    <span class="text-muted" id="savetext" style="margin-left:10px;">Changes autosave.</span>
                 </div>
                 <button class="btn btn-secondary" data-dismiss="modal" type="button">Close</button>
             </div>
@@ -249,6 +249,7 @@
         <h5 class="pfix"><span class="wminutely">${response.minutely.summary}</span></h5>
         <span class="wminutelycontent"></span>
         <span class="walerts"></span>
+        <p class="lastcached pfix text-muted"></p>
     </div>
 
 </div>
