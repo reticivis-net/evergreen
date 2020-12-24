@@ -441,7 +441,7 @@ function chstorage() {
 function backgroundhandler() {
     if (!promotional) {
         debugp("changing BG...");
-        followredirects(`https://source.unsplash.com/random/?${searchtags}`, function (response) {
+        followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${searchtags}`, function (response) {
             debugp("redirect followed");
             preloadImage(response, function (img) {
                 $(".bg").css("background-image", `url(${response})`);
