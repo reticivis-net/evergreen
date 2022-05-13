@@ -33,6 +33,7 @@ function ftoc(f) {
 }
 
 function weathercurrent(lat, long, callback) {
+    // TODO: replace with updated API methinks
     var url = `https://api.darksky.net/forecast/${encodeURIComponent(apikey)}/${encodeURIComponent(lat)},${encodeURIComponent(long)}?units=us`;
     jsonp(url, callback);
 }

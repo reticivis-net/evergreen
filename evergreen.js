@@ -1,16 +1,18 @@
 //TODO: make extra weather info nicer?
 
-var blur = 0;
+let blur = 0;
 
-var timeformat = "12";
-var dateformat = "md";
-var searchtags = "nature,architecture";
-var refreshtime = 0;
+let timeformat = "12";
+let dateformat = "md";
+let searchtags = "nature,architecture";
+let refreshtime = 0;
 
-var promotional = false; // use the same BG for promotionial purposes
-var development = true; // enables debug prints
+let promotional = false; // use the same BG for promotional purposes
+let development = true; // enables debug prints
 
-var version = chrome.runtime.getManifest().version;
+let version = chrome.runtime.getManifest().version;
+
+
 debugp("Evergreen in development mode");
 
 function debugp(string) {
@@ -23,31 +25,21 @@ function round(value, decimals) {
     return Number(`${Math.round(`${value}e${decimals}`)}e-${decimals}`);
 }
 function preloadImage(url, callback) {
-    var img = new Image();
+    let img = new Image();
     img.setAttribute("crossorigin", "anonymous")
     img.src = url;
-    img.onload = function (resp) {
+    img.onload = function () {
         callback()
     };
 }
 
-function httpGetAsync(theUrl, callback) {
-    var xmlHttp = new XMLHttpRequest();
-    xmlHttp.onreadystatechange = function () {
-        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-            callback(xmlHttp.responseText);
-    };
-    xmlHttp.open("GET", theUrl, true); // true for alocalhronous
-    xmlHttp.send(null);
-}
-
 /*
 function followredirects(url, callback) {
-    var theUrl = `https://reticivis.net/follow-redirect.php?url=${encodeURIComponent(url)}`;
+    let theUrl = `https://reticivis.net/follow-redirect.php?url=${encodeURIComponent(url)}`;
     httpGetAsync(theUrl, callback);
 }*/
 function followredirects(url, callback) {
-    var xhr = new XMLHttpRequest();
+    let xhr = new XMLHttpRequest();
     xhr.onload = function () {
         callback(this.responseURL); //cant fucking believe i was using a web server to do this for like a year
     }
@@ -56,17 +48,18 @@ function followredirects(url, callback) {
 }
 
 function datetime() {
-    var date = new Date();
-    var h = date.getHours(); // 0 - 23
-    var m = date.getMinutes(); // 0 - 59
-    var s = date.getSeconds(); // 0 - 59
+    let date = new Date();
+    let h = date.getHours(); // 0 - 23
+    let m = date.getMinutes(); // 0 - 59
+    let s = date.getSeconds(); // 0 - 59
+    let time;
     // i think i stole this code lol
     if (timeformat === "12") {
-        var session = "AM";
+        let session = "AM";
         if (h === 0) {
             h = 12;
         }
-        if (h == 12) {
+        if (h === 12) {
             session = "PM";
         }
         if (h > 12) {
@@ -75,25 +68,26 @@ function datetime() {
         }
         m = (m < 10) ? "0" + m : m;
         s = (s < 10) ? "0" + s : s;
-        var time = h + ":" + m + ":" + s + " " + session;
+        time = h + ":" + m + ":" + s + " " + session;
 
     } else {
         h = (h < 10) ? "0" + h : h;
         m = (m < 10) ? "0" + m : m;
         s = (s < 10) ? "0" + s : s;
-        var time = h + ":" + m + ":" + s;
+        time = h + ":" + m + ":" + s;
     }
 
     // h = (h < 10) ? "0" + h : h;
 
     $(".clock").html(time);
-    var d = date.getDate();
-    var mo = date.getMonth() + 1;
-    var y = date.getFullYear();
+    let d = date.getDate();
+    let mo = date.getMonth() + 1;
+    let y = date.getFullYear();
+    let da;
     if (dateformat === "md") {
-        var da = `${mo}/${d}/${y}`;
+        da = `${mo}/${d}/${y}`;
     } else {
-        var da = `${d}/${mo}/${y}`;
+        da = `${d}/${mo}/${y}`;
     }
 
     $(".date").html(da);
@@ -101,16 +95,16 @@ function datetime() {
 }
 
 function localeHourString(epoch) {
-    var d = new Date(0);
+    let d = new Date(0);
     d.setUTCSeconds(epoch);
-    var date = d;
-    var h = date.getHours(); // 0 - 23
+    let h = d.getHours(); // 0 - 23
+    let time;
     if (timeformat === "12") {
-        var session = "AM";
+        let session = "AM";
         if (h === 0) {
             h = 12;
         }
-        if (h == 12) {
+        if (h === 12) {
             session = "PM";
         }
         if (h > 12) {
@@ -118,19 +112,19 @@ function localeHourString(epoch) {
             session = "PM";
         }
 
-        var time = h + " " + session;
+        time = h + " " + session;
 
     } else {
         h = (h < 10) ? "0" + h : h;
 
-        var time = h + ":00";
+        time = h + ":00";
     }
     return time;
 }
 
 function dayofepoch(epoch) {
-    var weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    var d = new Date(0);
+    let weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    let d = new Date(0);
     d.setUTCSeconds(epoch);
     return weekdays[d.getDay()]
 }
@@ -151,7 +145,7 @@ function sunit(speed) { // cleaner to define it here
 
 function climacon(prop) {
     if (iconset === "climacons") {
-        var climacons = {
+        let climacons = {
             "clear-day": "sun",
             "clear-night": "moon",
             "rain": "rain",
@@ -165,7 +159,7 @@ function climacon(prop) {
         if (climacons[prop] !== undefined) return `<span aria-hidden="true" class="climacon ${climacons[prop]}"></span>`;
         else return `<span aria-hidden="true" class="climacon cloud"></span>`;
     } else {
-        var climacons = {
+        let climacons = {
             "clear-day": "sun",
             "clear-night": "moon",
             "rain": "cloud-rain",
@@ -205,7 +199,7 @@ function weather(response, offline = false) {
         chrome.storage.local.set({
             "weather": response
         });
-        var temp = response.currently.temperature;
+        let temp = response.currently.temperature;
         $(".wdaily").html("<i class=\"fas fa-calendar-week\"></i> " + response.daily.summary);
         $(".whourly").html("<i class=\"fas fa-calendar-day\"></i> " + response.hourly.summary);
         if (response.minutely) { // not all regions have minutely
@@ -221,7 +215,7 @@ function weather(response, offline = false) {
         let todaydate = new Date().getDate();
         let nextday = false;
         response.hourly.data.slice().forEach(function (hour, i) {
-            var paginationtime = "";
+            let paginationtime = "";
             if (new Date(hour.time * 1000).getDate() !== todaydate || nextday) {
                 nextday = true;
                 paginationtime = "<p class=\"pfix\">" + dayofepoch(hour.time) + " " + localeHourString(hour.time) + "</p>";
@@ -237,11 +231,11 @@ function weather(response, offline = false) {
         `);
         });
         response.daily.data.slice().forEach(function (day, i) {
-            var accum = "";
+            let accum = "";
             if (day.precipAccumulation) {
                 accum = day.precipAccumulation;
                 if (accum > 0.05) {
-                    if (tempunit == "f") accum += "in";
+                    if (tempunit === "f") accum += "in";
                     else accum = round(accum * 2.54, 2) + "cm";
                     accum = `<p class="rainp pfix">${accum} of ${day.precipType}</p>`;
                 } else {
@@ -258,17 +252,17 @@ function weather(response, offline = false) {
         </div>
         `);
         });
-        var cur = response.currently;
+        let cur = response.currently;
         $(".wminutelycontent").html(`
     <h5 class="pfix"><i class="fas fa-thermometer-half"></i> Feels like: ${tunit(cur.apparentTemperature)}°</h5>
     <h5 class="pfix"><i class="fas fa-sun"></i> UV Index: ${Math.round(cur.uvIndex)}</h5>
-    <h5 class="pfix"><i class="fas fa-wind"></i> Wind Speed: ${sunit(cur.windSpeed)} ${tempunit == "c" ? "km/h" : "mph"}</h5>
+    <h5 class="pfix"><i class="fas fa-wind"></i> Wind Speed: ${sunit(cur.windSpeed)} ${tempunit === "c" ? "km/h" : "mph"}</h5>
     <h5 class="pfix"><i class="fas fa-tint"></i> Humidity: ${Math.round(cur.humidity * 100)}%</h5>
     `);
 
         if (response.alerts) {
-            response.alerts.forEach(function (alert, i) {
-                var regionstring = "";
+            response.alerts.forEach(function (alert) {
+                let regionstring = "";
                 alert.regions.forEach(function (region) {
                     regionstring = regionstring.concat(`<p class="pfix">${region}</p>`);
                 });
@@ -311,8 +305,8 @@ function weather(response, offline = false) {
             $(".weather-pagination-left").unbind();
         });
         updateweather();
-        var sincelastdownload = (new Date().getTime() / 1000) - resp["lastweather"];
-        var timetowait = 2 * 60 * 60; // if weather hasnt been refreshed for 2 hours
+        let sincelastdownload = (new Date().getTime() / 1000) - resp["lastweather"];
+        let timetowait = 2 * 60 * 60; // if weather hasnt been refreshed for 2 hours
         if (sincelastdownload > timetowait) { // if its been longer than 10 mins, get the weather again
             $(".weather").html("<i class=\"fas fa-exclamation-circle\"></i>")
             $("#weatherh3").tooltip('hide')
@@ -335,11 +329,11 @@ function weather(response, offline = false) {
 
 function regularinterval() {
     datetime();
-    var now = new Date();
-    var weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    let now = new Date();
+    let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-    var date = `<h4 style="margin:0;">${weekdays[now.getDay()]} ${months[now.getMonth()]} ${("0" + now.getDate()).slice(-2)} ${now.getFullYear()} ${now.toLocaleTimeString()}</h4>`;
+    let date = `<h4 style="margin:0;">${weekdays[now.getDay()]} ${months[now.getMonth()]} ${("0" + now.getDate()).slice(-2)} ${now.getFullYear()} ${now.toLocaleTimeString()}</h4>`;
     $("#timepopover").attr("data-content", `<div id="tpop">${date}</div>`);
     $("#tpop").html(date);
 }
@@ -408,7 +402,7 @@ function sblur(val) {
 }
 
 function sblurmain(val) {
-    if (val == 0) {
+    if (val === 0) {
         $(".bg").css("transform", "initial");
         $(".bg").css("filter", "initial");
     } else {
@@ -443,7 +437,7 @@ function backgroundhandler() {
         debugp("changing BG...");
         followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${searchtags}`, function (response) {
             debugp("redirect followed");
-            preloadImage(response, function (img) {
+            preloadImage(response, function () {
                 $(".bg").css("background-image", `url(${response})`);
 
             });
@@ -470,34 +464,34 @@ function optionsinit() {
 
 
     chrome.storage.local.get(['blurval'], function (result) {
-        if (result["blurval"] == undefined) {
+        if (result["blurval"] === undefined) {
             result["blurval"] = "0";
         }
         blur = result["blurval"];
         sblurmain(result["blurval"], false);
         $("#blurslider").attr("value", result["blurval"]);
         //blur handler
-        var slider = document.getElementById('blurslider');
+        let slider = document.getElementById('blurslider');
         slider.addEventListener('input', sliderblur);
     });
     //temperature unit handler
 
     chrome.storage.local.get(['tempunit', 'lastweather', 'iconset'], function (result) {
         tempunit = result["tempunit"];
-        if (tempunit == undefined) {
+        if (tempunit === undefined) {
             tempunit = "f";
         }
         //weather routine
-        if (tempunit == "f") {
+        if (tempunit === "f") {
             $("#farradio").attr("checked", "checked");
         } else {
             $("#celradio").attr("checked", "checked");
         }
         iconset = result['iconset'];
-        if (iconset == undefined) {
+        if (iconset === undefined) {
             iconset = "climacons";
         }
-        if (iconset == "climacons") {
+        if (iconset === "climacons") {
             $("#cradio").attr("checked", "checked");
         } else {
             $("#faradio").attr("checked", "checked");
@@ -508,8 +502,8 @@ function optionsinit() {
                 lastweather: new Date().getTime() / 1000
             });
         } else { // there is a date of the last time we got the weather
-            var sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
-            var timetowait = 10 * 60; // only get weather every 10 mins
+            let sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
+            let timetowait = 10 * 60; // only get weather every 10 mins
             if (sincelastdownload > timetowait && navigator.onLine) { // if its been longer than 10 mins, get the weather again
                 weatherpos(weathercurrent, weather);
                 debugp("downloading new weather info");
@@ -533,11 +527,11 @@ function optionsinit() {
 
     chrome.storage.local.get(['timeformat'], function (result) {
         timeformat = result["timeformat"];
-        if (timeformat == undefined) {
+        if (timeformat === undefined) {
             timeformat = "12";
         }
         //weather routine
-        if (timeformat == "12") {
+        if (timeformat === "12") {
             $("#12radio").attr("checked", "checked");
         } else {
             $("#24radio").attr("checked", "checked");
@@ -549,11 +543,11 @@ function optionsinit() {
 
     chrome.storage.local.get(['dateformat'], function (result) {
         dateformat = result["dateformat"];
-        if (dateformat == undefined) {
+        if (dateformat === undefined) {
             dateformat = "md";
         }
         //weather routine
-        if (dateformat == "md") {
+        if (dateformat === "md") {
             $("#mdradio").attr("checked", "checked");
         } else {
             $("#dmradio").attr("checked", "checked");
@@ -564,18 +558,18 @@ function optionsinit() {
 
     chrome.storage.local.get(['searchtags', "lastbgrefresh", "refreshtime"], function (result) {
         searchtags = result["searchtags"];
-        if (searchtags == undefined) {
+        if (searchtags === undefined) {
             searchtags = "nature,ocean,city,space";
         }
         refreshtime = result["refreshtime"];
-        if (refreshtime == undefined) {
+        if (refreshtime === undefined) {
             refreshtime = 0;
         }
         $("#bgrefresh").attr("value", refreshtime);
         $("#bgtags").attr("value", searchtags);
-        if (refreshtime != 0) {
-            var sincelastdownload = (new Date().getTime() / 1000) - result["lastbgrefresh"];
-            var timetowait = refreshtime * 60;
+        if (refreshtime !== 0) {
+            let sincelastdownload = (new Date().getTime() / 1000) - result["lastbgrefresh"];
+            let timetowait = refreshtime * 60;
             if (sincelastdownload > timetowait) {
                 backgroundhandler();
             } else {
@@ -594,7 +588,7 @@ $(document).ready(function () {
     //htmlinclude
     $(".htmlinclude").each(function (i, obj) {
         obj = $(obj);
-        var include = obj.attr("html-include");
+        let include = obj.attr("html-include");
         $(obj).load(include);
         debugp(`included ${include}`)
     });
@@ -603,7 +597,7 @@ $(document).ready(function () {
         $(".bg").css("background-image", `url(https://images.unsplash.com/photo-1440558929809-1412944a6225?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1920&q=80)`);
     } else {
         chrome.storage.local.get(['bgimage', "lastbgrefresh"], function (result) {
-            var bgimage = result["bgimage"];
+            let bgimage = result["bgimage"];
             $(".bg").css("background-image", `url(${bgimage})`);
         });
     }
@@ -624,7 +618,7 @@ $(document).ready(function () {
     $("#timepopover").attr("data-content", `<div id="tpop"></div>`);
     //calendar
     caleandar(document.getElementById('caltemp'));
-    var caltemp = $("#caltemp").html();
+    let caltemp = $("#caltemp").html();
     $("#datepopover").attr("data-content", `<div id="caltemp">${caltemp}</div>`);
     $("#caltemp").remove();
 
@@ -647,7 +641,7 @@ $(document).ready(function () {
     // FIRST INSTALL
     chrome.storage.local.get(['firstinstall'], function (result) {
         result = result["firstinstall"];
-        if (result == undefined || result === true) {
+        if (result === undefined || result === true) {
             $("#welcome").modal();
         }
         chrome.storage.local.set({
@@ -657,10 +651,10 @@ $(document).ready(function () {
     // changelog showing
     chrome.storage.local.get(['version'], function (result) {
         result = result["version"];
-        if (result == undefined) {
+        if (result === undefined) {
             result = version;
         }
-        if (result != version) {
+        if (result !== version) {
             $("#changelog").modal();
         }
         chrome.storage.local.set({
