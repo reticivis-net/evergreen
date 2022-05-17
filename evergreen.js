@@ -1,14 +1,15 @@
 //TODO: make extra weather info nicer?
 
-let blur = 0;
-
-let timeformat = "12";
-let dateformat = "md";
-let searchtags = "nature,architecture";
-let refreshtime = 0;
+// initialize config to sensible defaults before it properly loads
+let config_blur = 0;
+let config_timeformat = "12";
+let config_dateformat = "md";
+let config_searchtags = "nature,architecture";
+let config_refreshtime = 0;
+let config_tempunit = "f";
+let config_iconset = "climacons"
 
 let promotional = false; // use the same BG for promotional purposes
-let development = true; // enables debug prints
 
 let version = chrome.runtime.getManifest().version;
 
@@ -16,17 +17,14 @@ const qs = document.querySelector.bind(document);
 
 console.debug("Evergreen New Tab for chrome");
 
-function sethtmlifneeded(object, html) {
+function set_html_if_needed(object, html) {
+    // sets the innerHTML of an object if possible and different
     if (object && "innerHTML" in object && object.innerHTML !== html) {
         object.innerHTML = html;
     }
 }
 
-function round(value, decimals) {
-    return Number(`${Math.round(`${value}e${decimals}`)}e-${decimals}`);
-}
-
-function preloadImage(url, callback) {
+function preload_image(url, callback) {
     let img = new Image();
     img.setAttribute("crossorigin", "anonymous")
     img.src = url;
@@ -35,116 +33,107 @@ function preloadImage(url, callback) {
     };
 }
 
-/*
-function followredirects(url, callback) {
-    let theUrl = `https://reticivis.net/follow-redirect.php?url=${encodeURIComponent(url)}`;
-    httpGetAsync(theUrl, callback);
-}*/
-function followredirects(url, callback) {
-    let xhr = new XMLHttpRequest();
-    xhr.onload = function () {
-        callback(this.responseURL); //cant fucking believe i was using a web server to do this for like a year
-    }
-    xhr.open('HEAD', url, true);
-    xhr.send();
+
+function follow_redirects(url, callback) {
+    // finds where URL redirects to
+    fetch(url, {method: 'HEAD'}).then(r => callback(r.url))
 }
 
-function datetime() {
+function update_newtab_datetime() {
+    // updates the date and time at the top and top right of the newtab respectively
     let date = new Date();
+
+    // time
     let h = date.getHours(); // 0 - 23
-    let m = date.getMinutes(); // 0 - 59
-    let s = date.getSeconds(); // 0 - 59
+    let m = String(date.getMinutes()).padStart(2, '0'); // 0 - 59
+    let s = String(date.getSeconds()).padStart(2, '0'); // 0 - 59
     let time;
     // i think i stole this code lol
-    if (timeformat === "12") {
+    if (config_timeformat === "12") {
         let session = "AM";
         if (h === 0) {
             h = 12;
-        }
-        if (h === 12) {
+        } else if (h === 12) {
             session = "PM";
-        }
-        if (h > 12) {
+        } else if (h > 12) {
             h = h - 12;
             session = "PM";
         }
-        m = (m < 10) ? "0" + m : m;
-        s = (s < 10) ? "0" + s : s;
-        time = h + ":" + m + ":" + s + " " + session;
-
+        time = `${h}:${m}:${s} ${session}`;
     } else {
-        h = (h < 10) ? "0" + h : h;
-        m = (m < 10) ? "0" + m : m;
-        s = (s < 10) ? "0" + s : s;
-        time = h + ":" + m + ":" + s;
+        time = `${String(h).padStart(2, '0')}:${m}:${s}`;
     }
+    set_html_if_needed(qs(".clock"), time);
 
-    // h = (h < 10) ? "0" + h : h;
-
-    sethtmlifneeded(qs(".clock"), time);
+    // date
     let d = date.getDate();
-    let mo = date.getMonth() + 1;
+    let mo = date.getMonth() + 1; // 0 indexed
     let y = date.getFullYear();
     let da;
-    if (dateformat === "md") {
+    if (config_dateformat === "md") {
         da = `${mo}/${d}/${y}`;
     } else {
         da = `${d}/${mo}/${y}`;
     }
-    sethtmlifneeded(qs(".date"), da);
+    set_html_if_needed(qs(".date"), da);
 }
 
-function localeHourString(epoch) {
-    let d = new Date(0);
-    d.setUTCSeconds(epoch);
+function epoch_to_date(epoch) {
+    // convert UNIX epoch to js date object
+    return new Date(0).setUTCSeconds(epoch);
+}
+
+function epoch_to_locale_hour_string(epoch) {
+    // represents an epoch number as a "hour string"
+    // for 12h time examples are 1 AM, 2 PM, etc.
+    // for 24h time examples are 01:00, 13:00, etc.
+    let d = epoch_to_date(epoch);
     let h = d.getHours(); // 0 - 23
     let time;
-    if (timeformat === "12") {
+    if (config_timeformat === "12") {
         let session = "AM";
         if (h === 0) {
             h = 12;
-        }
-        if (h === 12) {
+        } else if (h === 12) {
             session = "PM";
-        }
-        if (h > 12) {
+        } else if (h > 12) {
             h = h - 12;
             session = "PM";
         }
-
-        time = h + " " + session;
-
+        time = `${h} ${session}`;
     } else {
-        h = (h < 10) ? "0" + h : h;
-
-        time = h + ":00";
+        time = `${String(h).padStart(2, '0')}:00`;
     }
     return time;
 }
 
 function dayofepoch(epoch) {
-    let weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    let d = new Date(0);
-    d.setUTCSeconds(epoch);
+    // gets weekday of epoch
+    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    let d = epoch_to_date(epoch);
     return weekdays[d.getDay()]
 }
 
-function tunit(temp) { //for general use to have one function for every temperature
-    if (tempunit === "c") {
+function tunit(temp) {
+    // converts temperature unit if needed
+    if (config_tempunit === "c") {
         temp = ftoc(temp);
     }
     return Math.round(temp);
 }
 
-function sunit(speed) { // cleaner to define it here
-    if (tempunit === "c") {
+function sunit(speed) {
+    // converts speed unit if needed
+    if (config_tempunit === "c") {
         speed = speed * 1.609344;
     }
     return Math.round(speed);
 }
 
 function climacon(prop) {
-    if (iconset === "climacons") {
+    // converts DarkSky icon prop to HTML icon based on user settings
+    if (config_iconset === "climacons") {
+        // conversion from darksky to climacon
         let climacons = {
             "clear-day": "sun",
             "clear-night": "moon",
@@ -156,9 +145,14 @@ function climacon(prop) {
             "partly-cloudy-day": "cloud sun",
             "partly-cloudy-night": "cloud moon"
         };
-        if (climacons[prop] !== undefined) return `<span aria-hidden="true" class="climacon ${climacons[prop]}"></span>`;
-        else return `<span aria-hidden="true" class="climacon cloud"></span>`;
+        if (climacons[prop] !== undefined) {
+            return `<span aria-hidden="true" class="climacon ${climacons[prop]}"></span>`;
+        } else {
+            // sensible default
+            return `<span aria-hidden="true" class="climacon cloud"></span>`
+        }
     } else {
+        // conversions from darksky to fontawesome icons
         let climacons = {
             "clear-day": "sun",
             "clear-night": "moon",
@@ -170,39 +164,46 @@ function climacon(prop) {
             "partly-cloudy-day": "cloud-sun",
             "partly-cloudy-night": "cloud-moon"
         };
-        if (climacons[prop] !== undefined) return `<i class="fas fa-${climacons[prop]}"></i>`;
-        else return `<i class="fas fa-cloud"></i>`;
+        if (climacons[prop] !== undefined) {
+            return `<i class="fas fa-${climacons[prop]}"></i>`
+        } else {
+            // sensible default
+            return `<i class="fas fa-cloud"></i>`
+        }
     }
 
 }
 
 function devmode(callback) {
+    // check if extension was loaded from disk/dev mode
     chrome.management.getSelf(function (result) {
         callback(result.installType === "development");
     });
 }
 
 function updateweather() {
+    // update weather popover
     bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover")).dispose();
     qs("#weatherpopover").setAttribute("data-bs-content", qs(".weatherdiv").innerHTML);
     bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover"));
 }
 
-function weather(response, offline = false) {
-    //for some god forsaken reason, i have to get lastweather before anything else or fontawesome breaks. yeah idk.
+function weather(response) {
+    // takes a JSON response from darksky, creates and updates the weather popover
+    // for some god forsaken reason, i have to get lastweather before anything else or fontawesome breaks. yeah idk.
     chrome.storage.local.get(["lastweather"], function (resp) {
-
         console.debug(response);
         chrome.storage.local.set({
             "weather": response
         });
-        let temp = response.currently.temperature;
-        qs(".wdaily").innerHTML = "<i class=\"fas fa-calendar-week\"></i> " + response.daily.summary;
-        qs(".whourly").innerHTML = "<i class=\"fas fa-calendar-day\"></i> " + response.hourly.summary;
-        if (response.minutely) { // not all regions have minutely
-            qs(".wminutely").innerHTML = "<i class=\"fas fa-clock\"></i> " + response.minutely.summary;
+        const {currently, daily, hourly, minutely, alerts} = response;
+        let temp = currently["temperature"];
+        qs(".wdaily").innerHTML = "<i class=\"fas fa-calendar-week\"></i> " + daily["summary"];
+        qs(".whourly").innerHTML = "<i class=\"fas fa-calendar-day\"></i> " + hourly["summary"];
+        if (minutely) { // not all regions have minutely
+            qs(".wminutely").innerHTML = "<i class=\"fas fa-clock\"></i> " + minutely["summary"];
         } else {
-            qs(".wminutely").innerHTML = "<i class=\"fas fa-clock\"></i> " + response.currently.summary;
+            qs(".wminutely").innerHTML = "<i class=\"fas fa-clock\"></i> " + currently["summary"];
         }
         qs(".whourlycontent").innerHTML = "";
         qs(".wdailycontent").innerHTML = "";
@@ -211,30 +212,41 @@ function weather(response, offline = false) {
         // weatherpage * 7, 7 + weatherpage * 7
         let todaydate = new Date().getDate();
         let nextday = false;
-        response.hourly.data.slice().forEach(function (hour, i) {
+        hourly.data.slice().forEach(function (hour, i) {
             let paginationtime = "";
-            if (new Date(hour.time * 1000).getDate() !== todaydate || nextday) {
+            const {precipProbability, summary, icon, apparentTemperature, temperature, time} = hour;
+            if (new Date(time * 1000).getDate() !== todaydate || nextday) {
                 nextday = true;
-                paginationtime = "<p class=\"pfix\">" + dayofepoch(hour.time) + " " + localeHourString(hour.time) + "</p>";
+                paginationtime = "<p class=\"pfix\">" + dayofepoch(time) + " " + epoch_to_locale_hour_string(time) + "</p>";
             }
             qs(".whourlycontent").insertAdjacentHTML('beforeend', `
         <div class="weatherblock popovertt" data-bs-content="test123">
             <span class="data">hour-${i}</span>
-            <span class="data ttcontent">${paginationtime}<p class="pfix">${hour.summary}</p><p class="pfix">Feels like ${tunit(hour.apparentTemperature)}°</p></span>
-            <h6 class="pfix">${localeHourString(hour.time)} ${climacon(hour.icon)}</h6>
-            <p>${tunit(hour.temperature)}°</p>
-            <p class="rainp">${Math.round(hour.precipProbability * 100)}%</p>
+            <span class="data ttcontent">${paginationtime}<p class="pfix">${summary}</p><p class="pfix">Feels like ${tunit(apparentTemperature)}°</p></span>
+            <h6 class="pfix">${epoch_to_locale_hour_string(time)} ${climacon(icon)}</h6>
+            <p>${tunit(temperature)}°</p>
+            <p class="rainp">${Math.round(precipProbability * 100)}%</p>
         </div>
         `);
         });
-        response.daily.data.slice().forEach(function (day, i) {
+        daily.data.slice().forEach(function (day, i) {
             let accum = "";
-            if (day.precipAccumulation) {
-                accum = day.precipAccumulation;
+            const {
+                precipProbability,
+                precipType,
+                summary,
+                icon,
+                precipAccumulation,
+                temperatureLow,
+                temperatureHigh,
+                time
+            } = day;
+            if (precipAccumulation) {
+                accum = precipAccumulation;
                 if (accum > 0.05) {
-                    if (tempunit === "f") accum += "in";
-                    else accum = round(accum * 2.54, 2) + "cm";
-                    accum = `<p class="rainp pfix">${accum} of ${day.precipType}</p>`;
+                    if (config_tempunit === "f") accum += "in";
+                    else accum = (accum * 2.54).toPrecision(2) + "cm";
+                    accum = `<p class="rainp pfix">${accum} of ${precipType}</p>`;
                 } else {
                     accum = "";
                 }
@@ -242,38 +254,39 @@ function weather(response, offline = false) {
             qs(".wdailycontent").insertAdjacentHTML('beforeend', `
         <div class="weatherblock popovertt">
             <span class="data">day-${i}</span>
-            <span class="data ttcontent"><p class="pfix">${day.summary}</p>${accum}</span>
-            <h6 class="pfix">${dayofepoch(day.time)} ${climacon(day.icon)}</h6>
-            <p><span class="low">${tunit(day.temperatureLow)}°</span> <span class="high">${tunit(day.temperatureHigh)}°</span> </p>
-            <p class="rainp">${Math.round(day.precipProbability * 100)}%</p>
+            <span class="data ttcontent"><p class="pfix">${summary}</p>${accum}</span>
+            <h6 class="pfix">${dayofepoch(time)} ${climacon(icon)}</h6>
+            <p><span class="low">${tunit(temperatureLow)}°</span> <span class="high">${tunit(temperatureHigh)}°</span> </p>
+            <p class="rainp">${Math.round(precipProbability * 100)}%</p>
         </div>
         `);
         });
-        let cur = response.currently;
+        const {humidity, apparentTemperature: apparentTemperature1, windSpeed, uvIndex} = currently;
         qs(".wminutelycontent").innerHTML = `
-    <h5 class="pfix"><i class="fas fa-thermometer-half"></i> Feels like: ${tunit(cur.apparentTemperature)}°</h5>
-    <h5 class="pfix"><i class="fas fa-sun"></i> UV Index: ${Math.round(cur.uvIndex)}</h5>
-    <h5 class="pfix"><i class="fas fa-wind"></i> Wind Speed: ${sunit(cur.windSpeed)} ${tempunit === "c" ? "km/h" : "mph"}</h5>
-    <h5 class="pfix"><i class="fas fa-tint"></i> Humidity: ${Math.round(cur.humidity * 100)}%</h5>
+    <h5 class="pfix"><i class="fas fa-thermometer-half"></i> Feels like: ${tunit(apparentTemperature1)}°</h5>
+    <h5 class="pfix"><i class="fas fa-sun"></i> UV Index: ${Math.round(uvIndex)}</h5>
+    <h5 class="pfix"><i class="fas fa-wind"></i> Wind Speed: ${sunit(windSpeed)} ${config_tempunit === "c" ? "km/h" : "mph"}</h5>
+    <h5 class="pfix"><i class="fas fa-tint"></i> Humidity: ${Math.round(humidity * 100)}%</h5>
     `;
 
-        if (response.alerts) {
-            response.alerts.forEach(function (alert) {
+        if (alerts) {
+            alerts.forEach(function (alert) {
+                const {regions, uri, severity} = alert;
                 let regionstring = "";
-                alert.regions.forEach(function (region) {
+                regions.forEach(function (region) {
                     regionstring = regionstring.concat(`<p class="pfix">${region}</p>`);
                 });
                 qs(".walerts").append(`
         <h6 class="pfix">
-            <a href="${alert.uri}" class="text-danger">
+            <a href="${uri}" class="text-danger">
                 <span class="popovertt">
-                    <i class="fas fa-exclamation-triangle"></i> WEATHER ${alert.severity.toUpperCase()}. EXPIRES ${dayofepoch(alert.expires).toUpperCase()} ${localeHourString(alert.expires)}. 
+                    <i class="fas fa-exclamation-triangle"></i> WEATHER ${severity.toUpperCase()}. EXPIRES ${dayofepoch(alert.expires).toUpperCase()} ${epoch_to_locale_hour_string(alert.expires)}. 
                     <span class="data ttcontent"><div class="text-left"><p class="pfix">${alert.description.replace(/\*/g, "</p><p class='pfix' style=\"margin-top:3px;\">")}</p></div></span>
                 </span>
             </a>
-            <a href="${alert.uri}" class="text-danger">
+            <a href="${uri}" class="text-danger">
                 <span class="popovertt">
-                    AFFECTS ${alert.regions.length} REGIONS
+                    AFFECTS ${regions.length} REGIONS
                     <span class="data ttcontent">${regionstring}</span>
                 </span>
             </a>
@@ -311,10 +324,10 @@ function weather(response, offline = false) {
             qs("#weatherh3").setAttribute('data-bs-original-title', "Weather info is outdated.");
         } else {
             qs(".weather").innerHTML = `${tunit(temp)}°`;
-            qs("#weatherimage").innerHTML = `${climacon(response.currently.icon)}`;
+            qs("#weatherimage").innerHTML = `${climacon(currently.icon)}`;
             let weatherh3 = bootstrap.Tooltip.getOrCreateInstance(qs("#weatherh3"), {html: true});
             weatherh3.hide();
-            qs("#weatherh3").setAttribute('data-bs-original-title', response.currently.summary);
+            qs("#weatherh3").setAttribute('data-bs-original-title', currently["summary"]);
         }
 
         //("#weatherpopover").popover("hide");
@@ -328,14 +341,14 @@ function weather(response, offline = false) {
 }
 
 function regularinterval() {
-    datetime();
+    update_newtab_datetime();
     let now = new Date();
     let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
     let date = `<h4 style="margin:0;">${weekdays[now.getDay()]} ${months[now.getMonth()]} ${("0" + now.getDate()).slice(-2)} ${now.getFullYear()} ${now.toLocaleTimeString()}</h4>`;
     qs("#timepopover").setAttribute("data-bs-content", `<div id="tpop">${date}</div>`);
-    sethtmlifneeded(qs("#tpop"), date);
+    set_html_if_needed(qs("#tpop"), date);
 }
 
 function sliderblur() {
@@ -345,9 +358,9 @@ function sliderblur() {
 
 function tempunithandler() {
     if (this.id === "farradio") {
-        tempunit = "f";
+        config_tempunit = "f";
     } else {
-        tempunit = "c";
+        config_tempunit = "c";
     }
     console.debug("reloading weather div with cached info");
     chrome.storage.local.get(["weather"], function (resp) {
@@ -358,9 +371,9 @@ function tempunithandler() {
 
 function iconsethandler() {
     if (this.id === "cradio") {
-        iconset = "climacons";
+        config_iconset = "climacons";
     } else {
-        iconset = "fontawesome";
+        config_iconset = "fontawesome";
     }
     console.debug("reloading weather div with cached info");
     chrome.storage.local.get(["weather"], function (resp) {
@@ -371,9 +384,9 @@ function iconsethandler() {
 
 function timeformathandler() {
     if (this.id === "12radio") {
-        timeformat = "12";
+        config_timeformat = "12";
     } else {
-        timeformat = "24";
+        config_timeformat = "24";
     }
     console.debug("reloading weather div with cached info");
     chrome.storage.local.get(["weather"], function (resp) {
@@ -384,15 +397,15 @@ function timeformathandler() {
 
 function dateformathandler() {
     if (this.id === "mdradio") {
-        dateformat = "md";
+        config_dateformat = "md";
     } else {
-        dateformat = "dm";
+        config_dateformat = "dm";
     }
     chstorage();
 }
 
 function searchtaghandler() {
-    searchtags = this.value;
+    config_searchtags = this.value;
     chstorage();
 }
 
@@ -410,23 +423,23 @@ function sblurmain(val) {
         qs(".bg").style["filter"] = `blur(${val}px)`;
     }
     qs("#blurval").innerHTML = `<i class="fas fa-image"></i> Background blur: ${val}px`;
-    blur = val;
+    config_blur = val;
 }
 
 function refreshinphandler() {
-    refreshtime = this.value;
+    config_refreshtime = this.value;
     chstorage();
 }
 
 function chstorage() {
     chrome.storage.local.set({
-        blurval: blur,
-        tempunit: tempunit,
-        timeformat: timeformat,
-        dateformat: dateformat,
-        searchtags: searchtags,
-        refreshtime: refreshtime,
-        iconset: iconset
+        blurval: config_blur,
+        tempunit: config_tempunit,
+        timeformat: config_timeformat,
+        dateformat: config_dateformat,
+        searchtags: config_searchtags,
+        refreshtime: config_refreshtime,
+        iconset: config_iconset
     });
     qs("#savetext").innerHTML = "Saved.";
 
@@ -435,9 +448,9 @@ function chstorage() {
 function backgroundhandler() {
     if (!promotional) {
         console.debug("changing BG...");
-        followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${searchtags}`, function (response) {
+        follow_redirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${config_searchtags}`, function (response) {
             console.debug("redirect followed");
-            preloadImage(response, function () {
+            preload_image(response, function () {
                 qs(".bg").style["background-image"] = `url(${response})`;
 
             });
@@ -467,7 +480,7 @@ function optionsinit() {
         if (result["blurval"] === undefined) {
             result["blurval"] = "0";
         }
-        blur = result["blurval"];
+        config_blur = result["blurval"];
         sblurmain(result["blurval"], false);
         qs("#blurslider").setAttribute("value", result["blurval"]);
         //blur handler
@@ -477,21 +490,21 @@ function optionsinit() {
     //temperature unit handler
 
     chrome.storage.local.get(['tempunit', 'lastweather', 'iconset', 'weather'], function (result) {
-        tempunit = result["tempunit"];
-        if (tempunit === undefined) {
-            tempunit = "f";
+        config_tempunit = result["tempunit"];
+        if (config_tempunit === undefined) {
+            config_tempunit = "f";
         }
         //weather routine
-        if (tempunit === "f") {
+        if (config_tempunit === "f") {
             qs("#farradio").setAttribute("checked", "checked");
         } else {
             qs("#celradio").setAttribute("checked", "checked");
         }
-        iconset = result['iconset'];
-        if (iconset === undefined) {
-            iconset = "climacons";
+        config_iconset = result['iconset'];
+        if (config_iconset === undefined) {
+            config_iconset = "climacons";
         }
-        if (iconset === "climacons") {
+        if (config_iconset === "climacons") {
             qs("#cradio").setAttribute("checked", "checked");
         } else {
             qs("#faradio").setAttribute("checked", "checked");
@@ -521,15 +534,15 @@ function optionsinit() {
         document.getElementById('faradio').addEventListener('input', iconsethandler);
 
     });
-    //timeformat handler
+    //config_timeformat handler
 
-    chrome.storage.local.get(['timeformat'], function (result) {
-        timeformat = result["timeformat"];
-        if (timeformat === undefined) {
-            timeformat = "12";
+    chrome.storage.local.get(['config_timeformat'], function (result) {
+        config_timeformat = result["timeformat"];
+        if (config_timeformat === undefined) {
+            config_timeformat = "12";
         }
         //weather routine
-        if (timeformat === "12") {
+        if (config_timeformat === "12") {
             qs("#12radio").setAttribute("checked", "checked");
         } else {
             qs("#24radio").setAttribute("checked", "checked");
@@ -540,12 +553,12 @@ function optionsinit() {
     //dateformat handler
 
     chrome.storage.local.get(['dateformat'], function (result) {
-        dateformat = result["dateformat"];
-        if (dateformat === undefined) {
-            dateformat = "md";
+        config_dateformat = result["dateformat"];
+        if (config_dateformat === undefined) {
+            config_dateformat = "md";
         }
         //weather routine
-        if (dateformat === "md") {
+        if (config_dateformat === "md") {
             qs("#mdradio").setAttribute("checked", "checked");
         } else {
             qs("#dmradio").setAttribute("checked", "checked");
@@ -555,23 +568,23 @@ function optionsinit() {
     });
 
     chrome.storage.local.get(['searchtags', "lastbgrefresh", "refreshtime"], function (result) {
-        searchtags = result["searchtags"];
-        if (searchtags === undefined) {
-            searchtags = "nature,ocean,city,space";
+        config_searchtags = result["searchtags"];
+        if (config_searchtags === undefined) {
+            config_searchtags = "nature,ocean,city,space";
         }
-        refreshtime = result["refreshtime"];
-        if (refreshtime === undefined) {
-            refreshtime = 0;
+        config_refreshtime = result["refreshtime"];
+        if (config_refreshtime === undefined) {
+            config_refreshtime = 0;
         }
-        qs("#bgrefresh").setAttribute("value", refreshtime);
-        qs("#bgtags").setAttribute("value", searchtags);
-        if (refreshtime !== 0) {
+        qs("#bgrefresh").setAttribute("value", config_refreshtime);
+        qs("#bgtags").setAttribute("value", config_searchtags);
+        if (config_refreshtime !== 0) {
             let sincelastdownload = (new Date().getTime() / 1000) - result["lastbgrefresh"];
-            let timetowait = refreshtime * 60;
+            let timetowait = config_refreshtime * 60;
             if (sincelastdownload > timetowait) {
                 backgroundhandler();
             } else {
-                console.debug(`been less than ${refreshtime} mins, using same BG`);
+                console.debug(`been less than ${config_refreshtime} mins, using same BG`);
             }
         } else {
             backgroundhandler();
@@ -585,7 +598,7 @@ function optionsinit() {
 document.addEventListener("DOMContentLoaded", function () {
     //htmlinclude
     // what the hell is this?
-    document.querySelectorAll(".htmlinclude").forEach(function (obj, i) {
+    document.querySelectorAll(".htmlinclude").forEach(function (obj) {
         let include = obj.getAttribute("html-include");
         fetch(include)
             .then(function (response) {
@@ -616,7 +629,7 @@ document.addEventListener("DOMContentLoaded", function () {
     };
     devmode(function (dev) {
         let version = chrome.runtime.getManifest().version;
-        qs("#evergreenpopover").setAttribute("data-bs-content", `<h2 class="display-4"><img class="logoimg" src="icons/evergreen${dev ? "dev" : ""}128.png"/>Evergreen${dev ? " Dev" : ""}</span></h2><h4>New Tab for Chrome</h4><h4>Version ${version}</h4><h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`);
+        qs("#evergreenpopover").setAttribute("data-bs-content", `<h2 class="display-4"><img class="logoimg" alt="" src="icons/evergreen${dev ? "dev" : ""}128.png"/>Evergreen${dev ? " Dev" : ""}</span></h2><h4>New Tab for Chrome</h4><h4>Version ${version}</h4><h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`);
         bootstrap.Popover.getOrCreateInstance(qs("#evergreenpopover"), {
             html: true,
             placement: "bottom",
