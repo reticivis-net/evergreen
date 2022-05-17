@@ -17,7 +17,7 @@ const qs = document.querySelector.bind(document);
 console.debug("Evergreen New Tab for chrome");
 
 function sethtmlifneeded(object, html) {
-    if (object && object.hasOwnProperty("innerHTML") && object.innerHTML !== html) {
+    if (object && "innerHTML" in object && object.innerHTML !== html) {
         object.innerHTML = html;
     }
 }
@@ -81,7 +81,7 @@ function datetime() {
 
     // h = (h < 10) ? "0" + h : h;
 
-    qs(".clock").innerHTML = time;
+    sethtmlifneeded(qs(".clock"), time);
     let d = date.getDate();
     let mo = date.getMonth() + 1;
     let y = date.getFullYear();
@@ -91,9 +91,7 @@ function datetime() {
     } else {
         da = `${d}/${mo}/${y}`;
     }
-
-    qs(".date").innerHTML = da;
-
+    sethtmlifneeded(qs(".date"), da);
 }
 
 function localeHourString(epoch) {
@@ -185,12 +183,9 @@ function devmode(callback) {
 }
 
 function updateweather() {
-    new bootstrap.Popover(qs("#weatherpopover")).hide();
-    qs("#weatherpopover").setAttribute("data-content", qs(".weatherdiv").innerHTML);
-    new bootstrap.Popover(qs("#weatherpopover"), {
-        html: true,
-        trigger: "click"
-    }).show();
+    bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover")).dispose();
+    qs("#weatherpopover").setAttribute("data-bs-content", qs(".weatherdiv").innerHTML);
+    bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover"));
 }
 
 function weather(response, offline = false) {
@@ -222,8 +217,8 @@ function weather(response, offline = false) {
                 nextday = true;
                 paginationtime = "<p class=\"pfix\">" + dayofepoch(hour.time) + " " + localeHourString(hour.time) + "</p>";
             }
-            qs(".whourlycontent").append(`
-        <div class="weatherblock popovertt" data-content="test123">
+            qs(".whourlycontent").insertAdjacentHTML('beforeend', `
+        <div class="weatherblock popovertt" data-bs-content="test123">
             <span class="data">hour-${i}</span>
             <span class="data ttcontent">${paginationtime}<p class="pfix">${hour.summary}</p><p class="pfix">Feels like ${tunit(hour.apparentTemperature)}°</p></span>
             <h6 class="pfix">${localeHourString(hour.time)} ${climacon(hour.icon)}</h6>
@@ -244,7 +239,7 @@ function weather(response, offline = false) {
                     accum = "";
                 }
             }
-            qs(".wdailycontent").append(`
+            qs(".wdailycontent").insertAdjacentHTML('beforeend', `
         <div class="weatherblock popovertt">
             <span class="data">day-${i}</span>
             <span class="data ttcontent"><p class="pfix">${day.summary}</p>${accum}</span>
@@ -290,7 +285,7 @@ function weather(response, offline = false) {
         console.debug("Weather last updated at " + new Date(resp["lastweather"] * 1000).toLocaleString());
         // gotta do this after or its busted
         qs("#weatherpopover").addEventListener('shown.bs.popover', function () {
-            new bootstrap.Tooltip(qs("body"), {
+            bootstrap.Tooltip.getOrCreateInstance(qs("body"), {
                 selector: '.popovertt',
                 html: true,
                 title: function () {
@@ -302,31 +297,31 @@ function weather(response, offline = false) {
             });
         });
         qs("#weatherpopover").addEventListener("hidden.bs.popover", function () {
-            new bootstrap.Tooltip(qs(".tooltip")).hide();
-            $(".weather-pagination-right").unbind();
-            $(".weather-pagination-left").unbind();
+            [...document.querySelectorAll(".tooltip")].map(tt => {
+                bootstrap.Tooltip.getOrCreateInstance(tt).hide();
+            })
         });
         updateweather();
         let sincelastdownload = (new Date().getTime() / 1000) - resp["lastweather"];
         let timetowait = 2 * 60 * 60; // if weather hasnt been refreshed for 2 hours
         if (sincelastdownload > timetowait) { // if its been longer than 10 mins, get the weather again
             qs(".weather").innerHTML = "<i class=\"fas fa-exclamation-circle\"></i>"
-            let weatherh3 = new bootstrap.Tooltip(qs("#weatherh3"));
+            let weatherh3 = bootstrap.Tooltip.getOrCreateInstance(qs("#weatherh3"), {html: true});
             weatherh3.hide();
-            qs("#weatherh3").setAttribute('data-original-title', "Weather info is outdated.");
+            qs("#weatherh3").setAttribute('data-bs-original-title', "Weather info is outdated.");
         } else {
             qs(".weather").innerHTML = `${tunit(temp)}°`;
             qs("#weatherimage").innerHTML = `${climacon(response.currently.icon)}`;
-            let weatherh3 = new bootstrap.Tooltip(qs("#weatherh3"));
+            let weatherh3 = bootstrap.Tooltip.getOrCreateInstance(qs("#weatherh3"), {html: true});
             weatherh3.hide();
-            qs("#weatherh3").setAttribute('data-original-title', response.currently.summary);
+            qs("#weatherh3").setAttribute('data-bs-original-title', response.currently.summary);
         }
 
         //("#weatherpopover").popover("hide");
         // enable tooltips everywhere
         let tooltipTriggerList = [].slice.call(document.querySelectorAll('.tt'))
         tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
+            return bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl, {html: true})
         })
     });
 
@@ -339,7 +334,7 @@ function regularinterval() {
     let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
     let date = `<h4 style="margin:0;">${weekdays[now.getDay()]} ${months[now.getMonth()]} ${("0" + now.getDate()).slice(-2)} ${now.getFullYear()} ${now.toLocaleTimeString()}</h4>`;
-    qs("#timepopover").setAttribute("data-content", `<div id="tpop">${date}</div>`);
+    qs("#timepopover").setAttribute("data-bs-content", `<div id="tpop">${date}</div>`);
     sethtmlifneeded(qs("#tpop"), date);
 }
 
@@ -621,26 +616,30 @@ document.addEventListener("DOMContentLoaded", function () {
     };
     devmode(function (dev) {
         let version = chrome.runtime.getManifest().version;
-        qs("#evergreenpopover").setAttribute("data-content", `<h2 class="display-4"><img class="logoimg" src="evergreen${dev ? "dev" : ""}128.png"/>Evergreen${dev ? " Dev" : ""}</span></h2><h4>New Tab for Chrome</h4><h4>Version ${version}</h4><h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`);
-
+        qs("#evergreenpopover").setAttribute("data-bs-content", `<h2 class="display-4"><img class="logoimg" src="icons/evergreen${dev ? "dev" : ""}128.png"/>Evergreen${dev ? " Dev" : ""}</span></h2><h4>New Tab for Chrome</h4><h4>Version ${version}</h4><h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`);
+        bootstrap.Popover.getOrCreateInstance(qs("#evergreenpopover"), {
+            html: true,
+            placement: "bottom",
+            trigger: "focus"
+        })
     });
 
-    qs("#timepopover").setAttribute("data-content", `<div id="tpop"></div>`);
+    qs("#timepopover").setAttribute("data-bs-content", `<div id="tpop"></div>`);
     //calendar
     caleandar(document.getElementById('caltemp'));
     let caltemp = qs("#caltemp").innerHTML;
-    qs("#datepopover").setAttribute("data-content", `<div id="caltemp">${caltemp}</div>`);
+    qs("#datepopover").setAttribute("data-bs-content", `<div id="caltemp">${caltemp}</div>`);
     qs("#caltemp").remove();
     let popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
     popoverTriggerList.map(function (popoverTriggerEl) {
-        return new bootstrap.Popover(popoverTriggerEl)
+        return bootstrap.Popover.getOrCreateInstance(popoverTriggerEl)
     })
 
     let modalTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="modal"]'))
     modalTriggerList.map(function (modalTriggerEl) {
-        return new bootstrap.Popover(modalTriggerEl)
+        return new bootstrap.Modal(modalTriggerEl)
     })
-    new bootstrap.Tooltip(qs('#weatherh3'));
+    bootstrap.Tooltip.getOrCreateInstance(qs('#weatherh3'), {html: true});
     //other stuff
     optionsinit(); //load shit from chrome (also weather)
     if (promotional) {

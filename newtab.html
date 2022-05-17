@@ -2,12 +2,13 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
     <title>Evergreen New Tab</title>
     <link href="icons/evergreen32.png" rel="icon"/>
     <script src="libs/jquery-3.6.0.min.js"></script>
     <link href="libs/bootstrap/bootstrap.min.css" rel="stylesheet">
-    <script src="libs/bootstrap/bootstrap.min.js"></script>
+    <script src="libs/bootstrap/bootstrap.bundle.js"></script>
     <script src="libs/fontawesome/free.min.js"></script>
     <script src="libs/fontawesome/pro.min.js"></script>
     <script src="libs/calendar/calendar.min.js"></script>
@@ -23,24 +24,23 @@
 <div class="bg"></div>
 <div class="preloadimg" style="display:none;"></div>
 <div id="caltemp" style="display:none;"></div>
+<div id="tooltipmargin"></div>
 <div class="body">
     <div id="header">
         <div class="row">
             <div class="col text-start">
-                <h4 class="dynamic-text"><a class="popper" data-bs-content="content" data-bs-placement="top"
-                                            data-bs-toggle="popover"
-                                            data-bs-trigger="focus" id="evergreenpopover" role="button"
+                <h4 class="dynamic-text"><a class="popper" id="evergreenpopover" role="button"
                                             tabindex="0"><img class="logoimg"
                                                               src="icons/evergreen128.png"/>Evergreen</a>
                 </h4></div>
             <div class="col text-center">
-                <h3 class="dynamic-text"><a class="popper" data-bs-content="content" data-bs-placement="top"
-                                            data-bs-toggle="popover"
+                <h3 class="dynamic-text"><a class="popper" data-bs-content="content" data-bs-html=true
+                                            data-bs-placement="bottom" data-bs-toggle="popover"
                                             data-bs-trigger="focus" id="timepopover" role="button"
                                             tabindex="0"><span class="clock"></span></a></h3></div>
             <div class="col text-end">
                 <h4 class="dynamic-text"><a class="popper" data-bs-content="content" data-bs-placement="bottom"
-                                            data-bs-toggle="popover"
+                                            data-bs-html=true data-bs-toggle="popover"
                                             data-bs-trigger="focus" id="datepopover" role="button"
                                             tabindex="0"><span class="date"></span></a></h4></div>
         </div>
@@ -48,11 +48,12 @@
     <div class="footer">
         <div class="row">
             <div class="col-3 text-start">
-                <h3 class="dynamic-text"><span data-bs-placement="right" data-bs-toggle="tooltip" id="weatherh3"
+                <h3 class="dynamic-text"><span data-bs-placement="top" data-bs-toggle="tooltip" id="weatherh3"
                                                title=""><a
                         class="popper"
                         data-bs-placement="top"
                         data-bs-trigger="focus"
+                        data-bs-html=true
                         id="weatherpopover"
                         role="button"
                         tabindex="0"
@@ -122,7 +123,7 @@
                 <div class="br"></div>
                 <p><i class="fas fa-cloud-sun"></i> Weather Icon Set:</p>
                 <div class="custom-control custom-radio custom-control-inline" data-bs-html="true"
-                     data-bs-placement="bottom"
+                     data-bs-placement="top"
                      data-bs-toggle="tooltip"
                      title='<span aria-hidden="true" class="popover-climacon climacon sun"></span>
                             <span aria-hidden="true" class="popover-climacon climacon cloud sun"></span>
@@ -132,7 +133,7 @@
                            title="">Climacons</label>
                 </div>
                 <div class="custom-control custom-radio custom-control-inline" data-bs-html="true"
-                     data-bs-placement="bottom"
+                     data-bs-placement="top"
                      data-bs-toggle="tooltip"
                      title="<i class='fas fa-sun'></i> <i class='fas fa-cloud-sun'></i> <i class='fas fa-cloud'></i>">
                     <input class="custom-control-input" id="faradio" name="weatherform" type="radio">
