@@ -185,12 +185,12 @@ function devmode(callback) {
 }
 
 function updateweather() {
-    $("#weatherpopover").popover("hide");
+    new bootstrap.Popover(qs("#weatherpopover")).hide();
     qs("#weatherpopover").setAttribute("data-content", qs(".weatherdiv").innerHTML);
-    $('#weatherpopover').popover({
+    new bootstrap.Popover(qs("#weatherpopover"), {
         html: true,
         trigger: "click"
-    });
+    }).show();
 }
 
 function weather(response, offline = false) {
@@ -311,16 +311,18 @@ function weather(response, offline = false) {
         let timetowait = 2 * 60 * 60; // if weather hasnt been refreshed for 2 hours
         if (sincelastdownload > timetowait) { // if its been longer than 10 mins, get the weather again
             qs(".weather").innerHTML = "<i class=\"fas fa-exclamation-circle\"></i>"
-            $("#weatherh3").tooltip('hide')
-                .attr('data-original-title', "Weather info is outdated.");
+            let weatherh3 = new bootstrap.Tooltip(qs("#weatherh3"));
+            weatherh3.hide();
+            qs("#weatherh3").setAttribute('data-original-title', "Weather info is outdated.");
         } else {
             qs(".weather").innerHTML = `${tunit(temp)}°`;
             qs("#weatherimage").innerHTML = `${climacon(response.currently.icon)}`;
-            $("#weatherh3").tooltip('hide')
-                .attr('data-original-title', response.currently.summary);
+            let weatherh3 = new bootstrap.Tooltip(qs("#weatherh3"));
+            weatherh3.hide();
+            qs("#weatherh3").setAttribute('data-original-title', response.currently.summary);
         }
 
-        //$("#weatherpopover").popover("hide");
+        //("#weatherpopover").popover("hide");
         // enable tooltips everywhere
         let tooltipTriggerList = [].slice.call(document.querySelectorAll('.tt'))
         tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -615,7 +617,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("bg-download").onclick = downloadbg;
     document.getElementById("save").onclick = chstorage;
     qs("#changelog-button").onclick = function () {
-        $("#changelog").modal();
+        new bootstrap.Modal(qs("#changelog"));
     };
     devmode(function (dev) {
         let version = chrome.runtime.getManifest().version;
@@ -629,10 +631,16 @@ document.addEventListener("DOMContentLoaded", function () {
     let caltemp = qs("#caltemp").innerHTML;
     qs("#datepopover").setAttribute("data-content", `<div id="caltemp">${caltemp}</div>`);
     qs("#caltemp").remove();
-    new bootstrap.Popover(qs('[data-toggle="popover"]'), {
-        html: true
+    let popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl)
     })
-    $('#weatherh3').tooltip();
+
+    let modalTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="modal"]'))
+    modalTriggerList.map(function (modalTriggerEl) {
+        return new bootstrap.Popover(modalTriggerEl)
+    })
+    new bootstrap.Tooltip(qs('#weatherh3'));
     //other stuff
     optionsinit(); //load shit from chrome (also weather)
     if (promotional) {
