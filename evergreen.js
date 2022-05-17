@@ -80,7 +80,7 @@ function update_newtab_datetime() {
 
 function epoch_to_date(epoch) {
     // convert UNIX epoch to js date object
-    return new Date(0).setUTCSeconds(epoch);
+    return new Date(epoch / 1000);
 }
 
 function epoch_to_locale_hour_string(epoch) {
@@ -117,7 +117,7 @@ function dayofepoch(epoch) {
 function tunit(temp) {
     // converts temperature unit if needed
     if (config_tempunit === "c") {
-        temp = ftoc(temp);
+        temp = f_to_c(temp);
     }
     return Math.round(temp);
 }
@@ -181,14 +181,14 @@ function devmode(callback) {
     });
 }
 
-function updateweather() {
+function update_weather() {
     // update weather popover
     bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover")).dispose();
     qs("#weatherpopover").setAttribute("data-bs-content", qs(".weatherdiv").innerHTML);
     bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover"));
 }
 
-function weather(response) {
+function construct_weather_popover(response) {
     // takes a JSON response from darksky, creates and updates the weather popover
     // for some god forsaken reason, i have to get lastweather before anything else or fontawesome breaks. yeah idk.
     chrome.storage.local.get(["lastweather"], function (resp) {
@@ -314,7 +314,7 @@ function weather(response) {
                 bootstrap.Tooltip.getOrCreateInstance(tt).hide();
             })
         });
-        updateweather();
+        update_weather();
         let sincelastdownload = (new Date().getTime() / 1000) - resp["lastweather"];
         let timetowait = 2 * 60 * 60; // if weather hasnt been refreshed for 2 hours
         if (sincelastdownload > timetowait) { // if its been longer than 10 mins, get the weather again
@@ -340,7 +340,8 @@ function weather(response) {
 
 }
 
-function regularinterval() {
+function every_100ms() {
+    // ran every 100ms
     update_newtab_datetime();
     let now = new Date();
     let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -351,12 +352,10 @@ function regularinterval() {
     set_html_if_needed(qs("#tpop"), date);
 }
 
-function sliderblur() {
-    sblur(this.value);
-    chstorage();
-}
+// called by settings menu
 
-function tempunithandler() {
+
+function settings_set_tempunit() {
     if (this.id === "farradio") {
         config_tempunit = "f";
     } else {
@@ -364,12 +363,12 @@ function tempunithandler() {
     }
     console.debug("reloading weather div with cached info");
     chrome.storage.local.get(["weather"], function (resp) {
-        weather(resp["weather"]);
+        construct_weather_popover(resp["weather"]);
     });
-    chstorage();
+    save_settings();
 }
 
-function iconsethandler() {
+function settings_set_iconset() {
     if (this.id === "cradio") {
         config_iconset = "climacons";
     } else {
@@ -377,12 +376,12 @@ function iconsethandler() {
     }
     console.debug("reloading weather div with cached info");
     chrome.storage.local.get(["weather"], function (resp) {
-        weather(resp["weather"]);
+        construct_weather_popover(resp["weather"]);
     });
-    chstorage();
+    save_settings();
 }
 
-function timeformathandler() {
+function settings_set_timeformat() {
     if (this.id === "12radio") {
         config_timeformat = "12";
     } else {
@@ -390,31 +389,32 @@ function timeformathandler() {
     }
     console.debug("reloading weather div with cached info");
     chrome.storage.local.get(["weather"], function (resp) {
-        weather(resp["weather"]);
+        construct_weather_popover(resp["weather"]);
     }); // i have to do this since the weather popup uses the time format
-    chstorage();
+    save_settings();
 }
 
-function dateformathandler() {
+function settings_set_dateformat() {
     if (this.id === "mdradio") {
         config_dateformat = "md";
     } else {
         config_dateformat = "dm";
     }
-    chstorage();
+    save_settings();
 }
 
-function searchtaghandler() {
+function settings_set_searchtags() {
     config_searchtags = this.value;
-    chstorage();
+    save_settings();
 }
 
-function sblur(val) {
-    sblurmain(val);
-    chstorage();
+function settings_set_blur() {
+    set_blur(this.value);
+    save_settings();
 }
 
-function sblurmain(val) {
+function set_blur(val) {
+    // sets blur
     if (val === 0) {
         qs(".bg").style["transform"] = "initial";
         qs(".bg").style["filter"] = "initial";
@@ -426,12 +426,12 @@ function sblurmain(val) {
     config_blur = val;
 }
 
-function refreshinphandler() {
+function settings_set_refreshtime() {
     config_refreshtime = this.value;
-    chstorage();
+    save_settings();
 }
 
-function chstorage() {
+function save_settings() {
     chrome.storage.local.set({
         blurval: config_blur,
         tempunit: config_tempunit,
@@ -445,17 +445,13 @@ function chstorage() {
 
 }
 
-function backgroundhandler() {
+function change_background() {
     if (!promotional) {
         console.debug("changing BG...");
         follow_redirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${config_searchtags}`, function (response) {
-            console.debug("redirect followed");
             preload_image(response, function () {
                 qs(".bg").style["background-image"] = `url(${response})`;
-
             });
-
-            //qs(".bg").style["background-image"] =  `url(${response})`;
             chrome.storage.local.set({
                 bgimage: response,
                 lastbgrefresh: new Date().getTime() / 1000
@@ -465,41 +461,47 @@ function backgroundhandler() {
     }
 }
 
-function downloadbg() {
-    chrome.storage.local.get(['bgimage'], function (response) {
+function settings_download_background() {
+    chrome.storage.local.get(['bgimage'], response => {
         let url = response['bgimage'].split("?")[0];
         console.debug(url);
         window.location = url;
     });
 }
 
-function optionsinit() {
 
-
-    chrome.storage.local.get(['blurval'], function (result) {
+function init_background_blur() {// background blur
+    chrome.storage.local.get(['blurval'], result => {
+        // sensible default
         if (result["blurval"] === undefined) {
             result["blurval"] = "0";
         }
         config_blur = result["blurval"];
-        sblurmain(result["blurval"], false);
+        // set blur on load
+        set_blur(result["blurval"], false);
         qs("#blurslider").setAttribute("value", result["blurval"]);
-        //blur handler
-        let slider = document.getElementById('blurslider');
-        slider.addEventListener('input', sliderblur);
+        // add listener to settings
+        qs('#blurslider').addEventListener('input', settings_set_blur);
     });
-    //temperature unit handler
+}
 
+function init_weather() {
+    // temperature unit handler AND iconset AND weather
     chrome.storage.local.get(['tempunit', 'lastweather', 'iconset', 'weather'], function (result) {
+        // init temp unit settings options
         config_tempunit = result["tempunit"];
         if (config_tempunit === undefined) {
             config_tempunit = "f";
         }
-        //weather routine
         if (config_tempunit === "f") {
             qs("#farradio").setAttribute("checked", "checked");
         } else {
             qs("#celradio").setAttribute("checked", "checked");
         }
+        qs('#farradio').addEventListener('input', settings_set_tempunit);
+        qs('#celradio').addEventListener('input', settings_set_tempunit);
+
+        // init icon set settings options
         config_iconset = result['iconset'];
         if (config_iconset === undefined) {
             config_iconset = "climacons";
@@ -509,173 +511,150 @@ function optionsinit() {
         } else {
             qs("#faradio").setAttribute("checked", "checked");
         }
-        if (!result["lastweather"] || !result['weather']) { // most likely happens on first install
-            weatherpos(weathercurrent, weather);
+        qs('#cradio').addEventListener('input', settings_set_iconset);
+        qs('#faradio').addEventListener('input', settings_set_iconset);
+
+        // load weather
+        if (!result["lastweather"] || !result['weather']) {
+            // if no previous weather data, get weather
+            get_weather_at_current_pos(construct_weather_popover);
             chrome.storage.local.set({
                 lastweather: new Date().getTime() / 1000
             });
-        } else { // there is a date of the last time we got the weather
+        } else {
+            // there is a date of the last time we got the weather, check if we can use cached data
+
+            // seconds since last time we got the weather
             let sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
-            let timetowait = 10 * 60; // only get weather every 10 mins
-            if (navigator.onLine && sincelastdownload > timetowait) { // if its been longer than 10 mins, get the weather again
-                weatherpos(weathercurrent, weather);
+            // only get weather every 10 mins
+            let timetowait = 10 * 60;
+            // if its been longer than 10 mins and we are online, get the weather again
+            if (navigator.onLine && sincelastdownload > timetowait) {
+                get_weather_at_current_pos(construct_weather_popover);
                 console.debug("downloading new weather info");
                 chrome.storage.local.set({
                     lastweather: new Date().getTime() / 1000
                 });
-            } else { // otherwise, use the saved info to possibly prevent the weather api limit
-                weather(result["weather"]);
+            } else {
+                // we have fresh cached data that we can use for the weather info!
+                construct_weather_popover(result["weather"]);
                 console.debug("using cached weather info");
             }
         }
-        document.getElementById('farradio').addEventListener('input', tempunithandler);
-        document.getElementById('celradio').addEventListener('input', tempunithandler);
-        document.getElementById('cradio').addEventListener('input', iconsethandler);
-        document.getElementById('faradio').addEventListener('input', iconsethandler);
-
     });
-    //config_timeformat handler
+}
 
+function init_timeformat() {
+    // initialize time format options
     chrome.storage.local.get(['config_timeformat'], function (result) {
         config_timeformat = result["timeformat"];
         if (config_timeformat === undefined) {
             config_timeformat = "12";
         }
-        //weather routine
         if (config_timeformat === "12") {
-            qs("#12radio").setAttribute("checked", "checked");
+            document.getElementById("12radio").setAttribute("checked", "checked");
         } else {
-            qs("#24radio").setAttribute("checked", "checked");
+            document.getElementById("24radio").setAttribute("checked", "checked");
         }
-        document.getElementById('12radio').addEventListener('input', timeformathandler);
-        document.getElementById('24radio').addEventListener('input', timeformathandler);
+        document.getElementById('12radio').addEventListener('input', settings_set_timeformat);
+        document.getElementById('24radio').addEventListener('input', settings_set_timeformat);
     });
-    //dateformat handler
+}
 
+function init_background(lastbgrefresh) {
+    // set the actual background
+    if (promotional) {
+        qs(".bg").style["background-image"] = `url(https://images.unsplash.com/photo-1440558929809-1412944a6225?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1920&q=80)`;
+    } else {
+        // set background to cached image (well the browser should have cached it lol)
+        chrome.storage.local.get(['bgimage'], function (result) {
+            let bgimage = result["bgimage"];
+            if (bgimage) {
+                qs(".bg").style["background-image"] = `url(${bgimage})`;
+            }
+        });
+        // handle BG based on refreshtime
+        if (config_refreshtime !== 0) {
+            // config to not refresh everytime is set
+
+            // check if it's been long enough to get a new bg
+            let sincelastdownload = (new Date().getTime() / 1000) - lastbgrefresh;
+            let timetowait = config_refreshtime * 60;
+
+            if (sincelastdownload > timetowait) {
+                change_background();
+            } else {
+                // no action needed since cached bg was set
+                console.debug(`been less than ${config_refreshtime} mins, using same BG`);
+            }
+        } else {
+            change_background();
+        }
+    }
+
+}
+
+function init_background_settings() {
+    // initialize background settings
+    chrome.storage.local.get(['searchtags', "lastbgrefresh", "refreshtime"], function (result) {
+        // search tags options
+        config_searchtags = result["searchtags"];
+        if (config_searchtags === undefined) {
+            config_searchtags = "nature,ocean,city,space";
+        }
+        qs("#bgrefresh").setAttribute("value", config_refreshtime);
+        qs('#bgrefresh').addEventListener('change', settings_set_refreshtime);
+
+        // refreshtime options
+        config_refreshtime = result["refreshtime"];
+        if (config_refreshtime === undefined) {
+            config_refreshtime = 0;
+        }
+        qs("#bgtags").setAttribute("value", config_searchtags);
+        qs('#bgtags').addEventListener('change', settings_set_searchtags);
+
+        init_background(result["lastbgrefresh"])
+    });
+}
+
+function init_dateformat() {
+    // initialize date format options
     chrome.storage.local.get(['dateformat'], function (result) {
         config_dateformat = result["dateformat"];
         if (config_dateformat === undefined) {
             config_dateformat = "md";
         }
-        //weather routine
         if (config_dateformat === "md") {
             qs("#mdradio").setAttribute("checked", "checked");
         } else {
             qs("#dmradio").setAttribute("checked", "checked");
         }
-        document.getElementById('mdradio').addEventListener('input', dateformathandler);
-        document.getElementById('dmradio').addEventListener('input', dateformathandler);
-    });
-
-    chrome.storage.local.get(['searchtags', "lastbgrefresh", "refreshtime"], function (result) {
-        config_searchtags = result["searchtags"];
-        if (config_searchtags === undefined) {
-            config_searchtags = "nature,ocean,city,space";
-        }
-        config_refreshtime = result["refreshtime"];
-        if (config_refreshtime === undefined) {
-            config_refreshtime = 0;
-        }
-        qs("#bgrefresh").setAttribute("value", config_refreshtime);
-        qs("#bgtags").setAttribute("value", config_searchtags);
-        if (config_refreshtime !== 0) {
-            let sincelastdownload = (new Date().getTime() / 1000) - result["lastbgrefresh"];
-            let timetowait = config_refreshtime * 60;
-            if (sincelastdownload > timetowait) {
-                backgroundhandler();
-            } else {
-                console.debug(`been less than ${config_refreshtime} mins, using same BG`);
-            }
-        } else {
-            backgroundhandler();
-        }
-        document.getElementById('bgtags').addEventListener('change', searchtaghandler);
-        document.getElementById('bgrefresh').addEventListener('change', refreshinphandler);
-
+        qs('#mdradio').addEventListener('input', settings_set_dateformat);
+        qs('#dmradio').addEventListener('input', settings_set_dateformat);
     });
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    //htmlinclude
-    // what the hell is this?
-    document.querySelectorAll(".htmlinclude").forEach(function (obj) {
-        let include = obj.getAttribute("html-include");
-        fetch(include)
-            .then(function (response) {
-                return response.text();
-            })
-            .then(function (body) {
-                obj.innerHTML = body;
-                console.debug(`included ${include}`)
-            });
+function initialize_settings_menu() {
+    // initializes settings menu from saved config options and runs routines that require them (weather, background)
 
-    });
-    //imghandler
-    if (promotional) {
-        qs(".bg").style["background-image"] = `url(https://images.unsplash.com/photo-1440558929809-1412944a6225?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1920&q=80)`;
-    } else {
-        chrome.storage.local.get(['bgimage', "lastbgrefresh"], function (result) {
-            let bgimage = result["bgimage"];
-            qs(".bg").style["background-image"] = `url(${bgimage})`;
-        });
-    }
+    // all functions are async calls to chrome.storage.get
+    // only separate functions for organization
+    init_background_blur()
+    init_weather()
+    init_timeformat()
+    init_background_settings()
+    init_dateformat()
 
-    //popovers
-    document.getElementById("bg-change").onclick = backgroundhandler;
-    document.getElementById("bg-download").onclick = downloadbg;
-    document.getElementById("save").onclick = chstorage;
-    qs("#changelog-button").onclick = function () {
-        new bootstrap.Modal(qs("#changelog"));
-    };
-    devmode(function (dev) {
-        let version = chrome.runtime.getManifest().version;
-        qs("#evergreenpopover").setAttribute("data-bs-content", `<h2 class="display-4"><img class="logoimg" alt="" src="icons/evergreen${dev ? "dev" : ""}128.png"/>Evergreen${dev ? " Dev" : ""}</span></h2><h4>New Tab for Chrome</h4><h4>Version ${version}</h4><h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`);
-        bootstrap.Popover.getOrCreateInstance(qs("#evergreenpopover"), {
-            html: true,
-            placement: "bottom",
-            trigger: "focus"
-        })
-    });
-
-    qs("#timepopover").setAttribute("data-bs-content", `<div id="tpop"></div>`);
-    //calendar
-    caleandar(document.getElementById('caltemp'));
-    let caltemp = qs("#caltemp").innerHTML;
-    qs("#datepopover").setAttribute("data-bs-content", `<div id="caltemp">${caltemp}</div>`);
-    qs("#caltemp").remove();
-    let popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
-    popoverTriggerList.map(function (popoverTriggerEl) {
-        return bootstrap.Popover.getOrCreateInstance(popoverTriggerEl)
-    })
-
-    let modalTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="modal"]'))
-    modalTriggerList.map(function (modalTriggerEl) {
-        return new bootstrap.Modal(modalTriggerEl)
-    })
-    bootstrap.Tooltip.getOrCreateInstance(qs('#weatherh3'), {html: true});
-    //other stuff
-    optionsinit(); //load shit from chrome (also weather)
-    if (promotional) {
-        regularinterval();
-    } else {
-        setInterval(regularinterval, 100);
-    }
-
-    qs('#menu').addEventListener('hidden.bs.modal', function () {
+    // remove "saved" text when closing settings
+    qs('#settings_modal').addEventListener('hidden.bs.modal', () => {
         qs("#savetext").innerHTML = "";
     });
-    // FIRST INSTALL
-    chrome.storage.local.get(['firstinstall'], function (result) {
-        result = result["firstinstall"];
-        if (result === undefined || result === true) {
-            new bootstrap.Modal(qs("#welcome")).show()
-        }
-        chrome.storage.local.set({
-            firstinstall: false
-        });
-    });
-    // changelog showing
-    chrome.storage.local.get(['version'], function (result) {
+}
+
+document.addEventListener("DOMContentLoaded", on_doc_load);
+
+function show_changelog_if_needed() {
+    chrome.storage.local.get(['version'], result => {
         result = result["version"];
         if (result === undefined) {
             result = version;
@@ -687,6 +666,61 @@ document.addEventListener("DOMContentLoaded", function () {
             version: version
         });
     });
+}
+
+function show_welcome_if_needed() {
+    // FIRST INSTALL
+    chrome.storage.local.get(['firstinstall'], result => {
+        result = result["firstinstall"];
+        if (result === undefined || result === true) {
+            new bootstrap.Modal(qs("#welcome")).show()
+        }
+        chrome.storage.local.set({
+            firstinstall: false
+        });
+    });
+}
+
+function on_doc_load() {
+    //popovers
+    qs("#bg-change").onclick = change_background;
+    qs("#bg-download").onclick = settings_download_background;
+    qs("#save").onclick = save_settings;
+    qs("#changelog-button").onclick = function () {
+        bootstrap.Modal.getOrCreateInstance(qs("#changelog")).show();
+    };
+
+    devmode(dev => {
+        let version = chrome.runtime.getManifest().version;
+        qs("#evergreenpopover").setAttribute("data-bs-content", `<h2 class="display-4"><img class="logoimg" alt="" src="icons/evergreen${dev ? "dev" : ""}128.png"/>Evergreen${dev ? " Dev" : ""}</span></h2><h4>New Tab for Chrome</h4><h4>Version ${version}</h4><h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`);
+        bootstrap.Popover.getOrCreateInstance(qs("#evergreenpopover"), {
+            html: true,
+            placement: "bottom",
+            trigger: "focus"
+        })
+    });
+
+    qs("#timepopover").setAttribute("data-bs-content", `<div id="tpop"></div>`);
+    //calendar
+    caleandar(qs('#caltemp'));
+    let caltemp = qs("#caltemp").innerHTML;
+    qs("#datepopover").setAttribute("data-bs-content", `<div id="caltemp">${caltemp}</div>`);
+    qs("#caltemp").remove();
+
+
+    [...document.querySelectorAll('[data-bs-toggle="popover"]')].map(popoverTriggerEl => bootstrap.Popover.getOrCreateInstance(popoverTriggerEl));
+    [...document.querySelectorAll('[data-bs-toggle="modal"]')].map(modalTriggerEl => new bootstrap.Modal(modalTriggerEl))
+    //other stuff
+    initialize_settings_menu(); //load shit from chrome (also weather)
+
+    if (promotional) {
+        every_100ms();
+    } else {
+        setInterval(every_100ms, 100);
+    }
+
+    show_welcome_if_needed()
+    show_changelog_if_needed()
 
     console.debug("evergreen fully initiated");
-});
+}
