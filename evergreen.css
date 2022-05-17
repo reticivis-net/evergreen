@@ -34,10 +34,7 @@ body, html {
 }
 
 .round {
-    border-bottom-right-radius: 100px;
-    border-bottom-left-radius: 100px;
-    border-top-right-radius: 100px;
-    border-top-left-radius: 100px;
+    border-radius: 100px;
 }
 
 #header .col {
@@ -63,9 +60,8 @@ body, html {
     margin-bottom: 0 !important;
 }
 
-.center {
-    left: 50%;
-    transform: translateX(-50%);
+#searchform {
+    margin: 0 auto;
 }
 
 .logoimg {
@@ -83,6 +79,7 @@ body, html {
 a.popper {
     color: inherit;
     cursor: pointer;
+    text-decoration: none;
 }
 
 .menu-btn {
@@ -233,21 +230,6 @@ a.popper:focus {
 }
 
 .form-control, .form-control:focus {
-    background: var(--secondary);
+    background: var(--bs-secondary);
     color: #ccc;
-}
-
-.dynamic-text {
-    paint-order: stroke fill;
-}
-
-.stroke {
-    text-shadow: -1px -1px 0 #0008,
-    0 -1px 0 #0008,
-    1px -1px 0 #0008,
-    1px 0 0 #0008,
-    1px 1px 0 #0008,
-    0 1px 0 #0008,
-    -1px 1px 0 #0008,
-    -1px 0 0 #0008;
 }

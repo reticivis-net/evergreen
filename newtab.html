@@ -26,7 +26,7 @@
 <div class="body">
     <div id="header">
         <div class="row">
-            <div class="col text-left">
+            <div class="col text-start">
                 <h4 class="dynamic-text"><a class="popper" data-content="content" data-placement="top"
                                             data-toggle="popover"
                                             data-trigger="focus" id="evergreenpopover" role="button"
@@ -38,7 +38,7 @@
                                             data-toggle="popover"
                                             data-trigger="focus" id="timepopover" role="button"
                                             tabindex="0"><span class="clock"></span></a></h3></div>
-            <div class="col text-right">
+            <div class="col text-end">
                 <h4 class="dynamic-text"><a class="popper" data-content="content" data-placement="bottom"
                                             data-toggle="popover"
                                             data-trigger="focus" id="datepopover" role="button"
@@ -47,7 +47,7 @@
     </div>
     <div class="footer">
         <div class="row">
-            <div class="col-3 text-left">
+            <div class="col-3 text-start">
                 <h3 class="dynamic-text"><span data-placement="right" data-toggle="tooltip" id="weatherh3" title=""><a
                         class="popper"
                         data-placement="top"
@@ -60,18 +60,16 @@
                     <span class="weather"></span></a></span></h3>
             </div>
             <div class="col-6 text-center">
-                <form action="http://www.google.com/search" method="get">
-                    <div class="input-group mb-3 circleround search center">
+                <form action="https://www.google.com/search" class="form-group" method="get">
+                    <div class="input-group mb-3 circleround search" id="searchform">
                         <input class="form-control form-control-lg round" name="q" placeholder="Search Google"
                                type="text">
-                        <div class="input-group-append round">
-                            <button class="btn btn-primary btn-lg round" type="submit"><i class="fas fa-search"></i>
-                            </button>
-                        </div>
+                        <button class="btn btn-primary btn-lg round" type="submit"><i class="fas fa-search"></i>
+                        </button>
                     </div>
                 </form>
             </div>
-            <div class="col-3 text-right">
+            <div class="col-3 text-end">
                 <h3 class="dynamic-text"><i class="fas fa-ellipsis-h menu-btn" data-target="#menu"
                                             data-toggle="modal"></i></h3></div>
         </div>
@@ -202,8 +200,8 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title"><img class="logoimg" src="icons/evergreen128.png"/>Welcome to Evergreen!</h4>
-                <button aria-label="Close" class="close" data-dismiss="modal" type="button">
-                    <span aria-hidden="true">&times;</span>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button">
+                    <span aria-hidden="true"></span>
                 </button>
             </div>
             <div class="modal-body">
@@ -223,8 +221,8 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title"><img class="logoimg" src="icons/evergreen128.png"/>Evergreen Changelog</h4>
-                <button aria-label="Close" class="close" data-dismiss="modal" type="button">
-                    <span aria-hidden="true">&times;</span>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button">
+                    <span aria-hidden="true"></span>
                 </button>
             </div>
             <div class="modal-body">

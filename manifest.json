@@ -8,19 +8,22 @@
     "storage",
     "geolocation"
   ],
+  "host_permissions": [
+    "https://api.darksky.net/forecast/"
+  ],
   "chrome_url_overrides": {
     "newtab": "newtab.html"
   },
   "icons": {
-    "32": "evergreen32.png",
-    "128": "evergreen128.png",
-    "1000": "evergreen1000.png"
+    "32": "icons/evergreen32.png",
+    "128": "icons/evergreen128.png",
+    "1000": "icons/evergreen1000.png"
   },
   "action": {
     "default_icon": {
-      "32": "evergreen32.png",
-      "128": "evergreen128.png",
-      "1000": "evergreen1000.png"
+      "32": "icons/evergreen32.png",
+      "128": "icons/evergreen128.png",
+      "1000": "icons/evergreen1000.png"
     },
     "default_title": "Evergreen New Tab"
   }

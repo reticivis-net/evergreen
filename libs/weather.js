@@ -4,14 +4,12 @@ var tempunit = "f";
 var iconset = "climacons";
 
 function jsonp(url, callback) {
-    $.ajax({
-        url: url,
-        type: "POST",
-        dataType: 'jsonp',
-        success: function (result) {
-            callback(result);
-        }
-    });
+    fetch(url, {
+        // method: 'POST'
+    }).then(r => {
+        console.debug(r);
+        return r.json()
+    }).then(callback)
 }
 
 function geoloc(callback) {

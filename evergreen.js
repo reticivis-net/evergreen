@@ -12,18 +12,20 @@ let development = true; // enables debug prints
 
 let version = chrome.runtime.getManifest().version;
 
+const qs = document.querySelector.bind(document);
 
-debugp("Evergreen in development mode");
+console.debug("Evergreen New Tab for chrome");
 
-function debugp(string) {
-    if (development) {
-        console.log(string);
+function sethtmlifneeded(object, html) {
+    if (object && object.hasOwnProperty("innerHTML") && object.innerHTML !== html) {
+        object.innerHTML = html;
     }
 }
 
 function round(value, decimals) {
     return Number(`${Math.round(`${value}e${decimals}`)}e-${decimals}`);
 }
+
 function preloadImage(url, callback) {
     let img = new Image();
     img.setAttribute("crossorigin", "anonymous")
@@ -79,7 +81,7 @@ function datetime() {
 
     // h = (h < 10) ? "0" + h : h;
 
-    $(".clock").html(time);
+    qs(".clock").innerHTML = time;
     let d = date.getDate();
     let mo = date.getMonth() + 1;
     let y = date.getFullYear();
@@ -90,7 +92,7 @@ function datetime() {
         da = `${d}/${mo}/${y}`;
     }
 
-    $(".date").html(da);
+    qs(".date").innerHTML = da;
 
 }
 
@@ -184,7 +186,7 @@ function devmode(callback) {
 
 function updateweather() {
     $("#weatherpopover").popover("hide");
-    $("#weatherpopover").attr("data-content", $(".weatherdiv").html());
+    qs("#weatherpopover").setAttribute("data-content", qs(".weatherdiv").innerHTML);
     $('#weatherpopover').popover({
         html: true,
         trigger: "click"
@@ -195,21 +197,21 @@ function weather(response, offline = false) {
     //for some god forsaken reason, i have to get lastweather before anything else or fontawesome breaks. yeah idk.
     chrome.storage.local.get(["lastweather"], function (resp) {
 
-        debugp(response);
+        console.debug(response);
         chrome.storage.local.set({
             "weather": response
         });
         let temp = response.currently.temperature;
-        $(".wdaily").html("<i class=\"fas fa-calendar-week\"></i> " + response.daily.summary);
-        $(".whourly").html("<i class=\"fas fa-calendar-day\"></i> " + response.hourly.summary);
+        qs(".wdaily").innerHTML = "<i class=\"fas fa-calendar-week\"></i> " + response.daily.summary;
+        qs(".whourly").innerHTML = "<i class=\"fas fa-calendar-day\"></i> " + response.hourly.summary;
         if (response.minutely) { // not all regions have minutely
-            $(".wminutely").html("<i class=\"fas fa-clock\"></i> " + response.minutely.summary);
+            qs(".wminutely").innerHTML = "<i class=\"fas fa-clock\"></i> " + response.minutely.summary;
         } else {
-            $(".wminutely").html("<i class=\"fas fa-clock\"></i> " + response.currently.summary);
+            qs(".wminutely").innerHTML = "<i class=\"fas fa-clock\"></i> " + response.currently.summary;
         }
-        $(".whourlycontent").html("");
-        $(".wdailycontent").html("");
-        $(".walerts").html("");
+        qs(".whourlycontent").innerHTML = "";
+        qs(".wdailycontent").innerHTML = "";
+        qs(".walerts").innerHTML = "";
 
         // weatherpage * 7, 7 + weatherpage * 7
         let todaydate = new Date().getDate();
@@ -220,7 +222,7 @@ function weather(response, offline = false) {
                 nextday = true;
                 paginationtime = "<p class=\"pfix\">" + dayofepoch(hour.time) + " " + localeHourString(hour.time) + "</p>";
             }
-            $(".whourlycontent").append(`
+            qs(".whourlycontent").append(`
         <div class="weatherblock popovertt" data-content="test123">
             <span class="data">hour-${i}</span>
             <span class="data ttcontent">${paginationtime}<p class="pfix">${hour.summary}</p><p class="pfix">Feels like ${tunit(hour.apparentTemperature)}°</p></span>
@@ -242,7 +244,7 @@ function weather(response, offline = false) {
                     accum = "";
                 }
             }
-            $(".wdailycontent").append(`
+            qs(".wdailycontent").append(`
         <div class="weatherblock popovertt">
             <span class="data">day-${i}</span>
             <span class="data ttcontent"><p class="pfix">${day.summary}</p>${accum}</span>
@@ -253,12 +255,12 @@ function weather(response, offline = false) {
         `);
         });
         let cur = response.currently;
-        $(".wminutelycontent").html(`
+        qs(".wminutelycontent").innerHTML = `
     <h5 class="pfix"><i class="fas fa-thermometer-half"></i> Feels like: ${tunit(cur.apparentTemperature)}°</h5>
     <h5 class="pfix"><i class="fas fa-sun"></i> UV Index: ${Math.round(cur.uvIndex)}</h5>
     <h5 class="pfix"><i class="fas fa-wind"></i> Wind Speed: ${sunit(cur.windSpeed)} ${tempunit === "c" ? "km/h" : "mph"}</h5>
     <h5 class="pfix"><i class="fas fa-tint"></i> Humidity: ${Math.round(cur.humidity * 100)}%</h5>
-    `);
+    `;
 
         if (response.alerts) {
             response.alerts.forEach(function (alert) {
@@ -266,7 +268,7 @@ function weather(response, offline = false) {
                 alert.regions.forEach(function (region) {
                     regionstring = regionstring.concat(`<p class="pfix">${region}</p>`);
                 });
-                $(".walerts").append(`
+                qs(".walerts").append(`
         <h6 class="pfix">
             <a href="${alert.uri}" class="text-danger">
                 <span class="popovertt">
@@ -284,23 +286,23 @@ function weather(response, offline = false) {
         `);
             });
         }
-        $(".lastcached").html("Weather last updated at " + new Date(resp["lastweather"] * 1000).toLocaleString());
-        debugp("Weather last updated at " + new Date(resp["lastweather"] * 1000).toLocaleString());
+        qs(".lastcached").innerHTML = "Weather last updated at " + new Date(resp["lastweather"] * 1000).toLocaleString();
+        console.debug("Weather last updated at " + new Date(resp["lastweather"] * 1000).toLocaleString());
         // gotta do this after or its busted
-        $("#weatherpopover").on('shown.bs.popover', function () {
-            $("body").tooltip({
+        qs("#weatherpopover").addEventListener('shown.bs.popover', function () {
+            new bootstrap.Tooltip(qs("body"), {
                 selector: '.popovertt',
                 html: true,
                 title: function () {
-                    return $($(this).find(".ttcontent")[0]).html();
+                    return this.querySelector(".ttcontent").innerHTML;
                 },
                 trigger: "hover",
                 placement: "top",
                 boundary: "window"
             });
         });
-        $("#weatherpopover").on("hidden.bs.popover", function () {
-            $(".tooltip").tooltip("hide");
+        qs("#weatherpopover").addEventListener("hidden.bs.popover", function () {
+            new bootstrap.Tooltip(qs(".tooltip")).hide();
             $(".weather-pagination-right").unbind();
             $(".weather-pagination-left").unbind();
         });
@@ -308,21 +310,22 @@ function weather(response, offline = false) {
         let sincelastdownload = (new Date().getTime() / 1000) - resp["lastweather"];
         let timetowait = 2 * 60 * 60; // if weather hasnt been refreshed for 2 hours
         if (sincelastdownload > timetowait) { // if its been longer than 10 mins, get the weather again
-            $(".weather").html("<i class=\"fas fa-exclamation-circle\"></i>")
+            qs(".weather").innerHTML = "<i class=\"fas fa-exclamation-circle\"></i>"
             $("#weatherh3").tooltip('hide')
                 .attr('data-original-title', "Weather info is outdated.");
         } else {
-            $(".weather").html(`${tunit(temp)}°`);
-            $("#weatherimage").html(`${climacon(response.currently.icon)}`);
+            qs(".weather").innerHTML = `${tunit(temp)}°`;
+            qs("#weatherimage").innerHTML = `${climacon(response.currently.icon)}`;
             $("#weatherh3").tooltip('hide')
                 .attr('data-original-title', response.currently.summary);
         }
 
         //$("#weatherpopover").popover("hide");
-
-        $(document).tooltip({
-            selector: '.tt'
-        });
+        // enable tooltips everywhere
+        let tooltipTriggerList = [].slice.call(document.querySelectorAll('.tt'))
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
     });
 
 }
@@ -334,8 +337,8 @@ function regularinterval() {
     let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
     let date = `<h4 style="margin:0;">${weekdays[now.getDay()]} ${months[now.getMonth()]} ${("0" + now.getDate()).slice(-2)} ${now.getFullYear()} ${now.toLocaleTimeString()}</h4>`;
-    $("#timepopover").attr("data-content", `<div id="tpop">${date}</div>`);
-    $("#tpop").html(date);
+    qs("#timepopover").setAttribute("data-content", `<div id="tpop">${date}</div>`);
+    sethtmlifneeded(qs("#tpop"), date);
 }
 
 function sliderblur() {
@@ -349,7 +352,7 @@ function tempunithandler() {
     } else {
         tempunit = "c";
     }
-    debugp("reloading weather div with cached info");
+    console.debug("reloading weather div with cached info");
     chrome.storage.local.get(["weather"], function (resp) {
         weather(resp["weather"]);
     });
@@ -362,7 +365,7 @@ function iconsethandler() {
     } else {
         iconset = "fontawesome";
     }
-    debugp("reloading weather div with cached info");
+    console.debug("reloading weather div with cached info");
     chrome.storage.local.get(["weather"], function (resp) {
         weather(resp["weather"]);
     });
@@ -375,7 +378,7 @@ function timeformathandler() {
     } else {
         timeformat = "24";
     }
-    debugp("reloading weather div with cached info");
+    console.debug("reloading weather div with cached info");
     chrome.storage.local.get(["weather"], function (resp) {
         weather(resp["weather"]);
     }); // i have to do this since the weather popup uses the time format
@@ -392,7 +395,7 @@ function dateformathandler() {
 }
 
 function searchtaghandler() {
-    searchtags = $(this).val();
+    searchtags = this.value;
     chstorage();
 }
 
@@ -403,18 +406,18 @@ function sblur(val) {
 
 function sblurmain(val) {
     if (val === 0) {
-        $(".bg").css("transform", "initial");
-        $(".bg").css("filter", "initial");
+        qs(".bg").style["transform"] = "initial";
+        qs(".bg").style["filter"] = "initial";
     } else {
-        $(".bg").css("transform", `scale(${1 + 0.1 * (val / 15)})`);
-        $(".bg").css("filter", `blur(${val}px)`);
+        qs(".bg").style["transform"] = `scale(${1 + 0.1 * (val / 15)})`;
+        qs(".bg").style["filter"] = `blur(${val}px)`;
     }
-    $("#blurval").html(`<i class="fas fa-image"></i> Background blur: ${val}px`);
+    qs("#blurval").innerHTML = `<i class="fas fa-image"></i> Background blur: ${val}px`;
     blur = val;
 }
 
 function refreshinphandler() {
-    refreshtime = $(this).val();
+    refreshtime = this.value;
     chstorage();
 }
 
@@ -428,26 +431,26 @@ function chstorage() {
         refreshtime: refreshtime,
         iconset: iconset
     });
-    $("#savetext").html("Saved.");
+    qs("#savetext").innerHTML = "Saved.";
 
 }
 
 function backgroundhandler() {
     if (!promotional) {
-        debugp("changing BG...");
+        console.debug("changing BG...");
         followredirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${searchtags}`, function (response) {
-            debugp("redirect followed");
+            console.debug("redirect followed");
             preloadImage(response, function () {
-                $(".bg").css("background-image", `url(${response})`);
+                qs(".bg").style["background-image"] = `url(${response})`;
 
             });
 
-            //$(".bg").css("background-image", `url(${response})`);
+            //qs(".bg").style["background-image"] =  `url(${response})`;
             chrome.storage.local.set({
                 bgimage: response,
                 lastbgrefresh: new Date().getTime() / 1000
             });
-            debugp("BG changed");
+            console.debug("BG changed");
         });
     }
 }
@@ -455,7 +458,7 @@ function backgroundhandler() {
 function downloadbg() {
     chrome.storage.local.get(['bgimage'], function (response) {
         let url = response['bgimage'].split("?")[0];
-        debugp(url);
+        console.debug(url);
         window.location = url;
     });
 }
@@ -469,34 +472,34 @@ function optionsinit() {
         }
         blur = result["blurval"];
         sblurmain(result["blurval"], false);
-        $("#blurslider").attr("value", result["blurval"]);
+        qs("#blurslider").setAttribute("value", result["blurval"]);
         //blur handler
         let slider = document.getElementById('blurslider');
         slider.addEventListener('input', sliderblur);
     });
     //temperature unit handler
 
-    chrome.storage.local.get(['tempunit', 'lastweather', 'iconset'], function (result) {
+    chrome.storage.local.get(['tempunit', 'lastweather', 'iconset', 'weather'], function (result) {
         tempunit = result["tempunit"];
         if (tempunit === undefined) {
             tempunit = "f";
         }
         //weather routine
         if (tempunit === "f") {
-            $("#farradio").attr("checked", "checked");
+            qs("#farradio").setAttribute("checked", "checked");
         } else {
-            $("#celradio").attr("checked", "checked");
+            qs("#celradio").setAttribute("checked", "checked");
         }
         iconset = result['iconset'];
         if (iconset === undefined) {
             iconset = "climacons";
         }
         if (iconset === "climacons") {
-            $("#cradio").attr("checked", "checked");
+            qs("#cradio").setAttribute("checked", "checked");
         } else {
-            $("#faradio").attr("checked", "checked");
+            qs("#faradio").setAttribute("checked", "checked");
         }
-        if (result["lastweather"] === undefined) { // most likely happens on first install
+        if (!result["lastweather"] || !result['weather']) { // most likely happens on first install
             weatherpos(weathercurrent, weather);
             chrome.storage.local.set({
                 lastweather: new Date().getTime() / 1000
@@ -504,17 +507,15 @@ function optionsinit() {
         } else { // there is a date of the last time we got the weather
             let sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
             let timetowait = 10 * 60; // only get weather every 10 mins
-            if (sincelastdownload > timetowait && navigator.onLine) { // if its been longer than 10 mins, get the weather again
+            if (navigator.onLine && sincelastdownload > timetowait) { // if its been longer than 10 mins, get the weather again
                 weatherpos(weathercurrent, weather);
-                debugp("downloading new weather info");
+                console.debug("downloading new weather info");
                 chrome.storage.local.set({
                     lastweather: new Date().getTime() / 1000
                 });
             } else { // otherwise, use the saved info to possibly prevent the weather api limit
-                chrome.storage.local.get(["weather"], function (resp) {
-                    weather(resp["weather"]);
-                });
-                debugp("using cached weather info");
+                weather(result["weather"]);
+                console.debug("using cached weather info");
             }
         }
         document.getElementById('farradio').addEventListener('input', tempunithandler);
@@ -532,9 +533,9 @@ function optionsinit() {
         }
         //weather routine
         if (timeformat === "12") {
-            $("#12radio").attr("checked", "checked");
+            qs("#12radio").setAttribute("checked", "checked");
         } else {
-            $("#24radio").attr("checked", "checked");
+            qs("#24radio").setAttribute("checked", "checked");
         }
         document.getElementById('12radio').addEventListener('input', timeformathandler);
         document.getElementById('24radio').addEventListener('input', timeformathandler);
@@ -548,9 +549,9 @@ function optionsinit() {
         }
         //weather routine
         if (dateformat === "md") {
-            $("#mdradio").attr("checked", "checked");
+            qs("#mdradio").setAttribute("checked", "checked");
         } else {
-            $("#dmradio").attr("checked", "checked");
+            qs("#dmradio").setAttribute("checked", "checked");
         }
         document.getElementById('mdradio').addEventListener('input', dateformathandler);
         document.getElementById('dmradio').addEventListener('input', dateformathandler);
@@ -565,15 +566,15 @@ function optionsinit() {
         if (refreshtime === undefined) {
             refreshtime = 0;
         }
-        $("#bgrefresh").attr("value", refreshtime);
-        $("#bgtags").attr("value", searchtags);
+        qs("#bgrefresh").setAttribute("value", refreshtime);
+        qs("#bgtags").setAttribute("value", searchtags);
         if (refreshtime !== 0) {
             let sincelastdownload = (new Date().getTime() / 1000) - result["lastbgrefresh"];
             let timetowait = refreshtime * 60;
             if (sincelastdownload > timetowait) {
                 backgroundhandler();
             } else {
-                debugp(`been less than ${refreshtime} mins, using same BG`);
+                console.debug(`been less than ${refreshtime} mins, using same BG`);
             }
         } else {
             backgroundhandler();
@@ -584,21 +585,28 @@ function optionsinit() {
     });
 }
 
-$(document).ready(function () {
+document.addEventListener("DOMContentLoaded", function () {
     //htmlinclude
-    $(".htmlinclude").each(function (i, obj) {
-        obj = $(obj);
-        let include = obj.attr("html-include");
-        $(obj).load(include);
-        debugp(`included ${include}`)
+    // what the hell is this?
+    document.querySelectorAll(".htmlinclude").forEach(function (obj, i) {
+        let include = obj.getAttribute("html-include");
+        fetch(include)
+            .then(function (response) {
+                return response.text();
+            })
+            .then(function (body) {
+                obj.innerHTML = body;
+                console.debug(`included ${include}`)
+            });
+
     });
     //imghandler
     if (promotional) {
-        $(".bg").css("background-image", `url(https://images.unsplash.com/photo-1440558929809-1412944a6225?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1920&q=80)`);
+        qs(".bg").style["background-image"] = `url(https://images.unsplash.com/photo-1440558929809-1412944a6225?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1920&q=80)`;
     } else {
         chrome.storage.local.get(['bgimage', "lastbgrefresh"], function (result) {
             let bgimage = result["bgimage"];
-            $(".bg").css("background-image", `url(${bgimage})`);
+            qs(".bg").style["background-image"] = `url(${bgimage})`;
         });
     }
 
@@ -606,26 +614,24 @@ $(document).ready(function () {
     document.getElementById("bg-change").onclick = backgroundhandler;
     document.getElementById("bg-download").onclick = downloadbg;
     document.getElementById("save").onclick = chstorage;
-    $("#changelog-button")[0].onclick = function () {
+    qs("#changelog-button").onclick = function () {
         $("#changelog").modal();
     };
     devmode(function (dev) {
         let version = chrome.runtime.getManifest().version;
-        $("#evergreenpopover").attr("data-content", `<h2 class="display-4"><img class="logoimg" src="evergreen${dev ? "dev" : ""}128.png"/>Evergreen${dev ? " Dev" : ""}</span></h2><h4>New Tab for Chrome</h4><h4>Version ${version}</h4><h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`);
+        qs("#evergreenpopover").setAttribute("data-content", `<h2 class="display-4"><img class="logoimg" src="evergreen${dev ? "dev" : ""}128.png"/>Evergreen${dev ? " Dev" : ""}</span></h2><h4>New Tab for Chrome</h4><h4>Version ${version}</h4><h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`);
 
     });
 
-    $("#timepopover").attr("data-content", `<div id="tpop"></div>`);
+    qs("#timepopover").setAttribute("data-content", `<div id="tpop"></div>`);
     //calendar
     caleandar(document.getElementById('caltemp'));
-    let caltemp = $("#caltemp").html();
-    $("#datepopover").attr("data-content", `<div id="caltemp">${caltemp}</div>`);
-    $("#caltemp").remove();
-
-    $('[data-toggle="popover"]').popover({
+    let caltemp = qs("#caltemp").innerHTML;
+    qs("#datepopover").setAttribute("data-content", `<div id="caltemp">${caltemp}</div>`);
+    qs("#caltemp").remove();
+    new bootstrap.Popover(qs('[data-toggle="popover"]'), {
         html: true
-    });
-    $('[data-toggle="tooltip"]').tooltip();
+    })
     $('#weatherh3').tooltip();
     //other stuff
     optionsinit(); //load shit from chrome (also weather)
@@ -635,14 +641,14 @@ $(document).ready(function () {
         setInterval(regularinterval, 100);
     }
 
-    $('#menu').on('hidden.bs.modal', function () {
-        $("#savetext").html("");
+    qs('#menu').addEventListener('hidden.bs.modal', function () {
+        qs("#savetext").innerHTML = "";
     });
     // FIRST INSTALL
     chrome.storage.local.get(['firstinstall'], function (result) {
         result = result["firstinstall"];
         if (result === undefined || result === true) {
-            $("#welcome").modal();
+            new bootstrap.Modal(qs("#welcome")).show()
         }
         chrome.storage.local.set({
             firstinstall: false
@@ -655,21 +661,12 @@ $(document).ready(function () {
             result = version;
         }
         if (result !== version) {
-            $("#changelog").modal();
+            new bootstrap.Modal(qs("#changelog")).show()
         }
         chrome.storage.local.set({
             version: version
         });
     });
-    $(document).on('click', function (e) {
-        $('[data-toggle="popover"],[data-original-title]').each(function () {
-            //the 'is' for buttons that trigger popups
-            //the 'has' for icons within a button that triggers a popup
-            if (!$(this).is(e.target) && $(this).has(e.target).length === 0 && $('.popover').has(e.target).length === 0) {
-                (($(this).popover('hide').data('bs.popover') || {}).inState || {}).click = false  // fix for BS 3.3.6
-            }
 
-        });
-    });
-    debugp("evergreen fully initiated");
+    console.debug("evergreen fully initiated");
 });
