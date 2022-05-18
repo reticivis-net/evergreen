@@ -12,6 +12,10 @@ let config_iconset = "climacons"
 let promotional = false; // use the same BG for promotional purposes
 
 let version = chrome.runtime.getManifest().version;
+let devmode = undefined;
+chrome.management.getSelf(function (result) {
+    devmode = result.installType === "development";
+});
 
 const qs = document.querySelector.bind(document);
 
@@ -63,7 +67,7 @@ function update_newtab_datetime() {
     } else {
         time = `${String(h).padStart(2, '0')}:${m}:${s}`;
     }
-    set_html_if_needed(qs(".clock"), time);
+    set_html_if_needed(qs("#clock"), time);
 
     // date
     let d = date.getDate();
@@ -75,7 +79,7 @@ function update_newtab_datetime() {
     } else {
         da = `${d}/${mo}/${y}`;
     }
-    set_html_if_needed(qs(".date"), da);
+    set_html_if_needed(qs("#date"), da);
 }
 
 function epoch_to_date(epoch) {
@@ -174,15 +178,9 @@ function climacon(prop) {
 
 }
 
-function devmode(callback) {
-    // check if extension was loaded from disk/dev mode
-    chrome.management.getSelf(function (result) {
-        callback(result.installType === "development");
-    });
-}
 
 function update_weather() {
-    // update weather popover
+    // update weather popover`
     bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover")).dispose();
     qs("#weatherpopover").setAttribute("data-bs-content", qs(".weatherdiv").innerHTML);
     bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover"));
@@ -318,12 +316,12 @@ function construct_weather_popover(response) {
         let sincelastdownload = (new Date().getTime() / 1000) - resp["lastweather"];
         let timetowait = 2 * 60 * 60; // if weather hasnt been refreshed for 2 hours
         if (sincelastdownload > timetowait) { // if its been longer than 10 mins, get the weather again
-            qs(".weather").innerHTML = "<i class=\"fas fa-exclamation-circle\"></i>"
+            qs("#weather").innerHTML = "<i class=\"fas fa-exclamation-circle\"></i>"
             let weatherh3 = bootstrap.Tooltip.getOrCreateInstance(qs("#weatherh3"), {html: true});
             weatherh3.hide();
             qs("#weatherh3").setAttribute('data-bs-original-title', "Weather info is outdated.");
         } else {
-            qs(".weather").innerHTML = `${tunit(temp)}°`;
+            qs("#weather").innerHTML = `${tunit(temp)}°`;
             qs("#weatherimage").innerHTML = `${climacon(currently.icon)}`;
             let weatherh3 = bootstrap.Tooltip.getOrCreateInstance(qs("#weatherh3"), {html: true});
             weatherh3.hide();
@@ -343,18 +341,30 @@ function construct_weather_popover(response) {
 function every_100ms() {
     // ran every 100ms
     update_newtab_datetime();
-    let now = new Date();
-    let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    // qs("#clockpopover").setAttribute("data-bs-content", `<div id="tpop">${clock_datetime()}</div>`);
+    let tpop = qs("#tpop");
+    if (tpop) {
+        set_html_if_needed(tpop, clock_datetime());
+    }
 
-    let date = `<h4 style="margin:0;">${weekdays[now.getDay()]} ${months[now.getMonth()]} ${("0" + now.getDate()).slice(-2)} ${now.getFullYear()} ${now.toLocaleTimeString()}</h4>`;
-    qs("#timepopover").setAttribute("data-bs-content", `<div id="tpop">${date}</div>`);
-    set_html_if_needed(qs("#tpop"), date);
+}
+
+function clock_datetime() {
+    const now = new Date();
+    const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    return `
+        <div id="tpop">
+            <h4 style="margin:0;">
+                ${weekdays[now.getDay()]} ${months[now.getMonth()]} ${("0" + now.getDate()).slice(-2)} ${now.getFullYear()}
+                ${now.toLocaleTimeString()}
+            </h4>
+        </div>
+        `;
 }
 
 // called by settings menu
-
-
 function settings_set_tempunit() {
     if (this.id === "farradio") {
         config_tempunit = "f";
@@ -416,11 +426,11 @@ function settings_set_blur() {
 function set_blur(val) {
     // sets blur
     if (val === 0) {
-        qs(".bg").style["transform"] = "initial";
-        qs(".bg").style["filter"] = "initial";
+        qs("#bg").style["transform"] = "initial";
+        qs("#bg").style["filter"] = "initial";
     } else {
-        qs(".bg").style["transform"] = `scale(${1 + 0.1 * (val / 15)})`;
-        qs(".bg").style["filter"] = `blur(${val}px)`;
+        qs("#bg").style["transform"] = `scale(${1 + 0.1 * (val / 15)})`;
+        qs("#bg").style["filter"] = `blur(${val}px)`;
     }
     qs("#blurval").innerHTML = `<i class="fas fa-image"></i> Background blur: ${val}px`;
     config_blur = val;
@@ -450,7 +460,7 @@ function change_background() {
         console.debug("changing BG...");
         follow_redirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${config_searchtags}`, function (response) {
             preload_image(response, function () {
-                qs(".bg").style["background-image"] = `url(${response})`;
+                qs("#bg").style["background-image"] = `url(${response})`;
             });
             chrome.storage.local.set({
                 bgimage: response,
@@ -564,13 +574,13 @@ function init_timeformat() {
 function init_background(lastbgrefresh) {
     // set the actual background
     if (promotional) {
-        qs(".bg").style["background-image"] = `url(https://images.unsplash.com/photo-1440558929809-1412944a6225?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1920&q=80)`;
+        qs("#bg").style["background-image"] = `url(https://images.unsplash.com/photo-1440558929809-1412944a6225?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1920&q=80)`;
     } else {
         // set background to cached image (well the browser should have cached it lol)
         chrome.storage.local.get(['bgimage'], function (result) {
             let bgimage = result["bgimage"];
             if (bgimage) {
-                qs(".bg").style["background-image"] = `url(${bgimage})`;
+                qs("#bg").style["background-image"] = `url(${bgimage})`;
             }
         });
         // handle BG based on refreshtime
@@ -681,6 +691,38 @@ function show_welcome_if_needed() {
     });
 }
 
+function initialize_popovers_and_modals() {
+    // top left ("Evergreen")
+    bootstrap.Popover.getOrCreateInstance(qs("#evergreenpopover"), {
+        html: true,
+        placement: "bottom",
+        trigger: "focus",
+        content: `
+            <h2 class="display-4">
+                <img class="logoimg" alt="" src="icons/evergreen${devmode ? "dev" : ""}128.png"/>
+                Evergreen${devmode ? " Dev" : ""}
+            </h2>
+            <h4>New Tab for Chrome</h4>
+            <h4>Version ${version}</h4>
+            <h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`
+    })
+
+    // top middle (clock)
+    bootstrap.Popover.getOrCreateInstance(qs("#clockpopover"), {
+        html: true,
+        placement: "bottom",
+        trigger: "focus",
+        content: clock_datetime
+    })
+
+    // bottom right (menu)
+    bootstrap.Modal.getOrCreateInstance(qs("#menu-button"), {
+        // redundant properties actually specified in HTML, only here for clarity
+        target: "#settings_modal",
+        toggle: "modal"
+    })
+}
+
 function on_doc_load() {
     //popovers
     qs("#bg-change").onclick = change_background;
@@ -690,26 +732,11 @@ function on_doc_load() {
         bootstrap.Modal.getOrCreateInstance(qs("#changelog")).show();
     };
 
-    devmode(dev => {
-        let version = chrome.runtime.getManifest().version;
-        qs("#evergreenpopover").setAttribute("data-bs-content", `<h2 class="display-4"><img class="logoimg" alt="" src="icons/evergreen${dev ? "dev" : ""}128.png"/>Evergreen${dev ? " Dev" : ""}</span></h2><h4>New Tab for Chrome</h4><h4>Version ${version}</h4><h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`);
-        bootstrap.Popover.getOrCreateInstance(qs("#evergreenpopover"), {
-            html: true,
-            placement: "bottom",
-            trigger: "focus"
-        })
-    });
+    // [...document.querySelectorAll('[data-bs-toggle="popover"]')].map(popoverTriggerEl => bootstrap.Popover.getOrCreateInstance(popoverTriggerEl));
+    // [...document.querySelectorAll('[data-bs-toggle="modal"]')].map(modalTriggerEl => new bootstrap.Modal(modalTriggerEl))
 
-    qs("#timepopover").setAttribute("data-bs-content", `<div id="tpop"></div>`);
-    //calendar
-    caleandar(qs('#caltemp'));
-    let caltemp = qs("#caltemp").innerHTML;
-    qs("#datepopover").setAttribute("data-bs-content", `<div id="caltemp">${caltemp}</div>`);
-    qs("#caltemp").remove();
+    initialize_popovers_and_modals();
 
-
-    [...document.querySelectorAll('[data-bs-toggle="popover"]')].map(popoverTriggerEl => bootstrap.Popover.getOrCreateInstance(popoverTriggerEl));
-    [...document.querySelectorAll('[data-bs-toggle="modal"]')].map(modalTriggerEl => new bootstrap.Modal(modalTriggerEl))
     //other stuff
     initialize_settings_menu(); //load shit from chrome (also weather)
 

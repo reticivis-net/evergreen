@@ -1,0 +1,8 @@
+.calendar {
+    text-align: center;
+}
+
+.calendar td, .calendar th {
+    padding: 3px;
+    width: calc(100% / 7);
+}

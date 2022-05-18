@@ -1,4 +1,4 @@
-.bg {
+#bg {
     /*background-image: url(https://source.unsplash.com/1920x1080/?nature,ocean,city,space,forest,water,island);*/
     background-size: cover;
     background-repeat: no-repeat;
@@ -41,7 +41,7 @@ body, html {
 
 }
 
-.body {
+#body {
     padding: 15px;
 }
 
