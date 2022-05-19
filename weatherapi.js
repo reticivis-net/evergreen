@@ -14,7 +14,7 @@ function geolocate(callback) {
 }
 
 function get_weather_at_current_pos(callback) {
-    geolocate(function (position) {
+    geolocate(position => {
         get_weather_from_latlong(position.coords.latitude, position.coords.longitude, callback);
     });
 }

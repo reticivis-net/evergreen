@@ -13,6 +13,10 @@ let promotional = false; // use the same BG for promotional purposes
 
 let version = chrome.runtime.getManifest().version;
 let devmode = undefined;
+
+let weather_info;
+let last_weather_get;
+
 chrome.management.getSelf(function (result) {
     devmode = result.installType === "development";
 });
@@ -179,165 +183,6 @@ function climacon(prop) {
 }
 
 
-function update_weather() {
-    // update weather popover`
-    bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover")).dispose();
-    qs("#weatherpopover").setAttribute("data-bs-content", qs(".weatherdiv").innerHTML);
-    bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover"));
-}
-
-function construct_weather_popover(response) {
-    // takes a JSON response from darksky, creates and updates the weather popover
-    // for some god forsaken reason, i have to get lastweather before anything else or fontawesome breaks. yeah idk.
-    chrome.storage.local.get(["lastweather"], function (resp) {
-        console.debug(response);
-        chrome.storage.local.set({
-            "weather": response
-        });
-        const {currently, daily, hourly, minutely, alerts} = response;
-        let temp = currently["temperature"];
-        qs(".wdaily").innerHTML = "<i class=\"fas fa-calendar-week\"></i> " + daily["summary"];
-        qs(".whourly").innerHTML = "<i class=\"fas fa-calendar-day\"></i> " + hourly["summary"];
-        if (minutely) { // not all regions have minutely
-            qs(".wminutely").innerHTML = "<i class=\"fas fa-clock\"></i> " + minutely["summary"];
-        } else {
-            qs(".wminutely").innerHTML = "<i class=\"fas fa-clock\"></i> " + currently["summary"];
-        }
-        qs(".whourlycontent").innerHTML = "";
-        qs(".wdailycontent").innerHTML = "";
-        qs(".walerts").innerHTML = "";
-
-        // weatherpage * 7, 7 + weatherpage * 7
-        let todaydate = new Date().getDate();
-        let nextday = false;
-        hourly.data.slice().forEach(function (hour, i) {
-            let paginationtime = "";
-            const {precipProbability, summary, icon, apparentTemperature, temperature, time} = hour;
-            if (new Date(time * 1000).getDate() !== todaydate || nextday) {
-                nextday = true;
-                paginationtime = "<p class=\"pfix\">" + dayofepoch(time) + " " + epoch_to_locale_hour_string(time) + "</p>";
-            }
-            qs(".whourlycontent").insertAdjacentHTML('beforeend', `
-        <div class="weatherblock popovertt" data-bs-content="test123">
-            <span class="data">hour-${i}</span>
-            <span class="data ttcontent">${paginationtime}<p class="pfix">${summary}</p><p class="pfix">Feels like ${tunit(apparentTemperature)}°</p></span>
-            <h6 class="pfix">${epoch_to_locale_hour_string(time)} ${climacon(icon)}</h6>
-            <p>${tunit(temperature)}°</p>
-            <p class="rainp">${Math.round(precipProbability * 100)}%</p>
-        </div>
-        `);
-        });
-        daily.data.slice().forEach(function (day, i) {
-            let accum = "";
-            const {
-                precipProbability,
-                precipType,
-                summary,
-                icon,
-                precipAccumulation,
-                temperatureLow,
-                temperatureHigh,
-                time
-            } = day;
-            if (precipAccumulation) {
-                accum = precipAccumulation;
-                if (accum > 0.05) {
-                    if (config_tempunit === "f") accum += "in";
-                    else accum = (accum * 2.54).toPrecision(2) + "cm";
-                    accum = `<p class="rainp pfix">${accum} of ${precipType}</p>`;
-                } else {
-                    accum = "";
-                }
-            }
-            qs(".wdailycontent").insertAdjacentHTML('beforeend', `
-        <div class="weatherblock popovertt">
-            <span class="data">day-${i}</span>
-            <span class="data ttcontent"><p class="pfix">${summary}</p>${accum}</span>
-            <h6 class="pfix">${dayofepoch(time)} ${climacon(icon)}</h6>
-            <p><span class="low">${tunit(temperatureLow)}°</span> <span class="high">${tunit(temperatureHigh)}°</span> </p>
-            <p class="rainp">${Math.round(precipProbability * 100)}%</p>
-        </div>
-        `);
-        });
-        const {humidity, apparentTemperature: apparentTemperature1, windSpeed, uvIndex} = currently;
-        qs(".wminutelycontent").innerHTML = `
-    <h5 class="pfix"><i class="fas fa-thermometer-half"></i> Feels like: ${tunit(apparentTemperature1)}°</h5>
-    <h5 class="pfix"><i class="fas fa-sun"></i> UV Index: ${Math.round(uvIndex)}</h5>
-    <h5 class="pfix"><i class="fas fa-wind"></i> Wind Speed: ${sunit(windSpeed)} ${config_tempunit === "c" ? "km/h" : "mph"}</h5>
-    <h5 class="pfix"><i class="fas fa-tint"></i> Humidity: ${Math.round(humidity * 100)}%</h5>
-    `;
-
-        if (alerts) {
-            alerts.forEach(function (alert) {
-                const {regions, uri, severity} = alert;
-                let regionstring = "";
-                regions.forEach(function (region) {
-                    regionstring = regionstring.concat(`<p class="pfix">${region}</p>`);
-                });
-                qs(".walerts").append(`
-        <h6 class="pfix">
-            <a href="${uri}" class="text-danger">
-                <span class="popovertt">
-                    <i class="fas fa-exclamation-triangle"></i> WEATHER ${severity.toUpperCase()}. EXPIRES ${dayofepoch(alert.expires).toUpperCase()} ${epoch_to_locale_hour_string(alert.expires)}. 
-                    <span class="data ttcontent"><div class="text-left"><p class="pfix">${alert.description.replace(/\*/g, "</p><p class='pfix' style=\"margin-top:3px;\">")}</p></div></span>
-                </span>
-            </a>
-            <a href="${uri}" class="text-danger">
-                <span class="popovertt">
-                    AFFECTS ${regions.length} REGIONS
-                    <span class="data ttcontent">${regionstring}</span>
-                </span>
-            </a>
-        </h6>
-        `);
-            });
-        }
-        qs(".lastcached").innerHTML = "Weather last updated at " + new Date(resp["lastweather"] * 1000).toLocaleString();
-        console.debug("Weather last updated at " + new Date(resp["lastweather"] * 1000).toLocaleString());
-        // gotta do this after or its busted
-        qs("#weatherpopover").addEventListener('shown.bs.popover', function () {
-            bootstrap.Tooltip.getOrCreateInstance(qs("body"), {
-                selector: '.popovertt',
-                html: true,
-                title: function () {
-                    return this.querySelector(".ttcontent").innerHTML;
-                },
-                trigger: "hover",
-                placement: "top",
-                boundary: "window"
-            });
-        });
-        qs("#weatherpopover").addEventListener("hidden.bs.popover", function () {
-            [...document.querySelectorAll(".tooltip")].map(tt => {
-                bootstrap.Tooltip.getOrCreateInstance(tt).hide();
-            })
-        });
-        update_weather();
-        let sincelastdownload = (new Date().getTime() / 1000) - resp["lastweather"];
-        let timetowait = 2 * 60 * 60; // if weather hasnt been refreshed for 2 hours
-        if (sincelastdownload > timetowait) { // if its been longer than 10 mins, get the weather again
-            qs("#weather").innerHTML = "<i class=\"fas fa-exclamation-circle\"></i>"
-            let weatherh3 = bootstrap.Tooltip.getOrCreateInstance(qs("#weatherh3"), {html: true});
-            weatherh3.hide();
-            qs("#weatherh3").setAttribute('data-bs-original-title', "Weather info is outdated.");
-        } else {
-            qs("#weather").innerHTML = `${tunit(temp)}°`;
-            qs("#weatherimage").innerHTML = `${climacon(currently.icon)}`;
-            let weatherh3 = bootstrap.Tooltip.getOrCreateInstance(qs("#weatherh3"), {html: true});
-            weatherh3.hide();
-            qs("#weatherh3").setAttribute('data-bs-original-title', currently["summary"]);
-        }
-
-        //("#weatherpopover").popover("hide");
-        // enable tooltips everywhere
-        let tooltipTriggerList = [].slice.call(document.querySelectorAll('.tt'))
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl, {html: true})
-        })
-    });
-
-}
-
 function every_100ms() {
     // ran every 100ms
     update_newtab_datetime();
@@ -373,9 +218,7 @@ function settings_set_tempunit() {
         config_tempunit = "c";
     }
     console.debug("reloading weather div with cached info");
-    chrome.storage.local.get(["weather"], function (resp) {
-        construct_weather_popover(resp["weather"]);
-    });
+    construct_weather_popover()
     save_settings();
 }
 
@@ -386,9 +229,8 @@ function settings_set_iconset() {
         config_iconset = "fontawesome";
     }
     console.debug("reloading weather div with cached info");
-    chrome.storage.local.get(["weather"], function (resp) {
-        construct_weather_popover(resp["weather"]);
-    });
+    construct_weather_popover();
+
     save_settings();
 }
 
@@ -399,9 +241,9 @@ function settings_set_timeformat() {
         config_timeformat = "24";
     }
     console.debug("reloading weather div with cached info");
-    chrome.storage.local.get(["weather"], function (resp) {
-        construct_weather_popover(resp["weather"]);
-    }); // i have to do this since the weather popup uses the time format
+
+    construct_weather_popover();
+    // i have to do this since the weather popup uses the time format
     save_settings();
 }
 
@@ -496,6 +338,21 @@ function init_background_blur() {// background blur
     });
 }
 
+function fetch_weather() {
+    console.debug("downloading new weather info");
+    get_weather_at_current_pos((weather_response) => {
+        chrome.storage.local.set({
+            lastweather: new Date().getTime() / 1000,
+            weather: weather_response
+        });
+        last_weather_get = new Date();
+        weather_info = weather_response;
+        console.debug(weather_info)
+        construct_weather_popover()
+    });
+
+}
+
 function init_weather() {
     // temperature unit handler AND iconset AND weather
     chrome.storage.local.get(['tempunit', 'lastweather', 'iconset', 'weather'], function (result) {
@@ -528,10 +385,7 @@ function init_weather() {
         // load weather
         if (!result["lastweather"] || !result['weather']) {
             // if no previous weather data, get weather
-            get_weather_at_current_pos(construct_weather_popover);
-            chrome.storage.local.set({
-                lastweather: new Date().getTime() / 1000
-            });
+            fetch_weather()
         } else {
             // there is a date of the last time we got the weather, check if we can use cached data
 
@@ -541,14 +395,13 @@ function init_weather() {
             let timetowait = 10 * 60;
             // if its been longer than 10 mins and we are online, get the weather again
             if (navigator.onLine && sincelastdownload > timetowait) {
-                get_weather_at_current_pos(construct_weather_popover);
-                console.debug("downloading new weather info");
-                chrome.storage.local.set({
-                    lastweather: new Date().getTime() / 1000
-                });
+                fetch_weather()
             } else {
                 // we have fresh cached data that we can use for the weather info!
-                construct_weather_popover(result["weather"]);
+                weather_info = result["weather"]
+                last_weather_get = new Date(result["lastweather"] * 1000)
+                console.debug(weather_info)
+                construct_weather_popover();
                 console.debug("using cached weather info");
             }
         }
@@ -692,13 +545,13 @@ function show_welcome_if_needed() {
     });
 }
 
-function sameDay(d1, d2) {
+function dates_same_day(d1, d2) {
     return d1.getFullYear() === d2.getFullYear() &&
         d1.getMonth() === d2.getMonth() &&
         d1.getDate() === d2.getDate();
 }
 
-function ifcond(cond, string) {
+function string_if_condition(cond, string) {
     if (cond) {
         return string
     } else {
@@ -706,7 +559,7 @@ function ifcond(cond, string) {
     }
 }
 
-function calendar() {
+function calendar_html() {
     const now = new Date();
     let calday1 = new Date();
 
@@ -739,12 +592,12 @@ function calendar() {
             // get the date in question based on the loop offset
             thisday.setDate(calday1.getDate() + ((week * 7) + day));
             // get simple info
-            const today = sameDay(now, thisday);
+            const today = dates_same_day(now, thisday);
             // yes theoretically years apart can be the same month but that shouldn't actually happen
             const othermonth = now.getMonth() !== thisday.getMonth();
             // othermonth and today cant both happen
             tbody += `
-                <td ${ifcond(today, "class='today'")}${ifcond(othermonth, "class='text-muted'")}>
+                <td ${string_if_condition(today, "class='today'")}${string_if_condition(othermonth, "class='text-muted'")}>
                     <div>${thisday.getDate()}</div>
                 </td>`
         }
@@ -771,6 +624,28 @@ function calendar() {
                 ${tbody}
             </tbody>
         </table>`;
+}
+
+function construct_weather_popover() {
+    if (!(weather_info && last_weather_get)) {
+        // nothing we can do if there is no weather info
+        // shouldnt happen but just in case
+        return
+    }
+    const weatherpopover = qs("#weatherpopover")
+    let existing_popover = bootstrap.Popover.getInstance(weatherpopover);
+    if (existing_popover) {
+        existing_popover.dispose()
+    }
+
+    // deconstruct the info into better objects
+    const {currently, daily, hourly, minutely, alerts} = weather_info;
+
+    // TODO: construct weather popover
+
+    // set the visible icon in the bottom left
+    set_html_if_needed(qs("#weather"), `${tunit(currently["temperature"])}°`)
+    set_html_if_needed(qs("#weatherimage"), climacon(currently["icon"]))
 }
 
 function initialize_popovers_and_modals() {
@@ -803,8 +678,12 @@ function initialize_popovers_and_modals() {
         sanitize: false,  // why arent tables in the default allow list
         placement: "bottom",
         trigger: "focus",
-        content: calendar
+        content: calendar_html
     })
+
+    // bottom left (weather) is handled in construct_weather_popover()
+
+    // bottom middle (search) requires no popover
 
     // bottom right (menu)
     bootstrap.Modal.getOrCreateInstance(qs("#menu-button"), {
