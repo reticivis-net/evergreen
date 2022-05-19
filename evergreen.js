@@ -349,10 +349,11 @@ function every_100ms() {
 
 }
 
+const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
 function clock_datetime() {
     const now = new Date();
-    const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
     return `
         <div id="tpop">
@@ -691,6 +692,87 @@ function show_welcome_if_needed() {
     });
 }
 
+function sameDay(d1, d2) {
+    return d1.getFullYear() === d2.getFullYear() &&
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate();
+}
+
+function ifcond(cond, string) {
+    if (cond) {
+        return string
+    } else {
+        return ""
+    }
+}
+
+function calendar() {
+    const now = new Date();
+    let calday1 = new Date();
+
+    // debug
+    // now.setDate(-4253)
+    // calday1.setDate(-4253)
+
+    // day 1 of month should be in first row
+    calday1.setDate(1);
+    // move back to first day of that week
+    // yes setDate can take negatives and it rolls over to the previous month
+    calday1.setDate(1 - calday1.getDay())
+
+    let tbody = "";
+
+    // for 6 weeks in cal
+    for (let week = 0; week < 6; week++) {
+        // break if entire week is greyed out (next month)
+        let weeksun = new Date(calday1.valueOf())
+        weeksun.setDate(calday1.getDate() + (week * 7));
+        if (weeksun.getTime() > now.getTime() && now.getMonth() !== weeksun.getMonth()) {
+            break
+        }
+
+        tbody += "<tr>"
+        // for 7 days of week
+        for (let day = 0; day < 7; day++) {
+            // clone calday1
+            let thisday = new Date(calday1.valueOf())
+            // get the date in question based on the loop offset
+            thisday.setDate(calday1.getDate() + ((week * 7) + day));
+            // get simple info
+            const today = sameDay(now, thisday);
+            // yes theoretically years apart can be the same month but that shouldn't actually happen
+            const othermonth = now.getMonth() !== thisday.getMonth();
+            // othermonth and today cant both happen
+            tbody += `
+                <td ${ifcond(today, "class='today'")}${ifcond(othermonth, "class='text-muted'")}>
+                    <div>${thisday.getDate()}</div>
+                </td>`
+        }
+        tbody += "</tr>"
+    }
+
+    return `
+        <table class="calendar">
+            <thead>
+            <tr>
+                <th colspan="7" class="month">${months[now.getMonth()]} ${now.getFullYear()}</th>
+            </tr>
+            <tr>
+                <th scope="col">Sun</th>
+                <th scope="col">Mon</th>
+                <th scope="col">Tue</th>
+                <th scope="col">Wed</th>
+                <th scope="col">Thu</th>
+                <th scope="col">Fri</th>
+                <th scope="col">Sat</th>
+            </tr>
+            </thead>
+            <tbody>
+                ${tbody}
+            </tbody>
+        </table>`;
+}
+
 function initialize_popovers_and_modals() {
     // top left ("Evergreen")
     bootstrap.Popover.getOrCreateInstance(qs("#evergreenpopover"), {
@@ -713,6 +795,15 @@ function initialize_popovers_and_modals() {
         placement: "bottom",
         trigger: "focus",
         content: clock_datetime
+    })
+
+    // top right (calendar)
+    bootstrap.Popover.getOrCreateInstance(qs("#datepopover"), {
+        html: true,
+        sanitize: false,  // why arent tables in the default allow list
+        placement: "bottom",
+        trigger: "focus",
+        content: calendar
     })
 
     // bottom right (menu)

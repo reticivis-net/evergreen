@@ -2,7 +2,28 @@
     text-align: center;
 }
 
-.calendar td, .calendar th {
-    padding: 3px;
+.calendar td, .calendar th:not([colspan]) {
     width: calc(100% / 7);
+    padding: 3px;
+}
+
+.calendar td > div {
+    /* give each day a square, center text within */
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.calendar .top {
+    width: 100%;
+}
+
+.calendar td.today {
+    border-radius: 50%;
+    background: var(--bs-secondary);
+}
+
+.calendar .month {
+    padding-bottom: 6px;
 }
