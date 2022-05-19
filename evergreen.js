@@ -630,6 +630,7 @@ function construct_weather_popover() {
     if (!(weather_info && last_weather_get)) {
         // nothing we can do if there is no weather info
         // shouldnt happen but just in case
+        console.warn("asked to construct weather popup without proper data", weather_info, last_weather_get)
         return
     }
     const weatherpopover = qs("#weatherpopover")
