@@ -245,3 +245,7 @@ a.popper:focus {
     padding: 10px;
     pointer-events: none;
 }
+
+.floating-text {
+    text-shadow: 0 0 1rem rgb(0 0 0 / 70%);
+}
