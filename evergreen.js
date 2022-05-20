@@ -340,7 +340,8 @@ function init_background_blur() {// background blur
 
 function fetch_weather() {
     console.debug("downloading new weather info");
-    get_weather_at_current_pos((weather_response) => {
+    let weatherprom = get_weather_at_current_pos()
+    weatherprom.then((weather_response) => {
         chrome.storage.local.set({
             lastweather: new Date().getTime() / 1000,
             weather: weather_response
@@ -350,6 +351,10 @@ function fetch_weather() {
         console.debug(weather_info)
         construct_weather_popover()
     });
+    weatherprom.catch((reason) => {
+        console.error("weather fetching failed due to ", reason)
+        set_html_if_needed(qs("#weather"), "")
+    })
 
 }
 
@@ -643,6 +648,16 @@ function construct_weather_popover() {
     const {currently, daily, hourly, minutely, alerts} = weather_info;
 
     // TODO: construct weather popover
+    let weather_popover_content = "hiiiiiiiiiiiiiiiiiii";
+
+    // make the popover!
+    bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover"), {
+        html: true,
+        sanitize: false,
+        placement: "top",
+        trigger: "click",
+        content: weather_popover_content
+    })
 
     // set the visible icon in the bottom left
     set_html_if_needed(qs("#weather"), `${tunit(currently["temperature"])}°`)
@@ -682,7 +697,7 @@ function initialize_popovers_and_modals() {
         content: calendar_html
     })
 
-    // bottom left (weather) is handled in construct_weather_popover()
+    // bottom left (weather) is handled in construct_weather_popover() since it needs to wait for weather settings & data
 
     // bottom middle (search) requires no popover
 
