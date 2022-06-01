@@ -122,12 +122,12 @@ function dayofepoch(epoch) {
     return weekdays[d.getDay()]
 }
 
-function tunit(temp) {
+function tunit(temp, round = false) {
     // converts temperature unit if needed
     if (config_tempunit === "c") {
         temp = f_to_c(temp);
     }
-    return Math.round(temp);
+    return round ? Math.round(temp) : temp;
 }
 
 function sunit(speed) {
@@ -664,19 +664,9 @@ function construct_weather_popover() {
     })
 
     // set the visible icon in the bottom left
-    set_html_if_needed(qs("#weather"), `${tunit(currently["temperature"])}°`)
+    set_html_if_needed(qs("#weather"), `${tunit(currently["temperature"], true)}°`)
     set_html_if_needed(qs("#weatherimage"), climacon(currently["icon"]))
 }
-
-const CHART_COLORS = {
-    red: 'rgb(255, 99, 132)',
-    orange: 'rgb(255, 159, 64)',
-    yellow: 'rgb(255, 205, 86)',
-    green: 'rgb(75, 192, 192)',
-    blue: 'rgb(54, 162, 235)',
-    purple: 'rgb(153, 102, 255)',
-    grey: 'rgb(201, 203, 207)'
-};
 
 
 function getGradient(ctx, chartArea) {
@@ -697,8 +687,49 @@ function getGradient(ctx, chartArea) {
     return gradient;
 }
 
+const CHART_COLORS = {
+    red: 'rgb(255, 99, 132)',
+    orange: 'rgb(255, 159, 64)',
+    yellow: 'rgb(255, 205, 86)',
+    green: 'rgb(75, 192, 192)',
+    blue: 'rgb(54, 162, 235)',
+    purple: 'rgb(153, 102, 255)',
+    grey: 'rgb(201, 203, 207)',
+    white: 'rgb(255, 255, 255)',
+};
+
 let weather_chart_daily;
 let weather_chart_hourly;
+
+function context_to_gradient(context) {
+    if (!context.chart.chartArea) {
+        // This case happens on initial chart load
+        return;
+    }
+
+    const {bottom, top, height} = context.chart.chartArea;
+    const value_at_bottom = context.chart.scales.y.getValueForPixel(bottom)
+    const value_at_top = context.chart.scales.y.getValueForPixel(top)
+
+    // map the pixels of the chart to the absolute temperature values
+    const true0 = tunit(0);
+    const true1 = tunit(100);
+    // canvas pixels start at 0,0 in top left and y increases as it goes down, values work opposite so its weird
+    const ratio = -(height) / (value_at_top - value_at_bottom)
+    const gradient_bottom = bottom - (ratio * (value_at_bottom - true0));
+    const gradient_top = top - (ratio * (value_at_top - true1));
+    // debugger
+    // make the pure js gradient
+    let gradient = context.chart.ctx.createLinearGradient(0, gradient_bottom, 0, gradient_top);
+    // this is totally subjective
+    // TODO: make this configurable
+    gradient.addColorStop(0, CHART_COLORS.purple);
+    gradient.addColorStop(0.32, CHART_COLORS.blue);
+    gradient.addColorStop(0.70, CHART_COLORS.green);
+    gradient.addColorStop(0.80, CHART_COLORS.yellow);
+    gradient.addColorStop(1, CHART_COLORS.red);
+    return gradient
+}
 
 function initweatherchart() {
     let chart_daily = qs("#weather_chart_daily");
@@ -714,35 +745,70 @@ function initweatherchart() {
     console.debug(hourly["data"].map(hour => {
         return {x: hour["time"], y: hour["temperature"]}
     }))
+    let hourly_chart_gradient, daily_chart_gradient;
     weather_chart_hourly = new Chart(chart_hourly.getContext('2d'), {
         type: 'line',
         data: {
             datasets: [{
                 parsing: false,
                 data: hourly["data"].map(hour => {
-                    return {x: hour["time"] * 1000, y: hour["temperature"]}
+                    return {x: hour["time"] * 1000, y: tunit(hour["temperature"])}
                 }),
+                // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
+                //     return {x: val * 1000 * 60 * 60 * 24, y: tunit(val)}
+                // }), {x: 1000 * 60 * 60 * 24 * 10000, y: tunit(100)}],
                 label: "Temperature",
                 borderColor: function (context) {
-                    const chart = context.chart;
-                    const {ctx, chartArea} = chart;
-
-                    if (!chartArea) {
-                        // This case happens on initial chart load
-                        return;
+                    if (hourly_chart_gradient) {
+                        return hourly_chart_gradient
+                    } else {
+                        hourly_chart_gradient = context_to_gradient(context)
+                        return hourly_chart_gradient
                     }
-                    return getGradient(ctx, chartArea);
                 },
+                backgroundColor: function (context) {
+                    if (hourly_chart_gradient) {
+                        return hourly_chart_gradient
+                    } else {
+                        hourly_chart_gradient = context_to_gradient(context)
+                        return hourly_chart_gradient
+                    }
+                },
+                cubicInterpolationMode: 'monotone',
             }]
         },
         options: {
             scales: {
                 x: {
-                    type: 'time'
+                    type: 'time',
+                    time: {
+                        displayFormats: {
+                            hour: config_timeformat === "12" ? 'EEE h a' : "EEE HH:00",
+                            day: 'LLL do'
+                        },
+                        tooltipFormat: config_timeformat === "12" ? 'h a EEE LLL do' : "HH:00 EEE LLL do"
+                    },
+                },
+                y: {
+                    ticks: {
+                        callback: (value, index, ticks) => `${value}°${config_tempunit.toUpperCase()}`
+                    }
                 }
             },
             color: "#fff",
-        }
+            interaction: {
+                intersect: false
+            },
+            plugins: {
+                legend: false,
+                title: {
+                    display: true,
+                    text: "Temperature Over 72 Hours",
+                    color: "#fff"
+                }
+            }
+        },
+
     });
 
     weather_chart_daily = new Chart(chart_daily.getContext('2d'), {
@@ -752,32 +818,71 @@ function initweatherchart() {
                 {
                     parsing: false,
                     data: daily["data"].map(day => {
-                        return {x: day["time"] * 1000, y: day["temperatureHigh"]}
+                        return {x: day["time"] * 1000, y: tunit(day["temperatureHigh"])}
                     }),
                     label: "High",
                     backgroundColor: CHART_COLORS.red,
-                    borderColor: CHART_COLORS.red
+                    borderColor: function (context) {
+                        if (daily_chart_gradient) {
+                            return daily_chart_gradient
+                        } else {
+                            daily_chart_gradient = context_to_gradient(context)
+                            return daily_chart_gradient
+                        }
+                    },
+                    cubicInterpolationMode: 'monotone',
                 },
                 {
                     parsing: false,
                     data: daily["data"].map(day => {
-                        return {x: day["time"] * 1000, y: day["temperatureLow"]}
+                        return {x: day["time"] * 1000, y: tunit(day["temperatureLow"])}
                     }),
                     label: "Low",
                     backgroundColor: CHART_COLORS.blue,
-                    borderColor: CHART_COLORS.blue
+                    borderColor: function (context) {
+                        if (daily_chart_gradient) {
+                            return daily_chart_gradient
+                        } else {
+                            daily_chart_gradient = context_to_gradient(context)
+                            return hourly_chart_gradient
+                        }
+                    },
+                    cubicInterpolationMode: 'monotone',
                 }
             ]
         },
         options: {
             scales: {
                 x: {
-                    type: 'time'
+                    type: 'time',
+                    time: {
+                        displayFormats: {
+                            hour: config_timeformat === "12" ? 'EEE h a' : "EEE HH:00",
+                            day: 'LLL do'
+                        },
+                        tooltipFormat: "EEE LLL do uuuu"
+                    },
+                },
+                y: {
+                    ticks: {
+                        callback: (value, index, ticks) => `${value}°${config_tempunit.toUpperCase()}`
+                    }
                 }
             },
             color: "#fff",
+            interaction: {
+                intersect: false
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: "Temperature Over The Week",
+                    color: "#fff"
+                }
+            }
         }
     });
+    // console.debug(weather_chart_hourly, weather_chart_daily)
 }
 
 function initialize_popovers_and_modals() {
