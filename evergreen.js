@@ -631,6 +631,7 @@ function calendar_html() {
         </table>`;
 }
 
+
 function construct_weather_popover() {
     if (!(weather_info && last_weather_get)) {
         // nothing we can do if there is no weather info
@@ -648,7 +649,10 @@ function construct_weather_popover() {
     const {currently, daily, hourly, minutely, alerts} = weather_info;
 
     // TODO: construct weather popover
-    let weather_popover_content = "hiiiiiiiiiiiiiiiiiii";
+    let weather_popover_content = `
+        <canvas id="weather_chart_daily" width="500" height="200"></canvas>
+        <canvas id="weather_chart_hourly" width="500" height="200"></canvas>
+    `;
 
     // make the popover!
     bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover"), {
@@ -662,6 +666,118 @@ function construct_weather_popover() {
     // set the visible icon in the bottom left
     set_html_if_needed(qs("#weather"), `${tunit(currently["temperature"])}°`)
     set_html_if_needed(qs("#weatherimage"), climacon(currently["icon"]))
+}
+
+const CHART_COLORS = {
+    red: 'rgb(255, 99, 132)',
+    orange: 'rgb(255, 159, 64)',
+    yellow: 'rgb(255, 205, 86)',
+    green: 'rgb(75, 192, 192)',
+    blue: 'rgb(54, 162, 235)',
+    purple: 'rgb(153, 102, 255)',
+    grey: 'rgb(201, 203, 207)'
+};
+
+
+function getGradient(ctx, chartArea) {
+    let width, height, gradient;
+    const chartWidth = chartArea.right - chartArea.left;
+    const chartHeight = chartArea.bottom - chartArea.top;
+    if (!gradient || width !== chartWidth || height !== chartHeight) {
+        // Create the gradient because this is either the first render
+        // or the size of the chart has changed
+        width = chartWidth;
+        height = chartHeight;
+        gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+        gradient.addColorStop(0, CHART_COLORS.blue);
+        gradient.addColorStop(0.5, CHART_COLORS.yellow);
+        gradient.addColorStop(1, CHART_COLORS.red);
+    }
+
+    return gradient;
+}
+
+let weather_chart_daily;
+let weather_chart_hourly;
+
+function initweatherchart() {
+    let chart_daily = qs("#weather_chart_daily");
+    let chart_hourly = qs("#weather_chart_hourly");
+    if (!chart_daily || !chart_hourly) {
+        console.debug("initweatherchart() called but chart not found.")
+        return
+    }
+
+    const {currently, daily, hourly, minutely, alerts} = weather_info;
+    let data = [];
+
+    console.debug(hourly["data"].map(hour => {
+        return {x: hour["time"], y: hour["temperature"]}
+    }))
+    weather_chart_hourly = new Chart(chart_hourly.getContext('2d'), {
+        type: 'line',
+        data: {
+            datasets: [{
+                parsing: false,
+                data: hourly["data"].map(hour => {
+                    return {x: hour["time"] * 1000, y: hour["temperature"]}
+                }),
+                label: "Temperature",
+                borderColor: function (context) {
+                    const chart = context.chart;
+                    const {ctx, chartArea} = chart;
+
+                    if (!chartArea) {
+                        // This case happens on initial chart load
+                        return;
+                    }
+                    return getGradient(ctx, chartArea);
+                },
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    type: 'time'
+                }
+            },
+            color: "#fff",
+        }
+    });
+
+    weather_chart_daily = new Chart(chart_daily.getContext('2d'), {
+        type: 'line',
+        data: {
+            datasets: [
+                {
+                    parsing: false,
+                    data: daily["data"].map(day => {
+                        return {x: day["time"] * 1000, y: day["temperatureHigh"]}
+                    }),
+                    label: "High",
+                    backgroundColor: CHART_COLORS.red,
+                    borderColor: CHART_COLORS.red
+                },
+                {
+                    parsing: false,
+                    data: daily["data"].map(day => {
+                        return {x: day["time"] * 1000, y: day["temperatureLow"]}
+                    }),
+                    label: "Low",
+                    backgroundColor: CHART_COLORS.blue,
+                    borderColor: CHART_COLORS.blue
+                }
+            ]
+        },
+        options: {
+            scales: {
+                x: {
+                    type: 'time'
+                }
+            },
+            color: "#fff",
+        }
+    });
 }
 
 function initialize_popovers_and_modals() {
@@ -699,7 +815,21 @@ function initialize_popovers_and_modals() {
 
     // bottom left (weather) is handled in construct_weather_popover() since it needs to wait for weather settings & data
 
-    // bottom middle (search) requires no popover
+    // init js chart on show
+    qs("#weatherpopover").addEventListener('inserted.bs.popover', initweatherchart)
+    // destroy js chart element on hide
+    qs("#weatherpopover").addEventListener('hidden.bs.popover', () => {
+        if (weather_chart_daily) {
+            weather_chart_daily.destroy()
+            weather_chart_daily = undefined;
+        }
+        if (weather_chart_hourly) {
+            weather_chart_hourly.destroy()
+            weather_chart_hourly = undefined;
+        }
+    })
+
+    // bottom middle (search) requires no popoverweather_chart
 
     // bottom right (menu)
     bootstrap.Modal.getOrCreateInstance(qs("#menu-button"), {
