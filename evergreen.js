@@ -725,9 +725,9 @@ function initweatherchart() {
     const {currently, daily, hourly, minutely, alerts} = weather_info;
     let data = [];
 
-    console.debug(hourly["data"].map(hour => {
-        return {x: hour["time"], y: hour["temperature"]}
-    }))
+    // TODO: some button to toggle through datasets like humidity and UV i believe i can do that
+    // https://www.chartjs.org/docs/latest/developers/api.html#setdatasetvisibility-datasetindex-visibility
+
     let hourly_chart_gradient, daily_chart_gradient;
     weather_chart_hourly = new Chart(chart_hourly.getContext('2d'), {
         type: 'line',
