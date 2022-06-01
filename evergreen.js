@@ -341,6 +341,7 @@ function init_background_blur() {// background blur
 function fetch_weather() {
     console.debug("downloading new weather info");
     let weatherprom = get_weather_at_current_pos()
+    // let weatherprom = get_weather_from_latlong(39.7392, -104.9903)
     weatherprom.then((weather_response) => {
         chrome.storage.local.set({
             lastweather: new Date().getTime() / 1000,
@@ -669,24 +670,6 @@ function construct_weather_popover() {
 }
 
 
-function getGradient(ctx, chartArea) {
-    let width, height, gradient;
-    const chartWidth = chartArea.right - chartArea.left;
-    const chartHeight = chartArea.bottom - chartArea.top;
-    if (!gradient || width !== chartWidth || height !== chartHeight) {
-        // Create the gradient because this is either the first render
-        // or the size of the chart has changed
-        width = chartWidth;
-        height = chartHeight;
-        gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-        gradient.addColorStop(0, CHART_COLORS.blue);
-        gradient.addColorStop(0.5, CHART_COLORS.yellow);
-        gradient.addColorStop(1, CHART_COLORS.red);
-    }
-
-    return gradient;
-}
-
 const CHART_COLORS = {
     red: 'rgb(255, 99, 132)',
     orange: 'rgb(255, 159, 64)',
@@ -775,7 +758,20 @@ function initweatherchart() {
                     }
                 },
                 cubicInterpolationMode: 'monotone',
-            }]
+            },
+                {
+                    parsing: false,
+                    data: hourly["data"].map(hour => {
+                        return {x: hour["time"] * 1000, y: hour["precipProbability"] * 100}
+                    }),
+                    label: "Rain %",
+                    borderColor: 'rgba(54, 162, 235, 0.5)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    pointBorderColor: 'rgba(0, 0, 0, 0)',
+                    cubicInterpolationMode: 'monotone',
+                    yAxisID: 'y1',
+                    // borderDash: [5, 15],
+                }]
         },
         options: {
             scales: {
@@ -791,8 +787,17 @@ function initweatherchart() {
                 },
                 y: {
                     ticks: {
-                        callback: (value, index, ticks) => `${value}°${config_tempunit.toUpperCase()}`
-                    }
+                        callback: (value) => `${value}°${config_tempunit.toUpperCase()}`
+                    },
+                    position: 'left',
+                },
+                y1: {
+                    ticks: {
+                        callback: (value) => `${value}%`
+                    },
+                    position: 'right',
+                    min: 0,
+                    max: 100
                 }
             },
             color: "#fff",
@@ -803,7 +808,7 @@ function initweatherchart() {
                 legend: false,
                 title: {
                     display: true,
-                    text: "Temperature Over 72 Hours",
+                    text: "Weather Over 48 Hours",
                     color: "#fff"
                 }
             }
@@ -822,6 +827,7 @@ function initweatherchart() {
                     }),
                     label: "High",
                     backgroundColor: CHART_COLORS.red,
+                    pointBorderColor: CHART_COLORS.red,
                     borderColor: function (context) {
                         if (daily_chart_gradient) {
                             return daily_chart_gradient
@@ -839,6 +845,7 @@ function initweatherchart() {
                     }),
                     label: "Low",
                     backgroundColor: CHART_COLORS.blue,
+                    pointBorderColor: CHART_COLORS.blue,
                     borderColor: function (context) {
                         if (daily_chart_gradient) {
                             return daily_chart_gradient
@@ -848,6 +855,19 @@ function initweatherchart() {
                         }
                     },
                     cubicInterpolationMode: 'monotone',
+                },
+                {
+                    parsing: false,
+                    data: daily["data"].map(day => {
+                        return {x: day["time"] * 1000, y: day["precipProbability"] * 100}
+                    }),
+                    label: "Rain %",
+                    borderColor: 'rgba(54, 162, 235, 0.5)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    pointBorderColor: 'rgba(0, 0, 0, 0)',
+                    cubicInterpolationMode: 'monotone',
+                    yAxisID: 'y1',
+                    // borderDash: [5, 15],
                 }
             ]
         },
@@ -867,6 +887,14 @@ function initweatherchart() {
                     ticks: {
                         callback: (value, index, ticks) => `${value}°${config_tempunit.toUpperCase()}`
                     }
+                },
+                y1: {
+                    ticks: {
+                        callback: (value) => `${value}%`
+                    },
+                    position: 'right',
+                    min: 0,
+                    max: 100
                 }
             },
             color: "#fff",
@@ -876,7 +904,7 @@ function initweatherchart() {
             plugins: {
                 title: {
                     display: true,
-                    text: "Temperature Over The Week",
+                    text: "Weather Over The Week",
                     color: "#fff"
                 }
             }
