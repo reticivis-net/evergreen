@@ -729,36 +729,63 @@ function initweatherchart() {
     // https://www.chartjs.org/docs/latest/developers/api.html#setdatasetvisibility-datasetindex-visibility
 
     let hourly_chart_gradient, daily_chart_gradient;
+
+    function gen_hourly_chart_gradient(context) {
+        if (hourly_chart_gradient) {
+            return hourly_chart_gradient
+        } else {
+            hourly_chart_gradient = context_to_gradient(context)
+            return hourly_chart_gradient
+        }
+    }
+
     weather_chart_hourly = new Chart(chart_hourly.getContext('2d'), {
         type: 'line',
         data: {
-            datasets: [{
-                parsing: false,
-                data: hourly["data"].map(hour => {
-                    return {x: hour["time"] * 1000, y: tunit(hour["temperature"])}
-                }),
-                // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
-                //     return {x: val * 1000 * 60 * 60 * 24, y: tunit(val)}
-                // }), {x: 1000 * 60 * 60 * 24 * 10000, y: tunit(100)}],
-                label: "Temperature",
-                borderColor: function (context) {
-                    if (hourly_chart_gradient) {
-                        return hourly_chart_gradient
-                    } else {
-                        hourly_chart_gradient = context_to_gradient(context)
-                        return hourly_chart_gradient
-                    }
+            datasets: [
+                {
+                    parsing: false,
+                    data: hourly["data"].map(hour => {
+                        return {x: hour["time"] * 1000, y: tunit(hour["temperature"])}
+                    }),
+                    // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
+                    //     return {x: val * 1000 * 60 * 60 * 24, y: tunit(val)}
+                    // }), {x: 1000 * 60 * 60 * 24 * 10000, y: tunit(100)}],
+                    label: "Temperature",
+                    borderColor: gen_hourly_chart_gradient,
+                    backgroundColor: gen_hourly_chart_gradient,
+                    cubicInterpolationMode: 'monotone',
                 },
-                backgroundColor: function (context) {
-                    if (hourly_chart_gradient) {
-                        return hourly_chart_gradient
-                    } else {
-                        hourly_chart_gradient = context_to_gradient(context)
-                        return hourly_chart_gradient
-                    }
+                {
+                    parsing: false,
+                    data: hourly["data"].map(hour => {
+                        return {x: hour["time"] * 1000, y: tunit(hour["apparentTemperature"])}
+                    }),
+                    // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
+                    //     return {x: val * 1000 * 60 * 60 * 24, y: tunit(val)}
+                    // }), {x: 1000 * 60 * 60 * 24 * 10000, y: tunit(100)}],
+                    label: "Feels Like",
+                    borderColor: gen_hourly_chart_gradient,
+                    backgroundColor: gen_hourly_chart_gradient,
+                    cubicInterpolationMode: 'monotone',
+                    hidden: true
                 },
-                cubicInterpolationMode: 'monotone',
-            },
+                {
+                    data: hourly["data"].map(hour => {
+                        return {x: hour["time"] * 1000, y: tunit(hour["uvIndex"])}
+                    }),
+                    // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
+                    //     return {x: val * 1000 * 60 * 60 * 24, y: tunit(val)}
+                    // }), {x: 1000 * 60 * 60 * 24 * 10000, y: tunit(100)}],
+                    label: "UV Index",
+                    borderColor: CHART_COLORS.purple,
+                    backgroundColor: CHART_COLORS.purple,
+                    cubicInterpolationMode: 'monotone',
+                    min: 0,
+                    max: 10,
+                    hidden: true,
+                    yAxisID: "uv"
+                },
                 {
                     parsing: false,
                     data: hourly["data"].map(hour => {
@@ -769,7 +796,7 @@ function initweatherchart() {
                     backgroundColor: 'rgba(54, 162, 235, 0.5)',
                     pointBorderColor: 'rgba(0, 0, 0, 0)',
                     cubicInterpolationMode: 'monotone',
-                    yAxisID: 'y1',
+                    yAxisID: 'rain',
                     // borderDash: [5, 15],
                 }]
         },
@@ -791,7 +818,7 @@ function initweatherchart() {
                     },
                     position: 'left',
                 },
-                y1: {
+                rain: {
                     ticks: {
                         callback: (value) => `${value}%`
                     },
@@ -802,10 +829,27 @@ function initweatherchart() {
             },
             color: "#fff",
             interaction: {
-                intersect: false
+                intersect: false,
+                mode: 'index',
+                axis: 'x'
             },
             plugins: {
-                legend: false,
+                legend: {
+                    onClick: (event, legendItem, legend) => {
+                        // reimplimenting default behavior that gets overridden
+                        // toggle visibility of clicked item
+                        legend.chart.data.datasets[legendItem.datasetIndex].hidden ^= true;
+                        // update chart
+                        legend.chart.update();
+                        // if color is function (likely gradient)
+                        if (typeof legend.chart.data.datasets[legendItem.datasetIndex].borderColor === "function") {
+                            // reset gradient to recalculate from new scale
+                            hourly_chart_gradient = undefined;
+                            // update chart
+                            legend.chart.update();
+                        }
+                    }
+                },
                 title: {
                     display: true,
                     text: "Weather Over 48 Hours",
@@ -815,6 +859,15 @@ function initweatherchart() {
         },
 
     });
+
+    function gen_daily_chart_gradient(context) {
+        if (daily_chart_gradient) {
+            return daily_chart_gradient
+        } else {
+            daily_chart_gradient = context_to_gradient(context)
+            return hourly_chart_gradient
+        }
+    }
 
     weather_chart_daily = new Chart(chart_daily.getContext('2d'), {
         type: 'line',
@@ -828,14 +881,7 @@ function initweatherchart() {
                     label: "High",
                     backgroundColor: CHART_COLORS.red,
                     pointBorderColor: CHART_COLORS.red,
-                    borderColor: function (context) {
-                        if (daily_chart_gradient) {
-                            return daily_chart_gradient
-                        } else {
-                            daily_chart_gradient = context_to_gradient(context)
-                            return daily_chart_gradient
-                        }
-                    },
+                    borderColor: gen_daily_chart_gradient,
                     cubicInterpolationMode: 'monotone',
                 },
                 {
@@ -846,14 +892,7 @@ function initweatherchart() {
                     label: "Low",
                     backgroundColor: CHART_COLORS.blue,
                     pointBorderColor: CHART_COLORS.blue,
-                    borderColor: function (context) {
-                        if (daily_chart_gradient) {
-                            return daily_chart_gradient
-                        } else {
-                            daily_chart_gradient = context_to_gradient(context)
-                            return hourly_chart_gradient
-                        }
-                    },
+                    borderColor: gen_daily_chart_gradient,
                     cubicInterpolationMode: 'monotone',
                 },
                 {
@@ -899,13 +938,31 @@ function initweatherchart() {
             },
             color: "#fff",
             interaction: {
-                intersect: false
+                intersect: false,
+                mode: 'index',
+                axis: 'x'
             },
             plugins: {
                 title: {
                     display: true,
-                    text: "Weather Over The Week",
+                    text: "Weather This Week",
                     color: "#fff"
+                },
+                legend: {
+                    onClick: (event, legendItem, legend) => {
+                        // reimplimenting default behavior that gets overridden
+                        // toggle visibility of clicked item
+                        legend.chart.data.datasets[legendItem.datasetIndex].hidden ^= true;
+                        // update chart
+                        legend.chart.update();
+                        // if color is function (likely gradient)
+                        if (typeof legend.chart.data.datasets[legendItem.datasetIndex].borderColor === "function") {
+                            // reset gradient to recalculate from new scale
+                            daily_chart_gradient = undefined;
+                            // update chart
+                            legend.chart.update();
+                        }
+                    }
                 }
             }
         }
