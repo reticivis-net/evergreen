@@ -131,7 +131,7 @@ function tunit(temp, round = false) {
     if (config_tempunit === "c") {
         temp = f_to_c(temp);
     }
-    return round ? Math.round(temp) : roundton(temp, 2);
+    return round ? Math.round(temp) : temp;
 }
 
 function sunit(speed) {
@@ -761,7 +761,7 @@ function initweatherchart() {
                     cubicInterpolationMode: 'monotone',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y}°${config_tempunit.toUpperCase()}`
+                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`
                         }
                     }
                 },
@@ -905,7 +905,7 @@ function initweatherchart() {
                     cubicInterpolationMode: 'monotone',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y}°${config_tempunit.toUpperCase()}`
+                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`
                         }
                     }
                 },
@@ -921,7 +921,7 @@ function initweatherchart() {
                     cubicInterpolationMode: 'monotone',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y}°${config_tempunit.toUpperCase()}`
+                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`
                         }
                     }
                 },
