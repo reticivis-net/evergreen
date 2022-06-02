@@ -122,12 +122,16 @@ function dayofepoch(epoch) {
     return weekdays[d.getDay()]
 }
 
+function roundton(num, n) {
+    return +(Math.round((num + Number.EPSILON) + "e+" + n) + "e-" + n);
+}
+
 function tunit(temp, round = false) {
     // converts temperature unit if needed
     if (config_tempunit === "c") {
         temp = f_to_c(temp);
     }
-    return round ? Math.round(temp) : temp;
+    return round ? Math.round(temp) : roundton(temp, 2);
 }
 
 function sunit(speed) {
@@ -755,6 +759,11 @@ function initweatherchart() {
                     borderColor: gen_hourly_chart_gradient,
                     backgroundColor: gen_hourly_chart_gradient,
                     cubicInterpolationMode: 'monotone',
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y}°${config_tempunit.toUpperCase()}`
+                        }
+                    }
                 },
                 {
                     parsing: false,
@@ -772,7 +781,7 @@ function initweatherchart() {
                 },
                 {
                     data: hourly["data"].map(hour => {
-                        return {x: hour["time"] * 1000, y: tunit(hour["uvIndex"])}
+                        return {x: hour["time"] * 1000, y: hour["uvIndex"]}
                     }),
                     // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
                     //     return {x: val * 1000 * 60 * 60 * 24, y: tunit(val)}
@@ -797,6 +806,11 @@ function initweatherchart() {
                     pointBorderColor: 'rgba(0, 0, 0, 0)',
                     cubicInterpolationMode: 'monotone',
                     yAxisID: 'rain',
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                        }
+                    }
                     // borderDash: [5, 15],
                 }]
         },
@@ -824,7 +838,8 @@ function initweatherchart() {
                     },
                     position: 'right',
                     min: 0,
-                    max: 100
+                    max: 100,
+                    display: false
                 }
             },
             color: "#fff",
@@ -883,6 +898,11 @@ function initweatherchart() {
                     pointBorderColor: CHART_COLORS.red,
                     borderColor: gen_daily_chart_gradient,
                     cubicInterpolationMode: 'monotone',
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y}°${config_tempunit.toUpperCase()}`
+                        }
+                    }
                 },
                 {
                     parsing: false,
@@ -894,6 +914,11 @@ function initweatherchart() {
                     pointBorderColor: CHART_COLORS.blue,
                     borderColor: gen_daily_chart_gradient,
                     cubicInterpolationMode: 'monotone',
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y}°${config_tempunit.toUpperCase()}`
+                        }
+                    }
                 },
                 {
                     parsing: false,
@@ -906,6 +931,11 @@ function initweatherchart() {
                     pointBorderColor: 'rgba(0, 0, 0, 0)',
                     cubicInterpolationMode: 'monotone',
                     yAxisID: 'y1',
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                        }
+                    }
                     // borderDash: [5, 15],
                 }
             ]
