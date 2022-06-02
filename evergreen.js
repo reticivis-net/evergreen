@@ -655,8 +655,8 @@ function construct_weather_popover() {
 
     // TODO: construct weather popover
     let weather_popover_content = `
-        <canvas id="weather_chart_daily" width="500" height="200"></canvas>
-        <canvas id="weather_chart_hourly" width="500" height="200"></canvas>
+        <canvas id="weather_chart_daily" width="500" height="250"></canvas>
+        <canvas id="weather_chart_hourly" width="500" height="250"></canvas>
     `;
 
     // make the popover!
@@ -765,6 +765,25 @@ function initweatherchart() {
                         }
                     }
                 },
+
+                {
+                    parsing: false,
+                    data: hourly["data"].map(hour => {
+                        return {x: hour["time"] * 1000, y: hour["precipProbability"] * 100}
+                    }),
+                    label: "Rain %",
+                    borderColor: 'rgba(54, 162, 235, 0.5)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    pointBorderColor: 'rgba(0, 0, 0, 0)',
+                    cubicInterpolationMode: 'monotone',
+                    yAxisID: 'rain',
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                        }
+                    }
+                    // borderDash: [5, 15],
+                },
                 {
                     parsing: false,
                     data: hourly["data"].map(hour => {
@@ -790,29 +809,10 @@ function initweatherchart() {
                     borderColor: CHART_COLORS.purple,
                     backgroundColor: CHART_COLORS.purple,
                     cubicInterpolationMode: 'monotone',
-                    min: 0,
-                    max: 10,
                     hidden: true,
                     yAxisID: "uv"
                 },
-                {
-                    parsing: false,
-                    data: hourly["data"].map(hour => {
-                        return {x: hour["time"] * 1000, y: hour["precipProbability"] * 100}
-                    }),
-                    label: "Rain %",
-                    borderColor: 'rgba(54, 162, 235, 0.5)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    pointBorderColor: 'rgba(0, 0, 0, 0)',
-                    cubicInterpolationMode: 'monotone',
-                    yAxisID: 'rain',
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
-                        }
-                    }
-                    // borderDash: [5, 15],
-                }]
+            ]
         },
         options: {
             scales: {
@@ -838,9 +838,14 @@ function initweatherchart() {
                     },
                     position: 'right',
                     min: 0,
-                    max: 100,
-                    display: false
-                }
+                    max: 100
+                },
+                // TODO: fix
+                // uv: {
+                //     min: 0,
+                //     max: 10
+                //     // drawTicks: false
+                // }
             },
             color: "#fff",
             interaction: {
