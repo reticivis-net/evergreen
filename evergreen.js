@@ -123,6 +123,9 @@ function dayofepoch(epoch) {
 }
 
 function roundton(num, n) {
+    if (num === 0) {
+        return 0
+    }
     return +(Math.round((num + Number.EPSILON) + "e+" + n) + "e-" + n);
 }
 
