@@ -772,14 +772,14 @@ function initweatherchart() {
                 {
                     parsing: false,
                     data: hourly["data"].map(hour => {
-                        return {x: hour["time"] * 1000, y: hour["precipProbability"] * 100}
+                        return {x: hour["time"] * 1000, y: Math.round(hour["precipProbability"] * 100)}
                     }),
                     label: "Rain %",
                     borderColor: 'rgba(54, 162, 235, 0.5)',
                     backgroundColor: 'rgba(54, 162, 235, 0.5)',
                     pointBorderColor: 'rgba(0, 0, 0, 0)',
                     cubicInterpolationMode: 'monotone',
-                    yAxisID: 'rain',
+                    yAxisID: 'percent',
                     tooltip: {
                         callbacks: {
                             label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
@@ -792,28 +792,65 @@ function initweatherchart() {
                     data: hourly["data"].map(hour => {
                         return {x: hour["time"] * 1000, y: tunit(hour["apparentTemperature"])}
                     }),
-                    // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
-                    //     return {x: val * 1000 * 60 * 60 * 24, y: tunit(val)}
-                    // }), {x: 1000 * 60 * 60 * 24 * 10000, y: tunit(100)}],
                     label: "Feels Like",
                     borderColor: gen_hourly_chart_gradient,
                     backgroundColor: gen_hourly_chart_gradient,
                     cubicInterpolationMode: 'monotone',
-                    hidden: true
+                    hidden: true,
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`
+                        }
+                    }
                 },
                 {
                     data: hourly["data"].map(hour => {
                         return {x: hour["time"] * 1000, y: hour["uvIndex"]}
                     }),
-                    // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
-                    //     return {x: val * 1000 * 60 * 60 * 24, y: tunit(val)}
-                    // }), {x: 1000 * 60 * 60 * 24 * 10000, y: tunit(100)}],
                     label: "UV Index",
                     borderColor: CHART_COLORS.purple,
                     backgroundColor: CHART_COLORS.purple,
                     cubicInterpolationMode: 'monotone',
                     hidden: true,
                     yAxisID: "uv"
+                },
+                {
+                    parsing: false,
+                    data: hourly["data"].map(hour => {
+                        return {x: hour["time"] * 1000, y: Math.round(hour["humidity"] * 100)}
+                    }),
+                    label: "Humidity %",
+                    borderColor: CHART_COLORS.blue,
+                    backgroundColor: CHART_COLORS.blue,
+                    pointBorderColor: 'rgba(0, 0, 0, 0)',
+                    cubicInterpolationMode: 'monotone',
+                    yAxisID: 'percent',
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                        }
+                    },
+                    hidden: true
+                    // borderDash: [5, 15],
+                },
+                {
+                    parsing: false,
+                    data: hourly["data"].map(hour => {
+                        return {x: hour["time"] * 1000, y: Math.round(hour["cloudCover"] * 100)}
+                    }),
+                    label: "Cloud Cover %",
+                    borderColor: CHART_COLORS.white,
+                    backgroundColor: CHART_COLORS.white,
+                    pointBorderColor: 'rgba(0, 0, 0, 0)',
+                    cubicInterpolationMode: 'monotone',
+                    yAxisID: 'percent',
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                        }
+                    },
+                    hidden: true
+                    // borderDash: [5, 15],
                 },
             ]
         },
@@ -823,32 +860,51 @@ function initweatherchart() {
                     type: 'time',
                     time: {
                         displayFormats: {
-                            hour: config_timeformat === "12" ? 'EEE h a' : "EEE HH:00",
+                            hour: config_timeformat === "12" ? 'h a' : "HH:00",
                             day: 'LLL do'
                         },
                         tooltipFormat: config_timeformat === "12" ? 'h a EEE LLL do' : "HH:00 EEE LLL do"
                     },
+                    ticks: {
+                        // autoSkip: false,
+                        maxRotation: 0,
+                        major: {
+                            enabled: true
+                        },
+                        font: function (context) {
+                            if (context.tick && context.tick.major) {
+                                return {
+                                    weight: 'bold',
+                                };
+                            }
+                        }
+                    },
+
+
                 },
                 y: {
                     ticks: {
                         callback: (value) => `${value}°${config_tempunit.toUpperCase()}`
                     },
                     position: 'left',
+                    display: 'auto'
                 },
-                rain: {
+                percent: {
                     ticks: {
                         callback: (value) => `${value}%`
                     },
                     position: 'right',
                     min: 0,
-                    max: 100
+                    max: 100,
+                    display: 'auto'
                 },
                 // TODO: fix
-                // uv: {
-                //     min: 0,
-                //     max: 10
-                //     // drawTicks: false
-                // }
+                uv: {
+                    position: 'right',
+                    min: 0,
+                    suggestedMax: 10,
+                    display: 'auto'
+                }
             },
             color: "#fff",
             interaction: {
@@ -871,7 +927,8 @@ function initweatherchart() {
                             // update chart
                             legend.chart.update();
                         }
-                    }
+                    },
+
                 },
                 title: {
                     display: true,
@@ -931,14 +988,14 @@ function initweatherchart() {
                 {
                     parsing: false,
                     data: daily["data"].map(day => {
-                        return {x: day["time"] * 1000, y: day["precipProbability"] * 100}
+                        return {x: day["time"] * 1000, y: Math.round(day["precipProbability"] * 100)}
                     }),
                     label: "Rain %",
                     borderColor: 'rgba(54, 162, 235, 0.5)',
                     backgroundColor: 'rgba(54, 162, 235, 0.5)',
                     pointBorderColor: 'rgba(0, 0, 0, 0)',
                     cubicInterpolationMode: 'monotone',
-                    yAxisID: 'y1',
+                    yAxisID: 'percent',
                     tooltip: {
                         callbacks: {
                             label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
@@ -962,16 +1019,18 @@ function initweatherchart() {
                 },
                 y: {
                     ticks: {
-                        callback: (value, index, ticks) => `${value}°${config_tempunit.toUpperCase()}`
-                    }
+                        callback: value => `${value}°${config_tempunit.toUpperCase()}`
+                    },
+                    display: 'auto'
                 },
-                y1: {
+                percent: {
                     ticks: {
                         callback: (value) => `${value}%`
                     },
                     position: 'right',
                     min: 0,
-                    max: 100
+                    max: 100,
+                    display: 'auto'
                 }
             },
             color: "#fff",
