@@ -311,8 +311,7 @@ function change_background() {
                 qs("#bg").style["background-image"] = `url(${response})`;
             });
             chrome.storage.local.set({
-                bgimage: response,
-                lastbgrefresh: new Date().getTime() / 1000
+                bgimage: response, lastbgrefresh: new Date().getTime() / 1000
             });
             console.debug("BG changed");
         });
@@ -349,8 +348,7 @@ function fetch_weather() {
     // let weatherprom = get_weather_from_latlong(39.7392, -104.9903)
     weatherprom.then((weather_response) => {
         chrome.storage.local.set({
-            lastweather: new Date().getTime() / 1000,
-            weather: weather_response
+            lastweather: new Date().getTime() / 1000, weather: weather_response
         });
         last_weather_get = new Date();
         weather_info = weather_response;
@@ -557,9 +555,7 @@ function show_welcome_if_needed() {
 }
 
 function dates_same_day(d1, d2) {
-    return d1.getFullYear() === d2.getFullYear() &&
-        d1.getMonth() === d2.getMonth() &&
-        d1.getDate() === d2.getDate();
+    return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
 }
 
 function string_if_condition(cond, string) {
@@ -661,11 +657,8 @@ function construct_weather_popover() {
 
     // make the popover!
     bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover"), {
-        html: true,
-        sanitize: false,
-        placement: "top", // https://github.com/twbs/bootstrap/discussions/36562
-        trigger: "click",
-        content: weather_popover_content
+        html: true, sanitize: false, placement: "top", // https://github.com/twbs/bootstrap/discussions/36562
+        trigger: "click", content: weather_popover_content
     })
 
     // set the visible icon in the bottom left
@@ -690,13 +683,10 @@ let weather_chart_hourly;
 
 
 // temperature in fahrenheit because easier for me
-let tempcolors = [
-    {temp: 0, color: CHART_COLORS.purple},
-    {temp: 32, color: CHART_COLORS.blue},
-    {temp: 70, color: CHART_COLORS.green},
-    {temp: 80, color: CHART_COLORS.yellow},
-    {temp: 100, color: CHART_COLORS.red}
-]
+let tempcolors = [{temp: 0, color: CHART_COLORS.purple}, {temp: 32, color: CHART_COLORS.blue}, {
+    temp: 70,
+    color: CHART_COLORS.green
+}, {temp: 80, color: CHART_COLORS.yellow}, {temp: 100, color: CHART_COLORS.red}]
 
 function coloroftemp(temp) {
     let grad = chroma
@@ -780,35 +770,31 @@ function initweatherchart() {
     }
 
     weather_chart_hourly = new Chart(chart_hourly.getContext('2d'), {
-        type: 'line',
-        data: {
-            datasets: [
-                {
-                    parsing: false,
-                    data: hourly["data"].map(hour => {
-                        return {x: hour["time"] * 1000, y: tunit(hour["temperature"])}
-                    }),
-                    // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
-                    //     return {x: val * 1000 * 60 * 60 * 24, y: tunit(val)}
-                    // }), {x: 1000 * 60 * 60 * 24 * 10000, y: tunit(100)}],
-                    label: "Temperature",
-                    borderColor: gen_hourly_chart_gradient,
-                    backgroundColor: gen_hourly_chart_gradient,
-                    yAxisID: 'temperature',
-                    cubicInterpolationMode: 'monotone',
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
-                            labelColor: function (context) {
-                                const col = coloroftemp(context.parsed.y)
-                                return {
-                                    borderColor: col,
-                                    backgroundColor: col,
-                                }
-                            },
-                        }
+        type: 'line', data: {
+            datasets: [{
+                parsing: false,
+                data: hourly["data"].map(hour => {
+                    return {x: hour["time"] * 1000, y: tunit(hour["temperature"])}
+                }), // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
+                //     return {x: val * 1000 * 60 * 60 * 24, y: tunit(val)}
+                // }), {x: 1000 * 60 * 60 * 24 * 10000, y: tunit(100)}],
+                label: "Temperature",
+                borderColor: gen_hourly_chart_gradient,
+                backgroundColor: gen_hourly_chart_gradient,
+                yAxisID: 'temperature',
+                cubicInterpolationMode: 'monotone',
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                        labelColor: function (context) {
+                            const col = coloroftemp(context.parsed.y)
+                            return {
+                                borderColor: col, backgroundColor: col,
+                            }
+                        },
                     }
-                },
+                }
+            },
 
                 {
                     parsing: false,
@@ -827,8 +813,7 @@ function initweatherchart() {
                         }
                     }
                     // borderDash: [5, 15],
-                },
-                {
+                }, {
                     parsing: false,
                     data: hourly["data"].map(hour => {
                         return {x: hour["time"] * 1000, y: tunit(hour["apparentTemperature"])}
@@ -845,14 +830,12 @@ function initweatherchart() {
                             labelColor: function (context) {
                                 const col = coloroftemp(context.parsed.y)
                                 return {
-                                    borderColor: col,
-                                    backgroundColor: col,
+                                    borderColor: col, backgroundColor: col,
                                 }
                             },
                         }
                     }
-                },
-                {
+                }, {
                     data: hourly["data"].map(hour => {
                         return {x: hour["time"] * 1000, y: hour["uvIndex"]}
                     }),
@@ -862,8 +845,7 @@ function initweatherchart() {
                     cubicInterpolationMode: 'monotone',
                     hidden: true,
                     yAxisID: "uv"
-                },
-                {
+                }, {
                     parsing: false,
                     data: hourly["data"].map(hour => {
                         return {x: hour["time"] * 1000, y: Math.round(hour["humidity"] * 100)}
@@ -881,8 +863,7 @@ function initweatherchart() {
                     },
                     hidden: true
                     // borderDash: [5, 15],
-                },
-                {
+                }, {
                     parsing: false,
                     data: hourly["data"].map(hour => {
                         return {x: hour["time"] * 1000, y: Math.round(hour["cloudCover"] * 100)}
@@ -900,27 +881,19 @@ function initweatherchart() {
                     },
                     hidden: true
                     // borderDash: [5, 15],
-                },
-            ]
-        },
-        options: {
+                },]
+        }, options: {
             scales: {
                 x: {
-                    type: 'time',
-                    time: {
+                    type: 'time', time: {
                         displayFormats: {
-                            hour: config_timeformat === "12" ? 'h a' : "HH:00",
-                            day: 'LLL do'
-                        },
-                        tooltipFormat: config_timeformat === "12" ? 'h a EEE LLL do' : "HH:00 EEE LLL do"
-                    },
-                    ticks: {
+                            hour: config_timeformat === "12" ? 'h a' : "HH:00", day: 'LLL do'
+                        }, tooltipFormat: config_timeformat === "12" ? 'h a EEE LLL do' : "HH:00 EEE LLL do"
+                    }, ticks: {
                         // autoSkip: false,
-                        maxRotation: 0,
-                        major: {
+                        maxRotation: 0, major: {
                             enabled: true
-                        },
-                        font: function (context) {
+                        }, font: function (context) {
                             if (context.tick && context.tick.major) {
                                 return {
                                     weight: 'bold',
@@ -930,37 +903,20 @@ function initweatherchart() {
                     },
 
 
-                },
-                temperature: {
+                }, temperature: {
                     ticks: {
                         callback: (value) => `${value}°${config_tempunit.toUpperCase()}`
-                    },
-                    position: 'left',
-                    display: 'auto'
-                },
-                percent: {
+                    }, position: 'left', display: 'auto'
+                }, percent: {
                     ticks: {
                         callback: (value) => `${value}%`
-                    },
-                    position: 'right',
-                    min: 0,
-                    max: 100,
-                    display: 'auto'
-                },
-                uv: {
-                    position: 'right',
-                    min: 0,
-                    suggestedMax: 10,
-                    display: 'auto'
+                    }, position: 'right', min: 0, max: 100, display: 'auto'
+                }, uv: {
+                    position: 'right', min: 0, suggestedMax: 10, display: 'auto'
                 }
-            },
-            color: "#fff",
-            interaction: {
-                intersect: false,
-                mode: 'index',
-                axis: 'x'
-            },
-            plugins: {
+            }, color: "#fff", interaction: {
+                intersect: false, mode: 'index', axis: 'x'
+            }, plugins: {
                 legend: {
                     onClick: (event, legendItem, legend) => {
                         // reimplimenting default behavior that gets overridden
@@ -977,31 +933,24 @@ function initweatherchart() {
                         }
                     },
 
-                },
-                title: {
-                    display: true,
-                    text: "Weather Over 48 Hours",
-                    color: "#fff"
+                }, title: {
+                    display: true, text: "Weather Over 48 Hours", color: "#fff"
                 }
             }
-        },
-        plugins: [
-            {
-                id: "fixlegend",
-                beforeDraw: function (chart) {
-                    chart.config.data.datasets.forEach((dataset, i) => {
-                        if (dataset.yAxisID === "temperature") {
-                            const hb = chart.legend.legendHitBoxes[i];
-                            // console.debug(chart.legend.legendHitBoxes[i], dataset, chart);
-                            let gradient = chart.ctx.createLinearGradient(hb.left, 0, hb.left + chart.legend.options.labels.boxWidth, 0);
-                            tempgradient(gradient);
-                            chart.legend.legendItems[i].fillStyle = gradient;
-                            chart.legend.legendItems[i].strokeStyle = gradient;
-                        }
-                    });
-                }
+        }, plugins: [{
+            id: "fixlegend", beforeDraw: function (chart) {
+                chart.config.data.datasets.forEach((dataset, i) => {
+                    if (dataset.yAxisID === "temperature") {
+                        const hb = chart.legend.legendHitBoxes[i];
+                        // console.debug(chart.legend.legendHitBoxes[i], dataset, chart);
+                        let gradient = chart.ctx.createLinearGradient(hb.left, 0, hb.left + chart.legend.options.labels.boxWidth, 0);
+                        tempgradient(gradient);
+                        chart.legend.legendItems[i].fillStyle = gradient;
+                        chart.legend.legendItems[i].strokeStyle = gradient;
+                    }
+                });
             }
-        ]
+        }]
     });
 
     function gen_daily_chart_gradient(context) {
@@ -1014,118 +963,91 @@ function initweatherchart() {
     }
 
     weather_chart_daily = new Chart(chart_daily.getContext('2d'), {
-        type: 'line',
-        data: {
-            datasets: [
-                {
-                    parsing: false,
-                    data: daily["data"].map(day => {
-                        return {x: day["time"] * 1000, y: tunit(day["temperatureHigh"])}
-                    }),
-                    label: "High",
-                    backgroundColor: CHART_COLORS.red,
-                    pointBorderColor: CHART_COLORS.red,
-                    borderColor: gen_daily_chart_gradient,
-                    yAxisID: 'temperature',
-                    cubicInterpolationMode: 'monotone',
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
-                            labelColor: function (context) {
-                                return {
-                                    borderColor: CHART_COLORS.red,
-                                    backgroundColor: coloroftemp(context.parsed.y),
-                                }
-                            },
+        type: 'line', data: {
+            datasets: [{
+                parsing: false,
+                data: daily["data"].map(day => {
+                    return {x: day["time"] * 1000, y: tunit(day["temperatureHigh"])}
+                }),
+                label: "High",
+                backgroundColor: CHART_COLORS.red,
+                pointBorderColor: CHART_COLORS.red,
+                borderColor: gen_daily_chart_gradient,
+                yAxisID: 'temperature',
+                cubicInterpolationMode: 'monotone',
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                        labelColor: function (context) {
+                            return {
+                                borderColor: CHART_COLORS.red, backgroundColor: coloroftemp(context.parsed.y),
+                            }
                         },
+                    },
 
-                    }
-                },
-                {
-                    parsing: false,
-                    data: daily["data"].map(day => {
-                        return {x: day["time"] * 1000, y: tunit(day["temperatureLow"])}
-                    }),
-                    label: "Low",
-                    backgroundColor: CHART_COLORS.blue,
-                    pointBorderColor: CHART_COLORS.blue,
-                    borderColor: gen_daily_chart_gradient,
-                    yAxisID: 'temperature',
-                    cubicInterpolationMode: 'monotone',
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
-                            labelColor: function (context) {
-                                return {
-                                    borderColor: CHART_COLORS.blue,
-                                    backgroundColor: coloroftemp(context.parsed.y),
-                                }
-                            },
-                        }
-                    }
-                },
-                {
-                    parsing: false,
-                    data: daily["data"].map(day => {
-                        return {x: day["time"] * 1000, y: Math.round(day["precipProbability"] * 100)}
-                    }),
-                    label: "Rain %",
-                    borderColor: 'rgba(54, 162, 235, 0.5)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    pointBorderColor: 'rgba(0, 0, 0, 0)',
-                    cubicInterpolationMode: 'monotone',
-                    yAxisID: 'percent',
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
-                        }
-                    }
-                    // borderDash: [5, 15],
                 }
-            ]
-        },
-        options: {
+            }, {
+                parsing: false,
+                data: daily["data"].map(day => {
+                    return {x: day["time"] * 1000, y: tunit(day["temperatureLow"])}
+                }),
+                label: "Low",
+                backgroundColor: CHART_COLORS.blue,
+                pointBorderColor: CHART_COLORS.blue,
+                borderColor: gen_daily_chart_gradient,
+                yAxisID: 'temperature',
+                cubicInterpolationMode: 'monotone',
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                        labelColor: function (context) {
+                            return {
+                                borderColor: CHART_COLORS.blue, backgroundColor: coloroftemp(context.parsed.y),
+                            }
+                        },
+                    }
+                }
+            }, {
+                parsing: false,
+                data: daily["data"].map(day => {
+                    return {x: day["time"] * 1000, y: Math.round(day["precipProbability"] * 100)}
+                }),
+                label: "Rain %",
+                borderColor: 'rgba(54, 162, 235, 0.5)',
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                pointBorderColor: 'rgba(0, 0, 0, 0)',
+                cubicInterpolationMode: 'monotone',
+                yAxisID: 'percent',
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                    }
+                }
+                // borderDash: [5, 15],
+            }]
+        }, options: {
             scales: {
                 x: {
-                    type: 'time',
-                    time: {
+                    type: 'time', time: {
                         displayFormats: {
-                            hour: config_timeformat === "12" ? 'EEE h a' : "EEE HH:00",
-                            day: 'LLL do'
-                        },
-                        tooltipFormat: "EEE LLL do uuuu"
+                            hour: config_timeformat === "12" ? 'EEE h a' : "EEE HH:00", day: 'LLL do'
+                        }, tooltipFormat: "EEE LLL do uuuu"
                     },
-                },
-                temperature: {
+                }, temperature: {
                     ticks: {
                         callback: value => `${value}°${config_tempunit.toUpperCase()}`
-                    },
-                    display: 'auto',
-                    position: 'left'
-                },
-                percent: {
+                    }, display: 'auto', position: 'left'
+                }, percent: {
                     ticks: {
                         callback: (value) => `${value}%`
-                    },
-                    position: 'right',
-                    min: 0,
-                    max: 100,
-                    display: 'auto'
+                    }, position: 'right', min: 0, max: 100, display: 'auto'
                 }
-            },
-            color: "#fff",
-            interaction: {
-                intersect: false,
-                mode: 'index',
-                axis: 'x'
-            },
-            plugins: {
+            }, color: "#fff", interaction: {
+                intersect: false, mode: 'index', axis: 'x'
+            }, plugins: {
                 title: {
-                    display: true,
-                    text: "Weather This Week",
-                    color: "#fff"
-                },
-                legend: {
+                    display: true, text: "Weather This Week", color: "#fff"
+                }, legend: {
                     onClick: (event, legendItem, legend) => {
                         // reimplimenting default behavior that gets overridden
                         // toggle visibility of clicked item
@@ -1142,24 +1064,20 @@ function initweatherchart() {
                     }
                 }
             }
-        },
-        plugins: [
-            {
-                id: "fixlegend",
-                beforeDraw: function (chart) {
-                    chart.config.data.datasets.forEach((dataset, i) => {
-                        if (dataset.yAxisID === "temperature") {
-                            const hb = chart.legend.legendHitBoxes[i];
-                            let gradient = chart.ctx.createLinearGradient(hb.left, 0, hb.left + chart.legend.options.labels.boxWidth, 0);
-                            tempgradient(gradient);
-                            chart.legend.legendItems[i].strokeStyle = dataset.backgroundColor;
-                            chart.legend.legendItems[i].fillStyle = gradient;
-                        }
-                    });
+        }, plugins: [{
+            id: "fixlegend", beforeDraw: function (chart) {
+                chart.config.data.datasets.forEach((dataset, i) => {
+                    if (dataset.yAxisID === "temperature") {
+                        const hb = chart.legend.legendHitBoxes[i];
+                        let gradient = chart.ctx.createLinearGradient(hb.left, 0, hb.left + chart.legend.options.labels.boxWidth, 0);
+                        tempgradient(gradient);
+                        chart.legend.legendItems[i].strokeStyle = dataset.backgroundColor;
+                        chart.legend.legendItems[i].fillStyle = gradient;
+                    }
+                });
 
-                }
             }
-        ]
+        }]
     });
     // console.debug(weather_chart_hourly, weather_chart_daily)
 }
@@ -1167,10 +1085,7 @@ function initweatherchart() {
 function initialize_popovers_and_modals() {
     // top left ("Evergreen")
     bootstrap.Popover.getOrCreateInstance(qs("#evergreenpopover"), {
-        html: true,
-        placement: "bottom",
-        trigger: "focus",
-        content: `
+        html: true, placement: "bottom", trigger: "focus", content: `
             <h2 class="display-4">
                 <img class="logoimg" alt="" src="icons/evergreen${devmode ? "dev" : ""}128.png"/>
                 Evergreen${devmode ? " Dev" : ""}
@@ -1182,19 +1097,13 @@ function initialize_popovers_and_modals() {
 
     // top middle (clock)
     bootstrap.Popover.getOrCreateInstance(qs("#clockpopover"), {
-        html: true,
-        placement: "bottom",
-        trigger: "focus",
-        content: clock_datetime
+        html: true, placement: "bottom", trigger: "focus", content: clock_datetime
     })
 
     // top right (calendar)
     bootstrap.Popover.getOrCreateInstance(qs("#datepopover"), {
-        html: true,
-        sanitize: false,  // why arent tables in the default allow list
-        placement: "bottom",
-        trigger: "focus",
-        content: calendar_html
+        html: true, sanitize: false,  // why arent tables in the default allow list
+        placement: "bottom", trigger: "focus", content: calendar_html
     })
 
     // bottom left (weather) is handled in construct_weather_popover() since it needs to wait for weather settings & data
@@ -1218,8 +1127,7 @@ function initialize_popovers_and_modals() {
     // bottom right (menu)
     bootstrap.Modal.getOrCreateInstance(qs("#menu-button"), {
         // redundant properties actually specified in HTML, only here for clarity
-        target: "#settings_modal",
-        toggle: "modal"
+        target: "#settings_modal", toggle: "modal"
     })
 }
 
