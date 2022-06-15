@@ -1,5 +1,3 @@
-//TODO: make extra weather info nicer?
-
 // initialize config to sensible defaults before it properly loads
 let config_blur = 0;
 let config_timeformat = "12";
@@ -656,7 +654,6 @@ function construct_weather_popover() {
     // deconstruct the info into better objects
     const {currently, daily, hourly, minutely, alerts} = weather_info;
 
-    // TODO: construct weather popover
     let weather_popover_content = `
         <canvas id="weather_chart_daily" width="500" height="250"></canvas>
         <canvas id="weather_chart_hourly" width="500" height="250"></canvas>
@@ -691,12 +688,30 @@ const CHART_COLORS = {
 let weather_chart_daily;
 let weather_chart_hourly;
 
+
+// temperature in fahrenheit because easier for me
+let tempcolors = [
+    {temp: 0, color: CHART_COLORS.purple},
+    {temp: 32, color: CHART_COLORS.blue},
+    {temp: 70, color: CHART_COLORS.green},
+    {temp: 80, color: CHART_COLORS.yellow},
+    {temp: 100, color: CHART_COLORS.red}
+]
+
+function coloroftemp(temp) {
+    let grad = chroma
+        .scale(tempcolors.map(({temp, color}) => color))
+        .domain(tempcolors.map(({temp, color}) => temp));
+    return grad(temp)
+}
+
 function tempgradient(gradient) {
-    gradient.addColorStop(0, CHART_COLORS.purple);
-    gradient.addColorStop(0.32, CHART_COLORS.blue);
-    gradient.addColorStop(0.70, CHART_COLORS.green);
-    gradient.addColorStop(0.80, CHART_COLORS.yellow);
-    gradient.addColorStop(1, CHART_COLORS.red);
+    const temps = tempcolors.map(({temp, color}) => temp)
+    const min = Math.min(...temps)
+    const max = Math.max(...temps)
+    tempcolors.forEach(({temp, color}) => {
+        gradient.addColorStop((temp - min) / (max - min), color)
+    })
 }
 
 function context_to_gradient(context) {
@@ -710,8 +725,11 @@ function context_to_gradient(context) {
     const value_at_top = context.chart.scales.temperature.getValueForPixel(top)
 
     // map the pixels of the chart to the absolute temperature values
-    const true0 = tunit(0);
-    const true1 = tunit(100);
+    const temps = tempcolors.map(({temp, color}) => temp)
+    const min = Math.min(...temps)
+    const max = Math.max(...temps)
+    const true0 = tunit(min);
+    const true1 = tunit(max);
     // canvas pixels start at 0,0 in top left and y increases as it goes down, values work opposite so its weird
     const ratio = -(height) / (value_at_top - value_at_bottom)
     const gradient_bottom = bottom - (ratio * (value_at_bottom - true0));
@@ -748,7 +766,6 @@ function initweatherchart() {
     const {currently, daily, hourly, minutely, alerts} = weather_info;
     let data = [];
 
-    // TODO: some button to toggle through datasets like humidity and UV i believe i can do that
     // https://www.chartjs.org/docs/latest/developers/api.html#setdatasetvisibility-datasetindex-visibility
 
     let hourly_chart_gradient, daily_chart_gradient;
@@ -781,7 +798,14 @@ function initweatherchart() {
                     cubicInterpolationMode: 'monotone',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`
+                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                            labelColor: function (context) {
+                                const col = coloroftemp(context.parsed.y)
+                                return {
+                                    borderColor: col,
+                                    backgroundColor: col,
+                                }
+                            },
                         }
                     }
                 },
@@ -817,7 +841,14 @@ function initweatherchart() {
                     hidden: true,
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`
+                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                            labelColor: function (context) {
+                                const col = coloroftemp(context.parsed.y)
+                                return {
+                                    borderColor: col,
+                                    backgroundColor: col,
+                                }
+                            },
                         }
                     }
                 },
@@ -916,7 +947,6 @@ function initweatherchart() {
                     max: 100,
                     display: 'auto'
                 },
-                // TODO: fix
                 uv: {
                     position: 'right',
                     min: 0,
@@ -1001,13 +1031,12 @@ function initweatherchart() {
                     tooltip: {
                         callbacks: {
                             label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
-                            // TODO: fix tooltip color
-                            // labelColor: function (context) {
-                            //     console.debug(context)
-                            //     const basepos = findPos(context.chart.ctx.canvas)
-                            //     console.debug(context.chart.ctx.getImageData(Math.round(basepos.x + context.element.x), Math.round(basepos.y + context.element.y), 1, 1).data)
-                            //     return {};
-                            // },
+                            labelColor: function (context) {
+                                return {
+                                    borderColor: CHART_COLORS.red,
+                                    backgroundColor: coloroftemp(context.parsed.y),
+                                }
+                            },
                         },
 
                     }
@@ -1025,7 +1054,13 @@ function initweatherchart() {
                     cubicInterpolationMode: 'monotone',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`
+                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                            labelColor: function (context) {
+                                return {
+                                    borderColor: CHART_COLORS.blue,
+                                    backgroundColor: coloroftemp(context.parsed.y),
+                                }
+                            },
                         }
                     }
                 },
