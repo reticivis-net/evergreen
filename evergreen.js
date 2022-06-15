@@ -666,7 +666,7 @@ function construct_weather_popover() {
     bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover"), {
         html: true,
         sanitize: false,
-        placement: "top",
+        placement: "top", // https://github.com/twbs/bootstrap/discussions/36562
         trigger: "click",
         content: weather_popover_content
     })
@@ -691,6 +691,14 @@ const CHART_COLORS = {
 let weather_chart_daily;
 let weather_chart_hourly;
 
+function tempgradient(gradient) {
+    gradient.addColorStop(0, CHART_COLORS.purple);
+    gradient.addColorStop(0.32, CHART_COLORS.blue);
+    gradient.addColorStop(0.70, CHART_COLORS.green);
+    gradient.addColorStop(0.80, CHART_COLORS.yellow);
+    gradient.addColorStop(1, CHART_COLORS.red);
+}
+
 function context_to_gradient(context) {
     if (!context.chart.chartArea) {
         // This case happens on initial chart load
@@ -698,8 +706,8 @@ function context_to_gradient(context) {
     }
 
     const {bottom, top, height} = context.chart.chartArea;
-    const value_at_bottom = context.chart.scales.y.getValueForPixel(bottom)
-    const value_at_top = context.chart.scales.y.getValueForPixel(top)
+    const value_at_bottom = context.chart.scales.temperature.getValueForPixel(bottom)
+    const value_at_top = context.chart.scales.temperature.getValueForPixel(top)
 
     // map the pixels of the chart to the absolute temperature values
     const true0 = tunit(0);
@@ -713,12 +721,20 @@ function context_to_gradient(context) {
     let gradient = context.chart.ctx.createLinearGradient(0, gradient_bottom, 0, gradient_top);
     // this is totally subjective
     // TODO: make this configurable
-    gradient.addColorStop(0, CHART_COLORS.purple);
-    gradient.addColorStop(0.32, CHART_COLORS.blue);
-    gradient.addColorStop(0.70, CHART_COLORS.green);
-    gradient.addColorStop(0.80, CHART_COLORS.yellow);
-    gradient.addColorStop(1, CHART_COLORS.red);
+    tempgradient(gradient)
     return gradient
+}
+
+function findPos(obj) {
+    var curleft = 0, curtop = 0;
+    if (obj.offsetParent) {
+        do {
+            curleft += obj.offsetLeft;
+            curtop += obj.offsetTop;
+        } while (obj = obj.offsetParent);
+        return {x: curleft, y: curtop};
+    }
+    return undefined;
 }
 
 function initweatherchart() {
@@ -761,6 +777,7 @@ function initweatherchart() {
                     label: "Temperature",
                     borderColor: gen_hourly_chart_gradient,
                     backgroundColor: gen_hourly_chart_gradient,
+                    yAxisID: 'temperature',
                     cubicInterpolationMode: 'monotone',
                     tooltip: {
                         callbacks: {
@@ -796,6 +813,7 @@ function initweatherchart() {
                     borderColor: gen_hourly_chart_gradient,
                     backgroundColor: gen_hourly_chart_gradient,
                     cubicInterpolationMode: 'monotone',
+                    yAxisID: 'temperature',
                     hidden: true,
                     tooltip: {
                         callbacks: {
@@ -882,7 +900,7 @@ function initweatherchart() {
 
 
                 },
-                y: {
+                temperature: {
                     ticks: {
                         callback: (value) => `${value}°${config_tempunit.toUpperCase()}`
                     },
@@ -937,7 +955,23 @@ function initweatherchart() {
                 }
             }
         },
-
+        plugins: [
+            {
+                id: "fixlegend",
+                beforeDraw: function (chart) {
+                    chart.config.data.datasets.forEach((dataset, i) => {
+                        if (dataset.yAxisID === "temperature") {
+                            const hb = chart.legend.legendHitBoxes[i];
+                            // console.debug(chart.legend.legendHitBoxes[i], dataset, chart);
+                            let gradient = chart.ctx.createLinearGradient(hb.left, 0, hb.left + chart.legend.options.labels.boxWidth, 0);
+                            tempgradient(gradient);
+                            chart.legend.legendItems[i].fillStyle = gradient;
+                            chart.legend.legendItems[i].strokeStyle = gradient;
+                        }
+                    });
+                }
+            }
+        ]
     });
 
     function gen_daily_chart_gradient(context) {
@@ -962,11 +996,20 @@ function initweatherchart() {
                     backgroundColor: CHART_COLORS.red,
                     pointBorderColor: CHART_COLORS.red,
                     borderColor: gen_daily_chart_gradient,
+                    yAxisID: 'temperature',
                     cubicInterpolationMode: 'monotone',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`
-                        }
+                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                            // TODO: fix tooltip color
+                            // labelColor: function (context) {
+                            //     console.debug(context)
+                            //     const basepos = findPos(context.chart.ctx.canvas)
+                            //     console.debug(context.chart.ctx.getImageData(Math.round(basepos.x + context.element.x), Math.round(basepos.y + context.element.y), 1, 1).data)
+                            //     return {};
+                            // },
+                        },
+
                     }
                 },
                 {
@@ -978,6 +1021,7 @@ function initweatherchart() {
                     backgroundColor: CHART_COLORS.blue,
                     pointBorderColor: CHART_COLORS.blue,
                     borderColor: gen_daily_chart_gradient,
+                    yAxisID: 'temperature',
                     cubicInterpolationMode: 'monotone',
                     tooltip: {
                         callbacks: {
@@ -1017,11 +1061,12 @@ function initweatherchart() {
                         tooltipFormat: "EEE LLL do uuuu"
                     },
                 },
-                y: {
+                temperature: {
                     ticks: {
                         callback: value => `${value}°${config_tempunit.toUpperCase()}`
                     },
-                    display: 'auto'
+                    display: 'auto',
+                    position: 'left'
                 },
                 percent: {
                     ticks: {
@@ -1062,7 +1107,24 @@ function initweatherchart() {
                     }
                 }
             }
-        }
+        },
+        plugins: [
+            {
+                id: "fixlegend",
+                beforeDraw: function (chart) {
+                    chart.config.data.datasets.forEach((dataset, i) => {
+                        if (dataset.yAxisID === "temperature") {
+                            const hb = chart.legend.legendHitBoxes[i];
+                            let gradient = chart.ctx.createLinearGradient(hb.left, 0, hb.left + chart.legend.options.labels.boxWidth, 0);
+                            tempgradient(gradient);
+                            chart.legend.legendItems[i].strokeStyle = dataset.backgroundColor;
+                            chart.legend.legendItems[i].fillStyle = gradient;
+                        }
+                    });
+
+                }
+            }
+        ]
     });
     // console.debug(weather_chart_hourly, weather_chart_daily)
 }
