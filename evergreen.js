@@ -13,6 +13,7 @@ let version = chrome.runtime.getManifest().version;
 let devmode = undefined;
 
 let weather_info;
+let weather_reverse_geocode_info;
 let last_weather_get;
 
 chrome.management.getSelf(function (result) {
@@ -346,12 +347,14 @@ function fetch_weather() {
     console.debug("downloading new weather info");
     let weatherprom = get_weather_at_current_pos()
     // let weatherprom = get_weather_from_latlong(39.7392, -104.9903)
-    weatherprom.then((weather_response) => {
+    weatherprom.then(([weather_response, geocoderesponse]) => {
+        console.log(geocoderesponse)
         chrome.storage.local.set({
-            lastweather: new Date().getTime() / 1000, weather: weather_response
+            lastweather: new Date().getTime() / 1000, weather: weather_response, geocode: geocoderesponse
         });
         last_weather_get = new Date();
         weather_info = weather_response;
+        weather_reverse_geocode_info = geocoderesponse;
         console.debug(weather_info)
         construct_weather_popover()
     });
@@ -364,7 +367,7 @@ function fetch_weather() {
 
 function init_weather() {
     // temperature unit handler AND iconset AND weather
-    chrome.storage.local.get(['tempunit', 'lastweather', 'iconset', 'weather'], function (result) {
+    chrome.storage.local.get(['tempunit', 'lastweather', 'iconset', 'weather', "geocode"], function (result) {
         // init temp unit settings options
         config_tempunit = result["tempunit"];
         if (config_tempunit === undefined) {
@@ -408,6 +411,7 @@ function init_weather() {
             } else {
                 // we have fresh cached data that we can use for the weather info!
                 weather_info = result["weather"]
+                weather_reverse_geocode_info = result["geocode"]
                 last_weather_get = new Date(result["lastweather"] * 1000)
                 console.debug(weather_info)
                 construct_weather_popover();
@@ -635,10 +639,10 @@ function calendar_html() {
 
 
 function construct_weather_popover() {
-    if (!(weather_info && last_weather_get)) {
+    if (!(weather_info && last_weather_get && weather_reverse_geocode_info)) {
         // nothing we can do if there is no weather info
         // shouldnt happen but just in case
-        console.warn("asked to construct weather popup without proper data", weather_info, last_weather_get)
+        console.warn("asked to construct weather popup without proper data", weather_info, last_weather_get, weather_reverse_geocode_info)
         return
     }
     const weatherpopover = qs("#weatherpopover")
@@ -650,9 +654,39 @@ function construct_weather_popover() {
     // deconstruct the info into better objects
     const {currently, daily, hourly, minutely, alerts} = weather_info;
 
+    const hightoday = daily["data"][0]["temperatureHigh"]
+    const lowtoday = daily["data"][0]["temperatureLow"]
+    const tempnow = currently["temperature"]
+
     let weather_popover_content = `
         <canvas id="weather_chart_daily" width="500" height="250"></canvas>
         <canvas id="weather_chart_hourly" width="500" height="250"></canvas>
+        <h5 class="text-center">Current Conditions</h5>
+        <div class="row" style="    align-items: stretch;">
+            <div class="col-auto">
+            ${tunit(lowtoday, true)}°
+            </div>
+            <div class="col">
+                <div class="progress" style="height: 100%">
+                    <div class="progress-bar" 
+                    role="progressbar" 
+                    style="width: ${((tempnow - lowtoday) / (hightoday - lowtoday)) * 100}%;
+                    background: ${temps_to_css_gradient(lowtoday, tempnow)};
+                    " 
+                    aria-valuenow="${tunit(tempnow)}" 
+                    aria-valuemin="${tunit(lowtoday)}" 
+                    aria-valuemax="${tunit(hightoday)}">
+                    </div>
+                </div>
+            </div>
+            <div class="col-auto">
+            ${tunit(hightoday, true)}°
+            </div>
+        </div>
+        <p class="text-muted" style="margin-top: 1rem;margin-bottom: 0;">
+        Last fetched at ${Chart._adapters._date.prototype.format(last_weather_get, config_timeformat === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
+        for ${weather_reverse_geocode_info["locality"]}, ${weather_reverse_geocode_info["principalSubdivision"]}
+        </p> 
     `;
 
     // make the popover!
@@ -702,6 +736,18 @@ function tempgradient(gradient) {
     tempcolors.forEach(({temp, color}) => {
         gradient.addColorStop((temp - min) / (max - min), color)
     })
+}
+
+function temps_to_css_gradient(low, high) {
+    let stops = []
+    tempcolors.forEach(({temp, color}) => {
+        if (low <= temp && temp <= high) {
+            stops.push(`${color} ${100 * ((temp - low) / (high - low))}%`)
+        }
+    })
+    stops.unshift(`${coloroftemp(low)} 0%`)
+    stops.push(`${coloroftemp(high)} 100%`)
+    return `linear-gradient(90deg,${stops.join(",")})`
 }
 
 function context_to_gradient(context) {
@@ -801,7 +847,7 @@ function initweatherchart() {
                     data: hourly["data"].map(hour => {
                         return {x: hour["time"] * 1000, y: Math.round(hour["precipProbability"] * 100)}
                     }),
-                    label: "Rain %",
+                    label: "Precip %",
                     borderColor: 'rgba(54, 162, 235, 0.5)',
                     backgroundColor: 'rgba(54, 162, 235, 0.5)',
                     pointBorderColor: 'rgba(0, 0, 0, 0)',
@@ -1012,7 +1058,7 @@ function initweatherchart() {
                 data: daily["data"].map(day => {
                     return {x: day["time"] * 1000, y: Math.round(day["precipProbability"] * 100)}
                 }),
-                label: "Rain %",
+                label: "Precip %",
                 borderColor: 'rgba(54, 162, 235, 0.5)',
                 backgroundColor: 'rgba(54, 162, 235, 0.5)',
                 pointBorderColor: 'rgba(0, 0, 0, 0)',
@@ -1024,7 +1070,53 @@ function initweatherchart() {
                     }
                 }
                 // borderDash: [5, 15],
-            }]
+            }, {
+                data: daily["data"].map(hour => {
+                    return {x: hour["time"] * 1000, y: hour["uvIndex"]}
+                }),
+                label: "UV Index",
+                borderColor: CHART_COLORS.purple,
+                backgroundColor: CHART_COLORS.purple,
+                cubicInterpolationMode: 'monotone',
+                hidden: true,
+                yAxisID: "uv"
+            }, {
+                parsing: false,
+                data: daily["data"].map(hour => {
+                    return {x: hour["time"] * 1000, y: Math.round(hour["humidity"] * 100)}
+                }),
+                label: "Humidity %",
+                borderColor: CHART_COLORS.blue,
+                backgroundColor: CHART_COLORS.blue,
+                pointBorderColor: 'rgba(0, 0, 0, 0)',
+                cubicInterpolationMode: 'monotone',
+                yAxisID: 'percent',
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                    }
+                },
+                hidden: true
+                // borderDash: [5, 15],
+            }, {
+                parsing: false,
+                data: daily["data"].map(hour => {
+                    return {x: hour["time"] * 1000, y: Math.round(hour["cloudCover"] * 100)}
+                }),
+                label: "Cloud Cover %",
+                borderColor: CHART_COLORS.white,
+                backgroundColor: CHART_COLORS.white,
+                pointBorderColor: 'rgba(0, 0, 0, 0)',
+                cubicInterpolationMode: 'monotone',
+                yAxisID: 'percent',
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                    }
+                },
+                hidden: true
+                // borderDash: [5, 15],
+            },]
         }, options: {
             scales: {
                 x: {
@@ -1041,6 +1133,8 @@ function initweatherchart() {
                     ticks: {
                         callback: (value) => `${value}%`
                     }, position: 'right', min: 0, max: 100, display: 'auto'
+                }, uv: {
+                    position: 'right', min: 0, suggestedMax: 10, display: 'auto'
                 }
             }, color: "#fff", interaction: {
                 intersect: false, mode: 'index', axis: 'x'

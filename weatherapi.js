@@ -27,7 +27,8 @@ function f_to_c(f) {
 
 function get_weather_from_latlong(lat, long) {
     // TODO: replace with updated API methinks
-    const url = `https://api.darksky.net/forecast/${encodeURIComponent(apikey)}/${encodeURIComponent(lat)},${encodeURIComponent(long)}?units=us`;
-    return fetch_json(url);
+    const url1 = `https://api.darksky.net/forecast/${encodeURIComponent(apikey)}/${encodeURIComponent(lat)},${encodeURIComponent(long)}?units=us`;
+    const url2 = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(long)}`;
+    return Promise.all([fetch_json(url1), fetch_json(url2)])
 }
 
