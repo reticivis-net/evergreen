@@ -249,3 +249,18 @@ a.popper:focus {
 .floating-text {
     text-shadow: 0 0 1rem rgb(0 0 0 / 70%);
 }
+
+.progress-text-center {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 10;
+    text-align: center;
+
+}
+
+.progress-text-center span {
+    vertical-align: center;
+}

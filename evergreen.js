@@ -139,9 +139,10 @@ function tunit(temp, round = false) {
 function sunit(speed) {
     // converts speed unit if needed
     if (config_tempunit === "c") {
-        speed = speed * 1.609344;
+        // meters per second
+        speed = speed * 0.44704;
     }
-    return Math.round(speed);
+    return speed;
 }
 
 function climacon(prop) {
@@ -654,35 +655,81 @@ function construct_weather_popover() {
     // deconstruct the info into better objects
     const {currently, daily, hourly, minutely, alerts} = weather_info;
 
-    const hightoday = daily["data"][0]["temperatureHigh"]
-    const lowtoday = daily["data"][0]["temperatureLow"]
     const tempnow = currently["temperature"]
+    const hightoday = Math.max(daily["data"][0]["temperatureHigh"], tempnow)
+    const lowtoday = Math.min(daily["data"][0]["temperatureLow"], tempnow)
+
 
     let weather_popover_content = `
         <canvas id="weather_chart_daily" width="500" height="250"></canvas>
         <canvas id="weather_chart_hourly" width="500" height="250"></canvas>
         <h5 class="text-center">Current Conditions</h5>
-        <div class="row" style="    align-items: stretch;">
-            <div class="col-auto">
+        <div class="row mb-2" style="    align-items: stretch;">
+            <div class="col-auto" style="color:${coloroftemp(lowtoday)}">
             ${tunit(lowtoday, true)}°
             </div>
             <div class="col">
-                <div class="progress" style="height: 100%">
+                <div class="progress" style="height: 100%; position:relative">
                     <div class="progress-bar" 
                     role="progressbar" 
-                    style="width: ${((tempnow - lowtoday) / (hightoday - lowtoday)) * 100}%;
+                    style="width: ${Math.max(((tempnow - lowtoday) / (hightoday - lowtoday)) * 100, 1)}%;
                     background: ${temps_to_css_gradient(lowtoday, tempnow)};
                     " 
                     aria-valuenow="${tunit(tempnow)}" 
                     aria-valuemin="${tunit(lowtoday)}" 
                     aria-valuemax="${tunit(hightoday)}">
                     </div>
+                    <div class="progress-text-center"><span>${tunit(tempnow, true)}°</span></div>
                 </div>
             </div>
-            <div class="col-auto">
+            <div class="col-auto" style="color:${coloroftemp(hightoday)}">
             ${tunit(hightoday, true)}°
             </div>
         </div>
+        <div class="row">
+            <div class="col">
+                <h6 class="text-center">Humidity</h6>
+                <div class="progress" style=" position:relative">
+                    <div class="progress-bar bg-info" 
+                    role="progressbar" 
+                    style="width: ${Math.max(currently["humidity"] * 100, 1)}%;" 
+                    aria-valuenow="${Math.round(currently["humidity"] * 100)}" 
+                    aria-valuemin="0" 
+                    aria-valuemax="100">
+                    </div>
+                    <div class="progress-text-center"><span>${Math.round(currently["humidity"] * 100)}%</span></div>
+                </div>
+            </div>
+            <div class="col">
+                <h6 class="text-center">Cloud Cover</h6>
+                <div class="progress" style=" position:relative">
+                    <div class="progress-bar bg-light" 
+                    role="progressbar" 
+                    style="width: ${Math.max(currently["cloudCover"] * 100, 1)}%;" 
+                    aria-valuenow="${Math.round(currently["cloudCover"] * 100)}" 
+                    aria-valuemin="0" 
+                    aria-valuemax="100">
+                    </div>
+                    <div class="progress-text-center"><span>${Math.round(currently["cloudCover"] * 100)}%</span></div>
+                </div>
+            </div>
+            <div class="col">
+                <h6 class="text-center">UV Index</h6>
+                <div class="progress" style=" position:relative">
+                    <div class="progress-bar" 
+                    role="progressbar" 
+                    style="width: ${Math.max(currently["uvIndex"] * 10, 1)}%;
+                    background-color: var(--bs-purple)" 
+                    aria-valuenow="${Math.round(currently["uvIndex"])}" 
+                    aria-valuemin="0" 
+                    aria-valuemax="${Math.max(10, currently["uvIndex"] * 10)}">
+                    </div>
+                    <div class="progress-text-center"><span>${currently["uvIndex"]}</span></div>
+                </div>
+            </div>
+        </div>
+        
+        
         <p class="text-muted" style="margin-top: 1rem;margin-bottom: 0;">
         Last fetched at ${Chart._adapters._date.prototype.format(last_weather_get, config_timeformat === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
         for ${weather_reverse_geocode_info["locality"]}, ${weather_reverse_geocode_info["principalSubdivision"]}
@@ -717,10 +764,10 @@ let weather_chart_hourly;
 
 
 // temperature in fahrenheit because easier for me
-let tempcolors = [{temp: 0, color: CHART_COLORS.purple}, {temp: 32, color: CHART_COLORS.blue}, {
-    temp: 70,
-    color: CHART_COLORS.green
-}, {temp: 80, color: CHART_COLORS.yellow}, {temp: 100, color: CHART_COLORS.red}]
+let tempcolors = [{temp: 0, color: CHART_COLORS.purple}, {temp: 32, color: CHART_COLORS.blue},
+    {temp: 60, color: CHART_COLORS.green},
+    {temp: 70, color: 'rgb(75,192,122)'}, {temp: 80, color: CHART_COLORS.yellow},
+    {temp: 100, color: CHART_COLORS.red}]
 
 function coloroftemp(temp) {
     let grad = chroma
@@ -927,6 +974,24 @@ function initweatherchart() {
                     },
                     hidden: true
                     // borderDash: [5, 15],
+                }, {
+                    parsing: false,
+                    data: hourly["data"].map(hour => {
+                        return {x: hour["time"] * 1000, y: sunit(hour["windSpeed"])}
+                    }),
+                    label: "Wind Speed",
+                    borderColor: CHART_COLORS.grey,
+                    backgroundColor: CHART_COLORS.grey,
+                    pointBorderColor: 'rgba(0, 0, 0, 0)',
+                    cubicInterpolationMode: 'monotone',
+                    yAxisID: 'speed',
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y}${config_tempunit === "c" ? "m/s" : "mph"}`
+                        }
+                    },
+                    hidden: true
+                    // borderDash: [5, 15],
                 },]
         }, options: {
             scales: {
@@ -959,6 +1024,11 @@ function initweatherchart() {
                     }, position: 'right', min: 0, max: 100, display: 'auto'
                 }, uv: {
                     position: 'right', min: 0, suggestedMax: 10, display: 'auto'
+                }, speed: {
+                    position: 'right', min: 0, display: 'auto', suggestedMax: 7,
+                    ticks: {
+                        callback: (value) => `${value}${config_tempunit === "c" ? "m/s" : "mph"}`
+                    }
                 }
             }, color: "#fff", interaction: {
                 intersect: false, mode: 'index', axis: 'x'
@@ -1116,6 +1186,24 @@ function initweatherchart() {
                 },
                 hidden: true
                 // borderDash: [5, 15],
+            }, {
+                parsing: false,
+                data: daily["data"].map(hour => {
+                    return {x: hour["time"] * 1000, y: sunit(hour["windSpeed"])}
+                }),
+                label: "Wind Speed",
+                borderColor: CHART_COLORS.grey,
+                backgroundColor: CHART_COLORS.grey,
+                pointBorderColor: 'rgba(0, 0, 0, 0)',
+                cubicInterpolationMode: 'monotone',
+                yAxisID: 'speed',
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y}${config_tempunit === "c" ? "m/s" : "mph"}`
+                    }
+                },
+                hidden: true
+                // borderDash: [5, 15],
             },]
         }, options: {
             scales: {
@@ -1124,7 +1212,9 @@ function initweatherchart() {
                         displayFormats: {
                             hour: config_timeformat === "12" ? 'EEE h a' : "EEE HH:00", day: 'LLL do'
                         }, tooltipFormat: "EEE LLL do uuuu"
-                    },
+                    }, ticks: {
+                        maxRotation: 0,
+                    }
                 }, temperature: {
                     ticks: {
                         callback: value => `${value}°${config_tempunit.toUpperCase()}`
@@ -1135,6 +1225,11 @@ function initweatherchart() {
                     }, position: 'right', min: 0, max: 100, display: 'auto'
                 }, uv: {
                     position: 'right', min: 0, suggestedMax: 10, display: 'auto'
+                }, speed: {
+                    position: 'right', min: 0, display: 'auto', suggestedMax: 7,
+                    ticks: {
+                        callback: (value) => `${value}${config_tempunit === "c" ? "m/s" : "mph"}`
+                    }
                 }
             }, color: "#fff", interaction: {
                 intersect: false, mode: 'index', axis: 'x'
