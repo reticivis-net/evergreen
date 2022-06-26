@@ -977,7 +977,7 @@ function initweatherchart() {
                 }, {
                     parsing: false,
                     data: hourly["data"].map(hour => {
-                        return {x: hour["time"] * 1000, y: sunit(hour["windSpeed"])}
+                        return {x: hour["time"] * 1000, y: roundton(sunit(hour["windSpeed"]), 2)}
                     }),
                     label: "Wind Speed",
                     borderColor: CHART_COLORS.grey,
@@ -987,7 +987,7 @@ function initweatherchart() {
                     yAxisID: 'speed',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y}${config_tempunit === "c" ? "m/s" : "mph"}`
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "m/s" : "mph"}`
                         }
                     },
                     hidden: true
@@ -1027,7 +1027,7 @@ function initweatherchart() {
                 }, speed: {
                     position: 'right', min: 0, display: 'auto', suggestedMax: 7,
                     ticks: {
-                        callback: (value) => `${value}${config_tempunit === "c" ? "m/s" : "mph"}`
+                        callback: (value) => `${value} ${config_tempunit === "c" ? "m/s" : "mph"}`
                     }
                 }
             }, color: "#fff", interaction: {
@@ -1189,7 +1189,7 @@ function initweatherchart() {
             }, {
                 parsing: false,
                 data: daily["data"].map(hour => {
-                    return {x: hour["time"] * 1000, y: sunit(hour["windSpeed"])}
+                    return {x: hour["time"] * 1000, y: roundton(sunit(hour["windSpeed"]), 2)}
                 }),
                 label: "Wind Speed",
                 borderColor: CHART_COLORS.grey,
@@ -1199,7 +1199,7 @@ function initweatherchart() {
                 yAxisID: 'speed',
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${context.parsed.y}${config_tempunit === "c" ? "m/s" : "mph"}`
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "m/s" : "mph"}`
                     }
                 },
                 hidden: true
@@ -1228,7 +1228,7 @@ function initweatherchart() {
                 }, speed: {
                     position: 'right', min: 0, display: 'auto', suggestedMax: 7,
                     ticks: {
-                        callback: (value) => `${value}${config_tempunit === "c" ? "m/s" : "mph"}`
+                        callback: (value) => `${value} ${config_tempunit === "c" ? "m/s" : "mph"}`
                     }
                 }
             }, color: "#fff", interaction: {
