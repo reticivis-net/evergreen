@@ -25,6 +25,10 @@ function f_to_c(f) {
     return (f - 32) * (5 / 9);
 }
 
+function c_to_f(c) {
+    return (c * (9 / 5)) + 32
+}
+
 function get_weather_from_latlong(lat, long) {
     // TODO: replace with openweathermap by March 31st, 2023
     const url1 = `https://api.darksky.net/forecast/${encodeURIComponent(apikey)}/${encodeURIComponent(lat)},${encodeURIComponent(long)}?units=us`;

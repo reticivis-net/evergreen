@@ -838,6 +838,14 @@ function findPos(obj) {
     return undefined;
 }
 
+function invtunit(temp) {
+    if (config_tempunit === "c") {
+        return c_to_f(temp)
+    } else {
+        return temp
+    }
+}
+
 function initweatherchart() {
     let chart_daily = qs("#weather_chart_daily");
     let chart_hourly = qs("#weather_chart_hourly");
@@ -880,7 +888,8 @@ function initweatherchart() {
                     callbacks: {
                         label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
                         labelColor: function (context) {
-                            const col = coloroftemp(context.parsed.y)
+
+                            const col = coloroftemp(invtunit(context.parsed.y))
                             return {
                                 borderColor: col, backgroundColor: col,
                             }
@@ -921,7 +930,7 @@ function initweatherchart() {
                         callbacks: {
                             label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
                             labelColor: function (context) {
-                                const col = coloroftemp(context.parsed.y)
+                                const col = coloroftemp(invtunit(context.parsed.y))
                                 return {
                                     borderColor: col, backgroundColor: col,
                                 }
@@ -1096,7 +1105,7 @@ function initweatherchart() {
                         label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
                         labelColor: function (context) {
                             return {
-                                borderColor: CHART_COLORS.red, backgroundColor: coloroftemp(context.parsed.y),
+                                borderColor: CHART_COLORS.red, backgroundColor: coloroftemp(invtunit(context.parsed.y)),
                             }
                         },
                     },
@@ -1118,7 +1127,8 @@ function initweatherchart() {
                         label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
                         labelColor: function (context) {
                             return {
-                                borderColor: CHART_COLORS.blue, backgroundColor: coloroftemp(context.parsed.y),
+                                borderColor: CHART_COLORS.blue,
+                                backgroundColor: coloroftemp(invtunit(context.parsed.y)),
                             }
                         },
                     }
