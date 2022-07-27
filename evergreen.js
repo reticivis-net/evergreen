@@ -696,6 +696,12 @@ function construct_weather_popover() {
     }
 
     let weather_popover_content = `
+<!-- TODO: i wanted to put this to the right of the text at the bottom but for whatever reason its mere existance expands the popover and causes weird glitches -->
+        <div style="width: 100%; text-align: right">
+            <a href="https://darksky.net/poweredby/" >
+                <img src="darksky-poweredby.png" alt="Powered by Dark Sky" style="display:inline-block;height: 1rem;">
+            </a>
+        </div>
         <canvas id="weather_chart_daily" width="500" height="250"></canvas>
         <canvas id="weather_chart_hourly" width="500" height="250"></canvas>
         <h5 class="text-center">Current Conditions</h5>
@@ -764,21 +770,10 @@ function construct_weather_popover() {
             </div>
         </div>
         ${alerttext}
-        <div class="row mt-2" style="align-items: center;">
-            <div class="col-auto">
-                <p class="text-muted mb-0">
-                    Last fetched at ${Chart._adapters._date.prototype.format(last_weather_get, config_timeformat === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
-                    for ${weather_reverse_geocode_info["locality"]}, ${weather_reverse_geocode_info["principalSubdivision"]}
-                </p>
-            </div>
-            <div class="col">
-                <div style="width: 100%; text-align: right">
-                    <a href="https://darksky.net/poweredby/" >
-                        <img src="darksky-poweredby.png" alt="Powered by Dark Sky" style="display:inline-block;height: 1rem;">
-                    </a>
-                </div>
-            </div>
-        </div>
+        <p class="text-muted mb-0 mt-2">
+            Last fetched at ${Chart._adapters._date.prototype.format(last_weather_get, config_timeformat === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
+            for ${weather_reverse_geocode_info["locality"]}, ${weather_reverse_geocode_info["principalSubdivision"]}
+        </p>
     `;
 
     // make the popover!
@@ -1125,7 +1120,7 @@ function initweatherchart() {
                 }, title: {
                     display: true, text: "Weather Over 48 Hours", color: "#fff"
                 }
-            }
+            }, responsive: false
         }, plugins: [{
             id: "fixlegend", beforeDraw: function (chart) {
                 chart.config.data.datasets.forEach((dataset, i) => {
@@ -1347,7 +1342,7 @@ function initweatherchart() {
                         }
                     }
                 }
-            }
+            }, responsive: false
         }, plugins: [{
             id: "fixlegend", beforeDraw: function (chart) {
                 chart.config.data.datasets.forEach((dataset, i) => {
@@ -1386,7 +1381,7 @@ function initialize_popovers_and_modals() {
 
     // top right (calendar)
     bootstrap.Popover.getOrCreateInstance(qs("#datepopover"), {
-        html: true, sanitize: false,  // why arent tables in the default allow list
+        html: true, sanitize: false,  // why aren't tables in the default allow list
         placement: "bottom", trigger: "focus", content: calendar_html
     })
 
