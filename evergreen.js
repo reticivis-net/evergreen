@@ -1,4 +1,5 @@
 // initialize config to sensible defaults before it properly loads
+// TODO: make this a dict you fucking maniac 😭
 let config_blur = 0;
 let config_timeformat = "12";
 let config_dateformat = "md";
@@ -356,7 +357,7 @@ function init_background_blur() {// background blur
 function fetch_weather() {
     console.debug("downloading new weather info");
     let weatherprom = get_weather_at_current_pos()
-    // let weatherprom = get_weather_from_latlong(39.7392, -104.9903)
+    // let weatherprom = get_weather_from_latlong(39.7645187,-104.9951955)
     weatherprom.then(([weather_response, geocoderesponse]) => {
         console.log(geocoderesponse)
         chrome.storage.local.set({
@@ -651,7 +652,7 @@ function calendar_html() {
 function construct_weather_popover() {
     if (!(weather_info && last_weather_get && weather_reverse_geocode_info)) {
         // nothing we can do if there is no weather info
-        // shouldnt happen but just in case
+        // shouldn't happen but just in case
         console.warn("asked to construct weather popup without proper data", weather_info, last_weather_get, weather_reverse_geocode_info)
         return
     }
@@ -668,6 +669,29 @@ function construct_weather_popover() {
     const hightoday = Math.max(daily["data"][0]["temperatureHigh"], tempnow)
     const lowtoday = Math.min(daily["data"][0]["temperatureLow"], tempnow)
 
+    //TODO: details on hover, make sure to respect newlines this time
+    let alerttext = "";
+    if (alerts) {
+        alerts.forEach(function (alert, i) {
+            let classes = "";
+            let icon = "";
+            switch (alert["severity"]) {
+                case "advisory":
+                    classes = "text-info"
+                    icon = '<i class="fa-solid fa-circle-info"></i>'
+                    break
+                case "watch":
+                    classes = "text-warning"
+                    icon = '<i class="fa-solid fa-circle-exclamation"></i>'
+                    break
+                case "warning":
+                    classes = "text-danger fw-bolder h4"
+                    icon = '<i class="fa-solid fa-triangle-exclamation"></i>'
+                    break
+            }
+            alerttext += `<p class="${classes}"><a href="${alert["uri"]}">${icon} ${alert["title"]} until ${dayofepoch(alert["expires"])} ${epoch_to_locale_hour_string(alert["expires"])}</a></p>`
+        });
+    }
 
     let weather_popover_content = `
         <canvas id="weather_chart_daily" width="500" height="250"></canvas>
@@ -737,9 +761,10 @@ function construct_weather_popover() {
                 </div>
             </div>
         </div>
-        
-        
-        <p class="text-muted" style="margin-top: 1rem;margin-bottom: 0;">
+        <div class="d-grid gap-1 mt-3 h5" id="alerts">
+            ${alerttext}
+        </div>
+        <p class="text-muted mt-1 mb-0">
         Last fetched at ${Chart._adapters._date.prototype.format(last_weather_get, config_timeformat === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
         for ${weather_reverse_geocode_info["locality"]}, ${weather_reverse_geocode_info["principalSubdivision"]}
         </p> 
@@ -774,8 +799,7 @@ let weather_chart_hourly;
 
 // temperature in fahrenheit because easier for me
 let tempcolors = [{temp: 0, color: CHART_COLORS.purple}, {temp: 32, color: CHART_COLORS.blue}, {
-    temp: 60,
-    color: CHART_COLORS.green
+    temp: 60, color: CHART_COLORS.green
 }, {temp: 70, color: 'rgb(75,192,122)'}, {temp: 80, color: CHART_COLORS.yellow}, {temp: 100, color: CHART_COLORS.red}]
 
 function coloroftemp(temp) {
@@ -1048,8 +1072,6 @@ function initweatherchart() {
                             }
                         }
                     },
-
-
                 }, temperature: {
                     ticks: {
                         callback: (value) => `${value}°${config_tempunit.toUpperCase()}`
@@ -1066,7 +1088,8 @@ function initweatherchart() {
                     }
                 }, precipintensity: {
                     position: 'right', min: 0, display: 'auto', suggestedMin: 0, ticks: {
-                        callback: (value) => `${value}${config_tempunit === "c" ? "cm/h" : "in/h"}`
+                        callback: (value) => `${value}${config_tempunit === "c" ? "cm/h" : "in/h"}`, // without this it cuts off on the right side idfk
+                        padding: 0
                     }
                 }
             }, color: "#fff", interaction: {
@@ -1290,7 +1313,7 @@ function initweatherchart() {
                 }, precipintensity: {
                     position: 'right', min: 0, display: 'auto', ticks: {
                         callback: (value) => `${value}${config_tempunit === "c" ? "cm/h" : "in/h"}`
-                    }
+                    }, padding: 0
                 }
             }, color: "#fff", interaction: {
                 intersect: false, mode: 'index', axis: 'x'

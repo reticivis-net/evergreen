@@ -264,3 +264,16 @@ a.popper:focus {
 .progress-text-center span {
     vertical-align: center;
 }
+
+#alerts p {
+    margin: 0;
+}
+
+#alerts a:hover {
+    filter: brightness(80%);
+}
+
+#alerts a {
+    color: inherit;
+    text-decoration: none;
+}
