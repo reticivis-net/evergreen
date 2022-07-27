@@ -672,6 +672,7 @@ function construct_weather_popover() {
     //TODO: details on hover, make sure to respect newlines this time
     let alerttext = "";
     if (alerts) {
+        alerttext += `<div class="d-grid gap-1 mt-3 h5" id="alerts">`;
         alerts.forEach(function (alert, i) {
             let classes = "";
             let icon = "";
@@ -691,13 +692,14 @@ function construct_weather_popover() {
             }
             alerttext += `<p class="${classes}"><a href="${alert["uri"]}">${icon} ${alert["title"]} until ${dayofepoch(alert["expires"])} ${epoch_to_locale_hour_string(alert["expires"])}</a></p>`
         });
+        alerttext += `</div>`;
     }
 
     let weather_popover_content = `
         <canvas id="weather_chart_daily" width="500" height="250"></canvas>
         <canvas id="weather_chart_hourly" width="500" height="250"></canvas>
         <h5 class="text-center">Current Conditions</h5>
-        <div class="row mb-2" style="    align-items: stretch;">
+        <div class="row mb-2" style="align-items: stretch;">
             <div class="col-auto" style="color:${coloroftemp(lowtoday)}">
             ${tunit(lowtoday, true)}°
             </div>
@@ -761,13 +763,22 @@ function construct_weather_popover() {
                 </div>
             </div>
         </div>
-        <div class="d-grid gap-1 mt-3 h5" id="alerts">
-            ${alerttext}
+        ${alerttext}
+        <div class="row mt-2" style="align-items: center;">
+            <div class="col-auto">
+                <p class="text-muted mb-0">
+                    Last fetched at ${Chart._adapters._date.prototype.format(last_weather_get, config_timeformat === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
+                    for ${weather_reverse_geocode_info["locality"]}, ${weather_reverse_geocode_info["principalSubdivision"]}
+                </p>
+            </div>
+            <div class="col">
+                <div style="width: 100%; text-align: right">
+                    <a href="https://darksky.net/poweredby/" >
+                        <img src="darksky-poweredby.png" alt="Powered by Dark Sky" style="display:inline-block;height: 1rem;">
+                    </a>
+                </div>
+            </div>
         </div>
-        <p class="text-muted mt-1 mb-0">
-        Last fetched at ${Chart._adapters._date.prototype.format(last_weather_get, config_timeformat === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
-        for ${weather_reverse_geocode_info["locality"]}, ${weather_reverse_geocode_info["principalSubdivision"]}
-        </p> 
     `;
 
     // make the popover!
