@@ -145,6 +145,15 @@ function sunit(speed) {
     return speed;
 }
 
+function ssunit(size) {
+    // converts size units if needed
+    if (config_tempunit === "c") {
+        // inch to cm
+        size = roundton(size * 2.54, 6);
+    }
+    return size;
+}
+
 function climacon(prop) {
     // converts DarkSky icon prop to HTML icon based on user settings
     if (config_iconset === "climacons") {
@@ -764,10 +773,10 @@ let weather_chart_hourly;
 
 
 // temperature in fahrenheit because easier for me
-let tempcolors = [{temp: 0, color: CHART_COLORS.purple}, {temp: 32, color: CHART_COLORS.blue},
-    {temp: 60, color: CHART_COLORS.green},
-    {temp: 70, color: 'rgb(75,192,122)'}, {temp: 80, color: CHART_COLORS.yellow},
-    {temp: 100, color: CHART_COLORS.red}]
+let tempcolors = [{temp: 0, color: CHART_COLORS.purple}, {temp: 32, color: CHART_COLORS.blue}, {
+    temp: 60,
+    color: CHART_COLORS.green
+}, {temp: 70, color: 'rgb(75,192,122)'}, {temp: 80, color: CHART_COLORS.yellow}, {temp: 100, color: CHART_COLORS.red}]
 
 function coloroftemp(temp) {
     let grad = chroma
@@ -983,7 +992,7 @@ function initweatherchart() {
                     },
                     hidden: true
                     // borderDash: [5, 15],
-                }, {
+                },/* {
                     parsing: false,
                     data: hourly["data"].map(hour => {
                         return {x: hour["time"] * 1000, y: roundton(sunit(hour["windSpeed"]), 2)}
@@ -997,6 +1006,24 @@ function initweatherchart() {
                     tooltip: {
                         callbacks: {
                             label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "m/s" : "mph"}`
+                        }
+                    },
+                    hidden: true
+                    // borderDash: [5, 15],
+                },*/{
+                    parsing: false,
+                    data: hourly["data"].map(day => {
+                        return {x: day["time"] * 1000, y: ssunit(day["precipIntensity"])}
+                    }),
+                    label: "Precip Intensity",
+                    borderColor: "rgb(54,69,235)",
+                    backgroundColor: "rgb(54,69,235)",
+                    pointBorderColor: 'rgba(0, 0, 0, 0)',
+                    cubicInterpolationMode: 'monotone',
+                    yAxisID: 'precipintensity',
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "cm/h" : "in/h"}`
                         }
                     },
                     hidden: true
@@ -1034,9 +1061,12 @@ function initweatherchart() {
                 }, uv: {
                     position: 'right', min: 0, suggestedMax: 10, display: 'auto'
                 }, speed: {
-                    position: 'right', min: 0, display: 'auto', suggestedMax: 7,
-                    ticks: {
+                    position: 'right', min: 0, display: 'auto', suggestedMax: 7, ticks: {
                         callback: (value) => `${value} ${config_tempunit === "c" ? "m/s" : "mph"}`
+                    }
+                }, precipintensity: {
+                    position: 'right', min: 0, display: 'auto', suggestedMin: 0, ticks: {
+                        callback: (value) => `${value}${config_tempunit === "c" ? "cm/h" : "in/h"}`
                     }
                 }
             }, color: "#fff", interaction: {
@@ -1196,7 +1226,7 @@ function initweatherchart() {
                 },
                 hidden: true
                 // borderDash: [5, 15],
-            }, {
+            }, /*{
                 parsing: false,
                 data: daily["data"].map(hour => {
                     return {x: hour["time"] * 1000, y: roundton(sunit(hour["windSpeed"]), 2)}
@@ -1210,6 +1240,24 @@ function initweatherchart() {
                 tooltip: {
                     callbacks: {
                         label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "m/s" : "mph"}`
+                    }
+                },
+                hidden: true
+                // borderDash: [5, 15],
+            },*/ {
+                parsing: false,
+                data: daily["data"].map(day => {
+                    return {x: day["time"] * 1000, y: ssunit(day["precipIntensity"])}
+                }),
+                label: "Precip Intensity",
+                borderColor: "rgb(54,69,235)",
+                backgroundColor: "rgb(54,69,235)",
+                pointBorderColor: 'rgba(0, 0, 0, 0)',
+                cubicInterpolationMode: 'monotone',
+                yAxisID: 'precipintensity',
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "cm/h" : "in/h"}`
                     }
                 },
                 hidden: true
@@ -1236,9 +1284,12 @@ function initweatherchart() {
                 }, uv: {
                     position: 'right', min: 0, suggestedMax: 10, display: 'auto'
                 }, speed: {
-                    position: 'right', min: 0, display: 'auto', suggestedMax: 7,
-                    ticks: {
+                    position: 'right', min: 0, display: 'auto', suggestedMax: 7, ticks: {
                         callback: (value) => `${value} ${config_tempunit === "c" ? "m/s" : "mph"}`
+                    }
+                }, precipintensity: {
+                    position: 'right', min: 0, display: 'auto', ticks: {
+                        callback: (value) => `${value}${config_tempunit === "c" ? "cm/h" : "in/h"}`
                     }
                 }
             }, color: "#fff", interaction: {
