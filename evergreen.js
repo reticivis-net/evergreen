@@ -710,7 +710,7 @@ function construct_weather_popover() {
         </div>
         <canvas id="weather_chart_daily" width="600" height="250"></canvas>
         <canvas id="weather_chart_hourly" width="600" height="250"></canvas>
-        <h5 class="text-center">Current Conditions</h5>
+        <h5 class="text-center"><i class="fa-solid fa-cloud-sun-rain"></i> Current Conditions</h5>
         <div class="row mb-2" style="align-items: stretch;">
             <div class="col-auto" style="color:${coloroftemp(lowtoday)}">
             ${tunit(lowtoday, true)}°
@@ -735,7 +735,7 @@ function construct_weather_popover() {
         </div>
         <div class="row">
             <div class="col">
-                <h6 class="text-center">Humidity</h6>
+                <h6 class="text-center"><i class="fa-solid fa-droplet-percent"></i> Humidity</h6>
                 <div class="progress" style=" position:relative">
                     <div class="progress-bar bg-info" 
                     role="progressbar" 
@@ -748,7 +748,7 @@ function construct_weather_popover() {
                 </div>
             </div>
             <div class="col">
-                <h6 class="text-center">Cloud Cover</h6>
+                <h6 class="text-center"><i class="fa-solid fa-clouds-sun"></i> Cloud Cover</h6>
                 <div class="progress" style=" position:relative">
                     <div class="progress-bar bg-light" 
                     role="progressbar" 
@@ -761,7 +761,7 @@ function construct_weather_popover() {
                 </div>
             </div>
             <div class="col">
-                <h6 class="text-center">UV Index</h6>
+                <h6 class="text-center"><i class="fa-solid fa-sun"></i> UV Index</h6>
                 <div class="progress" style=" position:relative">
                     <div class="progress-bar" 
                     role="progressbar" 
@@ -1099,7 +1099,7 @@ function initweatherchart() {
                         callback: (value) => `${value} ${config_tempunit === "c" ? "m/s" : "mph"}`
                     }
                 }, precipintensity: {
-                    position: 'right', min: 0, display: 'auto', suggestedMin: 0, ticks: {
+                    position: 'right', min: 0, display: 'auto', suggestedMin: 0, suggestedMax: ssunit(0.098), ticks: {
                         callback: (value) => `${stripzeropoint(value)}${config_tempunit === "c" ? "mm/h" : "in/h"}`, // without this it cuts off on the right side idfk
                         padding: 0
                     }
@@ -1369,7 +1369,7 @@ function initweatherchart() {
                         callback: (value) => `${value} ${config_tempunit === "c" ? "m/s" : "mph"}`
                     }
                 }, precipintensity: {
-                    position: 'right', min: 0, display: 'auto', ticks: {
+                    position: 'right', min: 0, display: 'auto', suggestedMax: ssunit(0.098), ticks: {
                         callback: (value) => `${stripzeropoint(value)}${config_tempunit === "c" ? "mm/h" : "in/h"}`
                     }, padding: 0
                 }
