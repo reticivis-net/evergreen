@@ -1,12 +1,14 @@
 // initialize config to sensible defaults before it properly loads
 // TODO: make this a dict you fucking maniac 😭
-let config_blur = 0;
-let config_timeformat = "12";
-let config_dateformat = "md";
-let config_searchtags = "nature,architecture";
-let config_refreshtime = 0;
-let config_tempunit = "f";
-let config_iconset = "climacons"
+let config = {
+    blur: 0,
+    timeformat: "12",
+    dateformat: "md",
+    searchtags: "nature,architecture",
+    refreshtime: 0,
+    tempunit: "f",
+    iconset: "climacons"
+}
 
 let promotional = false; // use the same BG for promotional purposes
 
@@ -57,7 +59,7 @@ function update_newtab_datetime() {
     let s = String(date.getSeconds()).padStart(2, '0'); // 0 - 59
     let time;
     // i think i stole this code lol
-    if (config_timeformat === "12") {
+    if (config["timeformat"] === "12") {
         let session = "AM";
         if (h === 0) {
             h = 12;
@@ -78,7 +80,7 @@ function update_newtab_datetime() {
     let mo = date.getMonth() + 1; // 0 indexed
     let y = date.getFullYear();
     let da;
-    if (config_dateformat === "md") {
+    if (config["dateformat"] === "md") {
         da = `${mo}/${d}/${y}`;
     } else {
         da = `${d}/${mo}/${y}`;
@@ -98,7 +100,7 @@ function epoch_to_locale_hour_string(epoch) {
     let d = epoch_to_date(epoch);
     let h = d.getHours(); // 0 - 23
     let time;
-    if (config_timeformat === "12") {
+    if (config["timeformat"] === "12") {
         let session = "AM";
         if (h === 0) {
             h = 12;
@@ -131,7 +133,7 @@ function roundton(num, n) {
 
 function tunit(temp, round = false) {
     // converts temperature unit if needed
-    if (config_tempunit === "c") {
+    if (config["tempunit"] === "c") {
         temp = f_to_c(temp);
     }
     return round ? Math.round(temp) : temp;
@@ -139,7 +141,7 @@ function tunit(temp, round = false) {
 
 function sunit(speed) {
     // converts speed unit if needed
-    if (config_tempunit === "c") {
+    if (config["tempunit"] === "c") {
         // meters per second
         speed = speed * 0.44704;
     }
@@ -148,7 +150,7 @@ function sunit(speed) {
 
 function ssunit(size) {
     // converts size units if needed
-    if (config_tempunit === "c") {
+    if (config["tempunit"] === "c") {
         // inch to mm
         size = roundton(size * 25.4, 5);
     }
@@ -163,7 +165,7 @@ function stripzeropoint(val) {
 
 function climacon(prop) {
     // converts DarkSky icon prop to HTML icon based on user settings
-    if (config_iconset === "climacons") {
+    if (config["iconset"] === "climacons") {
         // conversion from darksky to climacon
         let climacons = {
             "clear-day": "sun",
@@ -236,9 +238,9 @@ function clock_datetime() {
 // called by settings menu
 function settings_set_tempunit() {
     if (this.id === "farradio") {
-        config_tempunit = "f";
+        config["tempunit"] = "f";
     } else {
-        config_tempunit = "c";
+        config["tempunit"] = "c";
     }
     console.debug("reloading weather div with cached info");
     construct_weather_popover()
@@ -247,9 +249,9 @@ function settings_set_tempunit() {
 
 function settings_set_iconset() {
     if (this.id === "cradio") {
-        config_iconset = "climacons";
+        config["iconset"] = "climacons";
     } else {
-        config_iconset = "fontawesome";
+        config["iconset"] = "fontawesome";
     }
     console.debug("reloading weather div with cached info");
     construct_weather_popover();
@@ -259,9 +261,9 @@ function settings_set_iconset() {
 
 function settings_set_timeformat() {
     if (this.id === "12radio") {
-        config_timeformat = "12";
+        config["timeformat"] = "12";
     } else {
-        config_timeformat = "24";
+        config["timeformat"] = "24";
     }
     console.debug("reloading weather div with cached info");
 
@@ -272,15 +274,15 @@ function settings_set_timeformat() {
 
 function settings_set_dateformat() {
     if (this.id === "mdradio") {
-        config_dateformat = "md";
+        config["dateformat"] = "md";
     } else {
-        config_dateformat = "dm";
+        config["dateformat"] = "dm";
     }
     save_settings();
 }
 
 function settings_set_searchtags() {
-    config_searchtags = this.value;
+    config["searchtags"] = this.value;
     save_settings();
 }
 
@@ -299,23 +301,23 @@ function set_blur(val) {
         qs("#bg").style["filter"] = `blur(${val}px)`;
     }
     qs("#blurval").innerHTML = `<i class="fas fa-image"></i> Background blur: ${val}px`;
-    config_blur = val;
+    config["blur"] = val;
 }
 
 function settings_set_refreshtime() {
-    config_refreshtime = this.value;
+    config["refreshtime"] = this.value;
     save_settings();
 }
 
 function save_settings() {
     chrome.storage.local.set({
-        blurval: config_blur,
-        tempunit: config_tempunit,
-        timeformat: config_timeformat,
-        dateformat: config_dateformat,
-        searchtags: config_searchtags,
-        refreshtime: config_refreshtime,
-        iconset: config_iconset
+        blurval: config["blur"],
+        tempunit: config["tempunit"],
+        timeformat: config["timeformat"],
+        dateformat: config["dateformat"],
+        searchtags: config["searchtags"],
+        refreshtime: config["refreshtime"],
+        iconset: config["iconset"]
     });
     qs("#savetext").innerHTML = "Saved.";
 
@@ -324,7 +326,7 @@ function save_settings() {
 function change_background() {
     if (!promotional) {
         console.debug("changing BG...");
-        follow_redirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${config_searchtags}`, function (response) {
+        follow_redirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${config["searchtags"]}`, function (response) {
             preload_image(response, function () {
                 qs("#bg").style["background-image"] = `url(${response})`;
             });
@@ -351,7 +353,7 @@ function init_background_blur() {// background blur
         if (result["blurval"] === undefined) {
             result["blurval"] = "0";
         }
-        config_blur = result["blurval"];
+        config["blur"] = result["blurval"];
         // set blur on load
         set_blur(result["blurval"], false);
         qs("#blurslider").setAttribute("value", result["blurval"]);
@@ -386,11 +388,11 @@ function init_weather() {
     // temperature unit handler AND iconset AND weather
     chrome.storage.local.get(['tempunit', 'lastweather', 'iconset', 'weather', "geocode"], function (result) {
         // init temp unit settings options
-        config_tempunit = result["tempunit"];
-        if (config_tempunit === undefined) {
-            config_tempunit = "f";
+        config["tempunit"] = result["tempunit"];
+        if (config["tempunit"] === undefined) {
+            config["tempunit"] = "f";
         }
-        if (config_tempunit === "f") {
+        if (config["tempunit"] === "f") {
             qs("#farradio").setAttribute("checked", "checked");
         } else {
             qs("#celradio").setAttribute("checked", "checked");
@@ -399,11 +401,11 @@ function init_weather() {
         qs('#celradio').addEventListener('input', settings_set_tempunit);
 
         // init icon set settings options
-        config_iconset = result['iconset'];
-        if (config_iconset === undefined) {
-            config_iconset = "climacons";
+        config["iconset"] = result['iconset'];
+        if (config["iconset"] === undefined) {
+            config["iconset"] = "climacons";
         }
-        if (config_iconset === "climacons") {
+        if (config["iconset"] === "climacons") {
             qs("#cradio").setAttribute("checked", "checked");
         } else {
             qs("#faradio").setAttribute("checked", "checked");
@@ -440,12 +442,12 @@ function init_weather() {
 
 function init_timeformat() {
     // initialize time format options
-    chrome.storage.local.get(['config_timeformat'], function (result) {
-        config_timeformat = result["timeformat"];
-        if (config_timeformat === undefined) {
-            config_timeformat = "12";
+    chrome.storage.local.get(['config["timeformat"]'], function (result) {
+        config["timeformat"] = result["timeformat"];
+        if (config["timeformat"] === undefined) {
+            config["timeformat"] = "12";
         }
-        if (config_timeformat === "12") {
+        if (config["timeformat"] === "12") {
             document.getElementById("12radio").setAttribute("checked", "checked");
         } else {
             document.getElementById("24radio").setAttribute("checked", "checked");
@@ -468,18 +470,18 @@ function init_background(lastbgrefresh) {
             }
         });
         // handle BG based on refreshtime
-        if (config_refreshtime !== 0) {
+        if (config["refreshtime"] !== 0) {
             // config to not refresh everytime is set
 
             // check if it's been long enough to get a new bg
             let sincelastdownload = (new Date().getTime() / 1000) - lastbgrefresh;
-            let timetowait = config_refreshtime * 60;
+            let timetowait = config["refreshtime"] * 60;
 
             if (sincelastdownload > timetowait) {
                 change_background();
             } else {
                 // no action needed since cached bg was set
-                console.debug(`been less than ${config_refreshtime} mins, using same BG`);
+                console.debug(`been less than ${config["refreshtime"]} mins, using same BG`);
             }
         } else {
             change_background();
@@ -492,19 +494,19 @@ function init_background_settings() {
     // initialize background settings
     chrome.storage.local.get(['searchtags', "lastbgrefresh", "refreshtime"], function (result) {
         // search tags options
-        config_searchtags = result["searchtags"];
-        if (config_searchtags === undefined) {
-            config_searchtags = "nature,ocean,city,space";
+        config["searchtags"] = result["searchtags"];
+        if (config["searchtags"] === undefined) {
+            config["searchtags"] = "nature,ocean,city,space";
         }
-        qs("#bgrefresh").setAttribute("value", config_refreshtime);
+        qs("#bgrefresh").setAttribute("value", config["refreshtime"]);
         qs('#bgrefresh').addEventListener('change', settings_set_refreshtime);
 
         // refreshtime options
-        config_refreshtime = result["refreshtime"];
-        if (config_refreshtime === undefined) {
-            config_refreshtime = 0;
+        config["refreshtime"] = result["refreshtime"];
+        if (config["refreshtime"] === undefined) {
+            config["refreshtime"] = 0;
         }
-        qs("#bgtags").setAttribute("value", config_searchtags);
+        qs("#bgtags").setAttribute("value", config["searchtags"]);
         qs('#bgtags').addEventListener('change', settings_set_searchtags);
 
         init_background(result["lastbgrefresh"])
@@ -514,11 +516,11 @@ function init_background_settings() {
 function init_dateformat() {
     // initialize date format options
     chrome.storage.local.get(['dateformat'], function (result) {
-        config_dateformat = result["dateformat"];
-        if (config_dateformat === undefined) {
-            config_dateformat = "md";
+        config["dateformat"] = result["dateformat"];
+        if (config["dateformat"] === undefined) {
+            config["dateformat"] = "md";
         }
-        if (config_dateformat === "md") {
+        if (config["dateformat"] === "md") {
             qs("#mdradio").setAttribute("checked", "checked");
         } else {
             qs("#dmradio").setAttribute("checked", "checked");
@@ -777,7 +779,7 @@ function construct_weather_popover() {
         </div>
         ${alerttext}
         <p class="text-muted mb-0 mt-2">
-            Last fetched at ${Chart._adapters._date.prototype.format(last_weather_get, config_timeformat === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
+            Last fetched at ${Chart._adapters._date.prototype.format(last_weather_get, config["timeformat"] === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
             for ${weather_reverse_geocode_info["locality"]}, ${weather_reverse_geocode_info["principalSubdivision"]}
         </p>
     `;
@@ -884,7 +886,7 @@ function findPos(obj) {
 }
 
 function invtunit(temp) {
-    if (config_tempunit === "c") {
+    if (config["tempunit"] === "c") {
         return c_to_f(temp)
     } else {
         return temp
@@ -931,7 +933,7 @@ function initweatherchart() {
                 cubicInterpolationMode: 'monotone',
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config["tempunit"].toUpperCase()}`,
                         labelColor: function (context) {
 
                             const col = coloroftemp(invtunit(context.parsed.y))
@@ -973,7 +975,7 @@ function initweatherchart() {
                     hidden: true,
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config["tempunit"].toUpperCase()}`,
                             labelColor: function (context) {
                                 const col = coloroftemp(invtunit(context.parsed.y))
                                 return {
@@ -1041,7 +1043,7 @@ function initweatherchart() {
                     yAxisID: 'speed',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "m/s" : "mph"}`
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "m/s" : "mph"}`
                         }
                     },
                     hidden: true
@@ -1059,7 +1061,7 @@ function initweatherchart() {
                     yAxisID: 'precipintensity',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "mm/h" : "in/h"}`
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm/h" : "in/h"}`
                         }
                     },
                     hidden: true
@@ -1070,8 +1072,8 @@ function initweatherchart() {
                 x: {
                     type: 'time', time: {
                         displayFormats: {
-                            hour: config_timeformat === "12" ? 'h a' : "HH:00", day: 'LLL do'
-                        }, tooltipFormat: config_timeformat === "12" ? 'h a EEE LLL do' : "HH:00 EEE LLL do"
+                            hour: config["timeformat"] === "12" ? 'h a' : "HH:00", day: 'LLL do'
+                        }, tooltipFormat: config["timeformat"] === "12" ? 'h a EEE LLL do' : "HH:00 EEE LLL do"
                     }, ticks: {
                         // autoSkip: false,
                         maxRotation: 0, major: {
@@ -1086,7 +1088,7 @@ function initweatherchart() {
                     },
                 }, temperature: {
                     ticks: {
-                        callback: (value) => `${value}°${config_tempunit.toUpperCase()}`
+                        callback: (value) => `${value}°${config["tempunit"].toUpperCase()}`
                     }, position: 'left', display: 'auto'
                 }, percent: {
                     ticks: {
@@ -1096,11 +1098,11 @@ function initweatherchart() {
                     position: 'right', min: 0, suggestedMax: 10, display: 'auto'
                 }, speed: {
                     position: 'right', min: 0, display: 'auto', suggestedMax: 7, ticks: {
-                        callback: (value) => `${value} ${config_tempunit === "c" ? "m/s" : "mph"}`
+                        callback: (value) => `${value} ${config["tempunit"] === "c" ? "m/s" : "mph"}`
                     }
                 }, precipintensity: {
                     position: 'right', min: 0, display: 'auto', suggestedMin: 0, suggestedMax: ssunit(0.098), ticks: {
-                        callback: (value) => `${stripzeropoint(value)}${config_tempunit === "c" ? "mm/h" : "in/h"}`, // without this it cuts off on the right side idfk
+                        callback: (value) => `${stripzeropoint(value)}${config["tempunit"] === "c" ? "mm/h" : "in/h"}`, // without this it cuts off on the right side idfk
                         padding: 0
                     }
                 }
@@ -1167,7 +1169,7 @@ function initweatherchart() {
                 cubicInterpolationMode: 'monotone',
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config["tempunit"].toUpperCase()}`,
                         labelColor: function (context) {
                             return {
                                 borderColor: CHART_COLORS.red, backgroundColor: coloroftemp(invtunit(context.parsed.y)),
@@ -1190,7 +1192,7 @@ function initweatherchart() {
                 hidden: true,
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config["tempunit"].toUpperCase()}`,
                         labelColor: function (context) {
                             return {
                                 borderColor: CHART_COLORS.red, backgroundColor: coloroftemp(invtunit(context.parsed.y)),
@@ -1212,7 +1214,7 @@ function initweatherchart() {
                 cubicInterpolationMode: 'monotone',
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config["tempunit"].toUpperCase()}`,
                         labelColor: function (context) {
                             return {
                                 borderColor: CHART_COLORS.blue,
@@ -1235,7 +1237,7 @@ function initweatherchart() {
                 hidden: true,
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config["tempunit"].toUpperCase()}`,
                         labelColor: function (context) {
                             return {
                                 borderColor: CHART_COLORS.blue,
@@ -1320,7 +1322,7 @@ function initweatherchart() {
                 yAxisID: 'speed',
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "m/s" : "mph"}`
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "m/s" : "mph"}`
                     }
                 },
                 hidden: true
@@ -1338,7 +1340,7 @@ function initweatherchart() {
                 yAxisID: 'precipintensity',
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "mm/h" : "in/h"}`
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm/h" : "in/h"}`
                     }
                 },
                 hidden: true
@@ -1349,14 +1351,14 @@ function initweatherchart() {
                 x: {
                     type: 'time', time: {
                         displayFormats: {
-                            hour: config_timeformat === "12" ? 'EEE h a' : "EEE HH:00", day: 'LLL do'
+                            hour: config["timeformat"] === "12" ? 'EEE h a' : "EEE HH:00", day: 'LLL do'
                         }, tooltipFormat: "EEE LLL do uuuu"
                     }, ticks: {
                         maxRotation: 0,
                     }
                 }, temperature: {
                     ticks: {
-                        callback: value => `${value}°${config_tempunit.toUpperCase()}`
+                        callback: value => `${value}°${config["tempunit"].toUpperCase()}`
                     }, display: 'auto', position: 'left'
                 }, percent: {
                     ticks: {
@@ -1366,11 +1368,11 @@ function initweatherchart() {
                     position: 'right', min: 0, suggestedMax: 10, display: 'auto'
                 }, speed: {
                     position: 'right', min: 0, display: 'auto', suggestedMax: 7, ticks: {
-                        callback: (value) => `${value} ${config_tempunit === "c" ? "m/s" : "mph"}`
+                        callback: (value) => `${value} ${config["tempunit"] === "c" ? "m/s" : "mph"}`
                     }
                 }, precipintensity: {
                     position: 'right', min: 0, display: 'auto', suggestedMax: ssunit(0.098), ticks: {
-                        callback: (value) => `${stripzeropoint(value)}${config_tempunit === "c" ? "mm/h" : "in/h"}`
+                        callback: (value) => `${stripzeropoint(value)}${config["tempunit"] === "c" ? "mm/h" : "in/h"}`
                     }, padding: 0
                 }
             }, color: "#fff", interaction: {
