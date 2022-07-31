@@ -149,10 +149,16 @@ function sunit(speed) {
 function ssunit(size) {
     // converts size units if needed
     if (config_tempunit === "c") {
-        // inch to cm
-        size = roundton(size * 2.54, 6);
+        // inch to mm
+        size = roundton(size * 25.4, 5);
     }
     return size;
+}
+
+function stripzeropoint(val) {
+    val = `${val}`
+    if (val.startsWith("0.")) val = val.substring(1)
+    return val
 }
 
 function climacon(prop) {
@@ -702,8 +708,8 @@ function construct_weather_popover() {
                 <img src="darksky-poweredby.png" alt="Powered by Dark Sky" style="display:inline-block;height: 1rem;">
             </a>
         </div>
-        <canvas id="weather_chart_daily" width="500" height="250"></canvas>
-        <canvas id="weather_chart_hourly" width="500" height="250"></canvas>
+        <canvas id="weather_chart_daily" width="600" height="250"></canvas>
+        <canvas id="weather_chart_hourly" width="600" height="250"></canvas>
         <h5 class="text-center">Current Conditions</h5>
         <div class="row mb-2" style="align-items: stretch;">
             <div class="col-auto" style="color:${coloroftemp(lowtoday)}">
@@ -1053,7 +1059,7 @@ function initweatherchart() {
                     yAxisID: 'precipintensity',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "cm/h" : "in/h"}`
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "mm/h" : "in/h"}`
                         }
                     },
                     hidden: true
@@ -1094,7 +1100,7 @@ function initweatherchart() {
                     }
                 }, precipintensity: {
                     position: 'right', min: 0, display: 'auto', suggestedMin: 0, ticks: {
-                        callback: (value) => `${value}${config_tempunit === "c" ? "cm/h" : "in/h"}`, // without this it cuts off on the right side idfk
+                        callback: (value) => `${stripzeropoint(value)}${config_tempunit === "c" ? "mm/h" : "in/h"}`, // without this it cuts off on the right side idfk
                         padding: 0
                     }
                 }
@@ -1173,6 +1179,29 @@ function initweatherchart() {
             }, {
                 parsing: false,
                 data: daily["data"].map(day => {
+                    return {x: day["time"] * 1000, y: tunit(day["apparentTemperatureHigh"])}
+                }),
+                label: "High Feels Like",
+                backgroundColor: CHART_COLORS.red,
+                pointBorderColor: CHART_COLORS.red,
+                borderColor: gen_daily_chart_gradient,
+                yAxisID: 'temperature',
+                cubicInterpolationMode: 'monotone',
+                hidden: true,
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                        labelColor: function (context) {
+                            return {
+                                borderColor: CHART_COLORS.red, backgroundColor: coloroftemp(invtunit(context.parsed.y)),
+                            }
+                        },
+                    },
+
+                }
+            }, {
+                parsing: false,
+                data: daily["data"].map(day => {
                     return {x: day["time"] * 1000, y: tunit(day["temperatureLow"])}
                 }),
                 label: "Low",
@@ -1181,6 +1210,29 @@ function initweatherchart() {
                 borderColor: gen_daily_chart_gradient,
                 yAxisID: 'temperature',
                 cubicInterpolationMode: 'monotone',
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
+                        labelColor: function (context) {
+                            return {
+                                borderColor: CHART_COLORS.blue,
+                                backgroundColor: coloroftemp(invtunit(context.parsed.y)),
+                            }
+                        },
+                    }
+                }
+            }, {
+                parsing: false,
+                data: daily["data"].map(day => {
+                    return {x: day["time"] * 1000, y: tunit(day["apparentTemperatureLow"])}
+                }),
+                label: "Low Feels Like",
+                backgroundColor: CHART_COLORS.blue,
+                pointBorderColor: CHART_COLORS.blue,
+                borderColor: gen_daily_chart_gradient,
+                yAxisID: 'temperature',
+                cubicInterpolationMode: 'monotone',
+                hidden: true,
                 tooltip: {
                     callbacks: {
                         label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)}°${config_tempunit.toUpperCase()}`,
@@ -1286,7 +1338,7 @@ function initweatherchart() {
                 yAxisID: 'precipintensity',
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "cm/h" : "in/h"}`
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config_tempunit === "c" ? "mm/h" : "in/h"}`
                     }
                 },
                 hidden: true
@@ -1318,7 +1370,7 @@ function initweatherchart() {
                     }
                 }, precipintensity: {
                     position: 'right', min: 0, display: 'auto', ticks: {
-                        callback: (value) => `${value}${config_tempunit === "c" ? "cm/h" : "in/h"}`
+                        callback: (value) => `${stripzeropoint(value)}${config_tempunit === "c" ? "mm/h" : "in/h"}`
                     }, padding: 0
                 }
             }, color: "#fff", interaction: {
