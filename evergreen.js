@@ -90,11 +90,12 @@ function update_newtab_datetime() {
 
 function epoch_to_date(epoch) {
     // convert UNIX epoch to js date object
-    return new Date(epoch / 1000);
+    // * 1000 necessary because JS uses ms while most places use seconds
+    return new Date(epoch * 1000);
 }
 
 function epoch_to_locale_hour_string(epoch) {
-    // represents an epoch number as a "hour string"
+    // represents an epoch number as an "hour string"
     // for 12h time examples are 1 AM, 2 PM, etc.
     // for 24h time examples are 01:00, 13:00, etc.
     let d = epoch_to_date(epoch);
@@ -893,6 +894,16 @@ function invtunit(temp) {
     }
 }
 
+function initalerttooltips() {
+
+    document.querySelectorAll("#alerts a").forEach((alertp, index) => {
+        new bootstrap.Tooltip(alertp, {
+            html: true,
+            title: "<div class='text-start d-grid gap-2'>" + weather_info["alerts"][index]["description"].replace(/((\*|^)[^*]+)/gim, "<p class='m-0'>$1</p>") + "</div>"
+        })
+    })
+}
+
 function initweatherchart() {
     let chart_daily = qs("#weather_chart_daily");
     let chart_hourly = qs("#weather_chart_hourly");
@@ -1443,6 +1454,8 @@ function initialize_popovers_and_modals() {
 
     // init js chart on show
     qs("#weatherpopover").addEventListener('inserted.bs.popover', initweatherchart)
+    // init hover tooltips for alerts
+    qs("#weatherpopover").addEventListener('inserted.bs.popover', initalerttooltips)
     // destroy js chart element on hide
     qs("#weatherpopover").addEventListener('hidden.bs.popover', () => {
         if (weather_chart_daily) {
