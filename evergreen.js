@@ -1,5 +1,4 @@
 // initialize config to sensible defaults before it properly loads
-// TODO: make this a dict you fucking maniac 😭
 let config = {
     blur: 0,
     timeformat: "12",
@@ -156,6 +155,26 @@ function ssunit(size) {
         size = roundton(size * 25.4, 5);
     }
     return size;
+}
+
+function rainintensity(rainfall) {
+    // https://en.wikipedia.org/wiki/Rain#Intensity
+    // https://glossary.ametsoc.org/wiki/Rain
+    if (rainfall <= 0) {
+        return "none"
+    } else if (0 < rainfall && rainfall < ssunit(0.01)) {
+        return "trace"
+    } else if (ssunit(0.01) <= rainfall && rainfall < ssunit(0.1)) {
+        return "light"
+    } else if (ssunit(0.1) <= rainfall && rainfall <= ssunit(0.3)) {
+        return "moderate"
+    } else if (ssunit(0.3) < rainfall && rainfall < ssunit(2)) {
+        return "heavy"
+    } else if (rainfall >= ssunit(2)) {
+        return "violent"
+    } else {
+        return "invalid"
+    }
 }
 
 function stripzeropoint(val) {
@@ -366,9 +385,9 @@ function init_background_blur() {// background blur
 function fetch_weather() {
     console.debug("downloading new weather info");
     let weatherprom = get_weather_at_current_pos()
-    // let weatherprom = get_weather_from_latlong(39.7645187,-104.9951955)
+    // let weatherprom = get_weather_from_latlong(18.7487647,79.4775855)
     weatherprom.then(([weather_response, geocoderesponse]) => {
-        console.log(geocoderesponse)
+        console.debug(geocoderesponse)
         chrome.storage.local.set({
             lastweather: new Date().getTime() / 1000, weather: weather_response, geocode: geocoderesponse
         });
@@ -678,7 +697,6 @@ function construct_weather_popover() {
     const hightoday = Math.max(daily["data"][0]["temperatureHigh"], tempnow)
     const lowtoday = Math.min(daily["data"][0]["temperatureLow"], tempnow)
 
-    //TODO: details on hover, make sure to respect newlines this time
     let alerttext = "";
     if (alerts) {
         alerttext += `<div class="d-grid gap-1 mt-3 h5" id="alerts">`;
@@ -874,18 +892,6 @@ function context_to_gradient(context) {
     return gradient
 }
 
-function findPos(obj) {
-    var curleft = 0, curtop = 0;
-    if (obj.offsetParent) {
-        do {
-            curleft += obj.offsetLeft;
-            curtop += obj.offsetTop;
-        } while (obj = obj.offsetParent);
-        return {x: curleft, y: curtop};
-    }
-    return undefined;
-}
-
 function invtunit(temp) {
     if (config["tempunit"] === "c") {
         return c_to_f(temp)
@@ -897,10 +903,12 @@ function invtunit(temp) {
 function initalerttooltips() {
 
     document.querySelectorAll("#alerts a").forEach((alertp, index) => {
-        new bootstrap.Tooltip(alertp, {
+        console.debug(new bootstrap.Tooltip(alertp, {
+            placement: "top",
+            fallbackPlacements: ["top"],
             html: true,
             title: "<div class='text-start d-grid gap-2'>" + weather_info["alerts"][index]["description"].replace(/((\*|^)[^*]+)/gim, "<p class='m-0'>$1</p>") + "</div>"
-        })
+        }))
     })
 }
 
@@ -1072,7 +1080,7 @@ function initweatherchart() {
                     yAxisID: 'precipintensity',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm/h" : "in/h"}`
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm/h" : "in/h"} (${rainintensity(context.parsed.y)})`
                         }
                     },
                     hidden: true
@@ -1113,7 +1121,8 @@ function initweatherchart() {
                     }
                 }, precipintensity: {
                     position: 'right', min: 0, display: 'auto', suggestedMin: 0, suggestedMax: ssunit(0.098), ticks: {
-                        callback: (value) => `${stripzeropoint(value)}${config["tempunit"] === "c" ? "mm/h" : "in/h"}`, // without this it cuts off on the right side idfk
+                        // callback: (value) => `${stripzeropoint(value)}${config["tempunit"] === "c" ? "mm/h" : "in/h"}`,
+                        callback: (value) => `${rainintensity(value)}`, // without this it cuts off on the right side idfk
                         padding: 0
                     }
                 }
@@ -1351,7 +1360,7 @@ function initweatherchart() {
                 yAxisID: 'precipintensity',
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm/h" : "in/h"}`
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm/h" : "in/h"} (${rainintensity(context.parsed.y)})`
                     }
                 },
                 hidden: true
@@ -1383,8 +1392,9 @@ function initweatherchart() {
                     }
                 }, precipintensity: {
                     position: 'right', min: 0, display: 'auto', suggestedMax: ssunit(0.098), ticks: {
-                        callback: (value) => `${stripzeropoint(value)}${config["tempunit"] === "c" ? "mm/h" : "in/h"}`
-                    }, padding: 0
+                        // callback: (value) => `${stripzeropoint(value)}${config["tempunit"] === "c" ? "mm/h" : "in/h"}`
+                        callback: (value) => `${rainintensity(value)}`, padding: 0
+                    },
                 }
             }, color: "#fff", interaction: {
                 intersect: false, mode: 'index', axis: 'x'
