@@ -7,8 +7,10 @@ async function fetch_json(url) {
 
 function geolocate() {
     return new Promise((resolve, reject) => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(resolve, reject);
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true
+            });
         } else {
             console.debug("no geolocation available")
             reject("no geolocation available")

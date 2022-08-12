@@ -338,9 +338,9 @@ function save_settings() {
         searchtags: config["searchtags"],
         refreshtime: config["refreshtime"],
         iconset: config["iconset"]
+    }).then(_ => {
+        qs("#savetext").innerHTML = "Saved.";
     });
-    qs("#savetext").innerHTML = "Saved.";
-
 }
 
 function change_background() {
@@ -442,9 +442,9 @@ function init_weather() {
 
             // seconds since last time we got the weather
             let sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
-            // only get weather every 10 mins
-            let timetowait = 10 * 60;
-            // if its been longer than 10 mins and we are online, get the weather again
+            // only get weather every hour
+            let timetowait = 60 * 60;
+            // if its been longer than an hour and we are online, get the weather again
             if (navigator.onLine && sincelastdownload > timetowait) {
                 fetch_weather()
             } else {
@@ -732,6 +732,7 @@ function construct_weather_popover() {
         <canvas id="weather_chart_daily" width="600" height="250"></canvas>
         <canvas id="weather_chart_hourly" width="600" height="250"></canvas>
         <h5 class="text-center"><i class="fa-solid fa-cloud-sun-rain"></i> Current Conditions</h5>
+        <p class="h6 text-center">${hourly["summary"]} ${daily["summary"]}</p>
         <div class="row mb-2" style="align-items: stretch;">
             <div class="col-auto" style="color:${coloroftemp(lowtoday)}">
             ${tunit(lowtoday, true)}°
@@ -1072,7 +1073,7 @@ function initweatherchart() {
                     data: hourly["data"].map(day => {
                         return {x: day["time"] * 1000, y: ssunit(day["precipIntensity"])}
                     }),
-                    label: "Precip Intensity",
+                    label: "Rainfall",
                     borderColor: "rgb(54,69,235)",
                     backgroundColor: "rgb(54,69,235)",
                     pointBorderColor: 'rgba(0, 0, 0, 0)',
@@ -1203,7 +1204,7 @@ function initweatherchart() {
                 data: daily["data"].map(day => {
                     return {x: day["time"] * 1000, y: tunit(day["apparentTemperatureHigh"])}
                 }),
-                label: "High Feels Like",
+                label: "Apparent High",
                 backgroundColor: CHART_COLORS.red,
                 pointBorderColor: CHART_COLORS.red,
                 borderColor: gen_daily_chart_gradient,
@@ -1248,7 +1249,7 @@ function initweatherchart() {
                 data: daily["data"].map(day => {
                     return {x: day["time"] * 1000, y: tunit(day["apparentTemperatureLow"])}
                 }),
-                label: "Low Feels Like",
+                label: "Apparent Low",
                 backgroundColor: CHART_COLORS.blue,
                 pointBorderColor: CHART_COLORS.blue,
                 borderColor: gen_daily_chart_gradient,
@@ -1352,9 +1353,27 @@ function initweatherchart() {
                 data: daily["data"].map(day => {
                     return {x: day["time"] * 1000, y: ssunit(day["precipIntensity"])}
                 }),
-                label: "Precip Intensity",
+                label: "Avg Rain",
                 borderColor: "rgb(54,69,235)",
                 backgroundColor: "rgb(54,69,235)",
+                pointBorderColor: 'rgba(0, 0, 0, 0)',
+                cubicInterpolationMode: 'monotone',
+                yAxisID: 'precipintensity',
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm/h" : "in/h"} (${rainintensity(context.parsed.y)})`
+                    }
+                },
+                hidden: true
+                // borderDash: [5, 15],
+            }, {
+                parsing: false,
+                data: daily["data"].map(day => {
+                    return {x: day["time"] * 1000, y: ssunit(day["precipIntensityMax"])}
+                }),
+                label: "Max Rain",
+                borderColor: "rgb(35,53,162)",
+                backgroundColor: "rgb(35,53,162)",
                 pointBorderColor: 'rgba(0, 0, 0, 0)',
                 cubicInterpolationMode: 'monotone',
                 yAxisID: 'precipintensity',
