@@ -6,7 +6,12 @@ let config = {
     searchtags: "nature,architecture",
     refreshtime: 0,
     tempunit: "f",
-    iconset: "climacons"
+    iconset: "climacons",
+    autolocate: true,
+    weather_address: undefined/*{
+        "latitude": 0,
+        "longitude": 0
+    }*/
 }
 
 let promotional = false; // use the same BG for promotional purposes
@@ -15,7 +20,7 @@ let version = chrome.runtime.getManifest().version;
 let devmode = undefined;
 
 let weather_info;
-let weather_reverse_geocode_info;
+let weather_location_string;
 let last_weather_get;
 
 chrome.management.getSelf(function (result) {
@@ -125,10 +130,7 @@ function dayofepoch(epoch) {
 }
 
 function roundton(num, n) {
-    if (num === 0) {
-        return 0
-    }
-    return +(Math.round((num + Number.EPSILON) + "e+" + n) + "e-" + n);
+    return Number(num.toFixed(n));
 }
 
 function tunit(temp, round = false) {
@@ -329,6 +331,21 @@ function settings_set_refreshtime() {
     save_settings();
 }
 
+function set_autolocation(enabled) {
+    document.querySelectorAll(".disable-on-autolocate").forEach(elem => {
+        if (enabled)
+            elem.setAttribute("disabled", "disabled")
+        else
+            elem.removeAttribute("disabled")
+    })
+}
+
+function settings_set_autolocation() {
+    set_autolocation(this.checked)
+    config["autolocate"] = this.checked
+    save_settings()
+}
+
 function save_settings() {
     chrome.storage.local.set({
         blurval: config["blur"],
@@ -337,7 +354,9 @@ function save_settings() {
         dateformat: config["dateformat"],
         searchtags: config["searchtags"],
         refreshtime: config["refreshtime"],
-        iconset: config["iconset"]
+        iconset: config["iconset"],
+        autolocate: config["autolocate"],
+        weather_address: config["weather_address"]
     }).then(_ => {
         qs("#savetext").innerHTML = "Saved.";
     });
@@ -383,20 +402,30 @@ function init_background_blur() {// background blur
 }
 
 function fetch_weather() {
-    console.debug("downloading new weather info");
+    console.debug("geolocating...");
+    geolocate().then(position => {
+        get_weather_from_latlong(position.coords.latitude, position.coords.longitude).then(weather_response => {
+            console.debug(weather_response)
+            chrome.storage.local.set({
+                lastweather: new Date().getTime() / 1000, weather: weather_response
+            });
+            last_weather_get = new Date();
+            weather_info = weather_response;
+            construct_weather_popover()
+        })
+        reverse_geocode(position.coords.latitude, position.coords.longitude, position.coords.accuracy).then(geocode_response => {
+            console.debug(geocode_response)
+            weather_location_string = geocode_response;
+            // reconstruct if needed
+            if (weather_info) {
+                construct_weather_popover()
+            }
+            chrome.storage.local.set({
+                geocode: geocode_response
+            });
+        })
+    })
     let weatherprom = get_weather_at_current_pos()
-    // let weatherprom = get_weather_from_latlong(18.7487647,79.4775855)
-    weatherprom.then(([weather_response, geocoderesponse]) => {
-        console.debug(geocoderesponse)
-        chrome.storage.local.set({
-            lastweather: new Date().getTime() / 1000, weather: weather_response, geocode: geocoderesponse
-        });
-        last_weather_get = new Date();
-        weather_info = weather_response;
-        weather_reverse_geocode_info = geocoderesponse;
-        console.debug(weather_info)
-        construct_weather_popover()
-    });
     weatherprom.catch((reason) => {
         console.error("weather fetching failed due to ", reason)
         set_html_if_needed(qs("#weather"), "")
@@ -450,7 +479,7 @@ function init_weather() {
             } else {
                 // we have fresh cached data that we can use for the weather info!
                 weather_info = result["weather"]
-                weather_reverse_geocode_info = result["geocode"]
+                weather_location_string = result["geocode"]
                 last_weather_get = new Date(result["lastweather"] * 1000)
                 console.debug(weather_info)
                 construct_weather_popover();
@@ -462,7 +491,7 @@ function init_weather() {
 
 function init_timeformat() {
     // initialize time format options
-    chrome.storage.local.get(['config["timeformat"]'], function (result) {
+    chrome.storage.local.get(['timeformat'], function (result) {
         config["timeformat"] = result["timeformat"];
         if (config["timeformat"] === undefined) {
             config["timeformat"] = "12";
@@ -507,6 +536,20 @@ function init_background(lastbgrefresh) {
             change_background();
         }
     }
+
+}
+
+function init_weather_location_settings() {
+    chrome.storage.local.get(["autolocate", "weathercoords"], function (result) {
+        qs("#autolocate").addEventListener("input", settings_set_autolocation)
+        config["autolocate"] = result["autolocate"]
+        if (result["autolocate"] === undefined || result["autolocate"]) {
+            set_autolocation(true)
+            qs("#autolocate").setAttribute("checked", "checked")
+        } else {
+            set_autolocation(false)
+        }
+    })
 
 }
 
@@ -560,6 +603,7 @@ function initialize_settings_menu() {
     init_timeformat()
     init_background_settings()
     init_dateformat()
+    init_weather_location_settings()
 
     // remove "saved" text when closing settings
     qs('#settings_modal').addEventListener('hidden.bs.modal', () => {
@@ -678,10 +722,10 @@ function calendar_html() {
 
 
 function construct_weather_popover() {
-    if (!(weather_info && last_weather_get && weather_reverse_geocode_info)) {
+    if (!(weather_info && last_weather_get)) {
         // nothing we can do if there is no weather info
         // shouldn't happen but just in case
-        console.warn("asked to construct weather popup without proper data", weather_info, last_weather_get, weather_reverse_geocode_info)
+        console.warn("asked to construct weather popup without proper data", weather_info, last_weather_get, weather_location_string)
         return
     }
     const weatherpopover = qs("#weatherpopover")
@@ -798,9 +842,9 @@ function construct_weather_popover() {
             </div>
         </div>
         ${alerttext}
-        <p class="text-muted mb-0 mt-2">
+        <p class="text-muted mb-0 mt-2" style="max-width: 600px">
             Last fetched at ${Chart._adapters._date.prototype.format(last_weather_get, config["timeformat"] === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
-            for ${weather_reverse_geocode_info["locality"]}, ${weather_reverse_geocode_info["principalSubdivision"]}
+            ${weather_location_string ? `for ${weather_location_string}` : ""}
         </p>
     `;
 

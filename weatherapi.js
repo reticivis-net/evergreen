@@ -33,8 +33,24 @@ function c_to_f(c) {
 
 function get_weather_from_latlong(lat, long) {
     // TODO: replace with openweathermap by March 31st, 2023
-    const url1 = `https://api.darksky.net/forecast/${encodeURIComponent(apikey)}/${encodeURIComponent(lat)},${encodeURIComponent(long)}?units=us`;
-    const url2 = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(long)}`;
-    return Promise.all([fetch_json(url1), fetch_json(url2)])
+    return fetch_json(`https://api.darksky.net/forecast/${encodeURIComponent(apikey)}/${encodeURIComponent(lat)},${encodeURIComponent(long)}?units=us`)
+}
+
+function geocode(addr) {
+    return fetch_json(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&addressdetails=1&limit=1`).then(r => {
+        return {
+            "latitude": r[0]["lat"],
+            "longitude": r[0]["long"]
+        }
+    })
+}
+
+function reverse_geocode(lat, long, accuracy) {
+    // accuracy of GPS is in meters, need to convert to OSM tiles https://wiki.openstreetmap.org/wiki/Zoom_levels
+    accuracy = Math.min(Math.ceil(-Math.log2((accuracy * 2) / 40075017)), 12)
+
+    return fetch_json(`https://nominatim.openstreetmap.org/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(long)}&format=json&zoom=${encodeURIComponent(accuracy)}`).then(r => {
+        return r["display_name"]
+    })
 }
 

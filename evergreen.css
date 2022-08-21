@@ -282,3 +282,15 @@ a.popper:focus {
     max-height: 100vh;
     overflow-y: auto;
 }
+
+.whitelink {
+    color: white;
+}
+
+.whitelink:hover {
+    color: lightgray;
+}
+
+.form-control:disabled {
+    background-color: #242424;
+}
