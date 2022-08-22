@@ -3,15 +3,15 @@ let config = {
     blur: 0,
     timeformat: "12",
     dateformat: "md",
-    searchtags: "nature,architecture",
+    searchtags: "wallpapers",
     refreshtime: 0,
     tempunit: "f",
     iconset: "climacons",
     autolocate: true,
-    weather_address: undefined/*{
-        "latitude": 0,
-        "longitude": 0
-    }*/
+    weather_address: {
+        "latitude": undefined,
+        "longitude": undefined
+    }
 }
 
 let promotional = false; // use the same BG for promotional purposes
@@ -30,6 +30,10 @@ chrome.management.getSelf(function (result) {
 const qs = document.querySelector.bind(document);
 
 console.debug("Evergreen New Tab for chrome");
+
+function isNumeric(num) {
+    return !isNaN(num)
+}
 
 function set_html_if_needed(object, html) {
     // sets the innerHTML of an object if possible and different
@@ -385,6 +389,17 @@ function settings_download_background() {
     });
 }
 
+function settings_set_location() {
+    config["weather_address"] = {}
+    config["weather_address"]["latitude"] = qs("#weather-latitude").value
+    config["weather_address"]["longitude"] = qs("#weather-longitude").value
+    if (isNumeric(config["weather_address"]["latitude"]) && isNumeric(config["weather_address"]["longitude"])) {
+        allow_weather_refresh()
+    } else { // disable if no coords
+        qs("#refresh-weather").setAttribute("disabled", "disabled")
+    }
+    save_settings()
+}
 
 function init_background_blur() {// background blur
     chrome.storage.local.get(['blurval'], result => {
@@ -401,35 +416,38 @@ function init_background_blur() {// background blur
     });
 }
 
-function fetch_weather() {
-    console.debug("geolocating...");
-    geolocate().then(position => {
-        get_weather_from_latlong(position.coords.latitude, position.coords.longitude).then(weather_response => {
-            console.debug(weather_response)
-            chrome.storage.local.set({
-                lastweather: new Date().getTime() / 1000, weather: weather_response
-            });
-            last_weather_get = new Date();
-            weather_info = weather_response;
+function handle_weather_from_latlong(latitude, longitude, accuracy) {
+    reverse_geocode(latitude, longitude, accuracy).then(geocode_response => {
+        console.debug(geocode_response)
+        weather_location_string = geocode_response;
+        // reconstruct if needed
+        if (weather_info) {
             construct_weather_popover()
-        })
-        reverse_geocode(position.coords.latitude, position.coords.longitude, position.coords.accuracy).then(geocode_response => {
-            console.debug(geocode_response)
-            weather_location_string = geocode_response;
-            // reconstruct if needed
-            if (weather_info) {
-                construct_weather_popover()
-            }
-            chrome.storage.local.set({
-                geocode: geocode_response
-            });
-        })
+        }
+        chrome.storage.local.set({
+            geocode: geocode_response
+        });
     })
-    let weatherprom = get_weather_at_current_pos()
-    weatherprom.catch((reason) => {
-        console.error("weather fetching failed due to ", reason)
-        set_html_if_needed(qs("#weather"), "")
+    return get_weather_from_latlong(latitude, longitude).then(weather_response => {
+        console.debug(weather_response)
+        chrome.storage.local.set({
+            lastweather: new Date().getTime() / 1000, weather: weather_response
+        });
+        last_weather_get = new Date();
+        weather_info = weather_response;
+        construct_weather_popover()
+        return weather_info
     })
+}
+
+function fetch_weather() {
+    if (config["autolocate"]) {
+        return geolocate().then(position => {
+            return handle_weather_from_latlong(position.coords.latitude, position.coords.longitude, position.coords.accuracy)
+        })
+    } else {
+        return handle_weather_from_latlong(config["weather_address"]["latitude"], config["weather_address"]["longitude"], 0)
+    }
 
 }
 
@@ -536,12 +554,54 @@ function init_background(lastbgrefresh) {
             change_background();
         }
     }
+}
 
+let weather_refresh_timeout;
+
+function allow_weather_refresh() {
+    if (weather_refresh_timeout) {
+        clearTimeout(weather_refresh_timeout)
+    }
+    weather_refresh_timeout = undefined
+    qs("#refresh-weather").removeAttribute("disabled")
+    qs("#refresh-progress").innerHTML = `<i class="fa-solid fa-arrows-rotate"></i>`
 }
 
 function init_weather_location_settings() {
-    chrome.storage.local.get(["autolocate", "weathercoords"], function (result) {
+    chrome.storage.local.get(["autolocate", "weather_address", "lastweather"], function (result) {
+        config["weather_address"]["latitude"] = result["weather_address"]["latitude"]
+        config["weather_address"]["longitude"] = result["weather_address"]["longitude"]
+
+        qs("#weather-latitude").value = config["weather_address"]["latitude"]
+        qs("#weather-longitude").value = config["weather_address"]["longitude"]
+
+        let sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
+        let timetowait = 60 * 10;
+        if (timetowait > sincelastdownload) {
+            qs("#refresh-weather").setAttribute("disabled", "disabled")
+            weather_refresh_timeout = setTimeout(_ => {
+                allow_weather_refresh()
+            }, (timetowait - sincelastdownload) * 1000)
+        }
+        qs("#refresh-weather").addEventListener("click", _ => {
+            if (qs("#refresh-weather").getAttribute("disabled")) {
+                return
+            }
+            qs("#refresh-weather").setAttribute("disabled", "disabled")
+            qs("#refresh-progress").innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i>`
+            fetch_weather().then(_ => {
+                qs("#refresh-progress").innerHTML = `<i class="fa-solid fa-check"></i>`
+                if (weather_refresh_timeout) {
+                    clearTimeout(weather_refresh_timeout)
+                }
+                weather_refresh_timeout = setTimeout(_ => {
+                    allow_weather_refresh()
+                }, timetowait * 1000)
+            })
+        })
+
         qs("#autolocate").addEventListener("input", settings_set_autolocation)
+        qs("#autolocate").addEventListener("input", allow_weather_refresh)
         config["autolocate"] = result["autolocate"]
         if (result["autolocate"] === undefined || result["autolocate"]) {
             set_autolocation(true)
@@ -549,6 +609,26 @@ function init_weather_location_settings() {
         } else {
             set_autolocation(false)
         }
+        document.querySelectorAll(".weather-coords").forEach(elem => {
+            elem.addEventListener("input", settings_set_location)
+        })
+
+        qs("#submit-address").addEventListener("click", _ => {
+            if (qs("#submit-address").getAttribute("disabled")) {
+                return
+            }
+            qs("#submit-address").setAttribute("disabled", "disabled")
+            qs("#weather-address").setAttribute("disabled", "disabled")
+            qs("#submit-address").innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i>`
+            geocode(qs("#weather-address").value).then(({latitude, longitude}) => {
+                qs("#weather-latitude").value = latitude
+                qs("#weather-longitude").value = longitude
+                settings_set_location()
+                qs("#submit-address").removeAttribute("disabled")
+                qs("#weather-address").removeAttribute("disabled")
+                qs("#submit-address").innerHTML = `<i class="fa-solid fa-magnifying-glass-location"></i>`
+            })
+        })
     })
 
 }

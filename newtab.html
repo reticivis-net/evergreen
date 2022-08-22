@@ -166,8 +166,9 @@
                     <p><i class="fa-solid fa-location-crosshairs"></i> Weather:</p>
                     <div class="ms-4 d-grid gap-2">
                         <div>
-                            <button class="btn btn-primary" data-bs-dismiss="modal" id="refresh-weather" type="button">
-                                <i class="fa-solid fa-arrows-rotate"></i> Refresh Weather Info
+                            <button class="btn btn-primary" id="refresh-weather" type="button">
+                                <span id="refresh-progress"><i class="fa-solid fa-arrows-rotate"></i></span> Refresh
+                                Weather Info
                             </button>
                         </div>
 
@@ -180,12 +181,12 @@
                         <div>
                             <p><i class="fa-solid fa-map-location-dot"></i> Use this location:</p>
                             <div class="input-group">
-                                <input aria-label="Longitude" class="form-control disable-on-autolocate"
-                                       id="weather-longitude"
-                                       max="180" min="-180" placeholder="Longitude" type="number">
-                                <input aria-label="Longitude" class="form-control disable-on-autolocate"
+                                <input aria-label="Latitude" class="form-control disable-on-autolocate weather-coords"
                                        id="weather-latitude"
                                        max="90" min="-90" placeholder="Latitude" type="number">
+                                <input aria-label="Longitude" class="form-control disable-on-autolocate weather-coords"
+                                       id="weather-longitude"
+                                       max="180" min="-180" placeholder="Longitude" type="number">
                             </div>
                         </div>
                         <div>
