@@ -452,8 +452,8 @@ function fetch_weather() {
 }
 
 function init_weather() {
-    // temperature unit handler AND iconset AND weather
-    chrome.storage.local.get(['tempunit', 'lastweather', 'iconset', 'weather', "geocode"], function (result) {
+    // temperature unit handler AND iconset AND location settings AND weather
+    chrome.storage.local.get(['tempunit', 'lastweather', 'iconset', 'weather', "geocode", "autolocate", "weather_address", "lastweather"], function (result) {
         // init temp unit settings options
         config["tempunit"] = result["tempunit"];
         if (config["tempunit"] === undefined) {
@@ -479,6 +479,73 @@ function init_weather() {
         }
         qs('#cradio').addEventListener('input', settings_set_iconset);
         qs('#faradio').addEventListener('input', settings_set_iconset);
+
+        // init saved weather address
+        config["weather_address"]["latitude"] = result["weather_address"]["latitude"]
+        config["weather_address"]["longitude"] = result["weather_address"]["longitude"]
+        qs("#weather-latitude").value = config["weather_address"]["latitude"]
+        qs("#weather-longitude").value = config["weather_address"]["longitude"]
+        document.querySelectorAll(".weather-coords").forEach(elem => {
+            elem.addEventListener("input", settings_set_location)
+        })
+
+        // init autolocate switch
+        qs("#autolocate").addEventListener("input", settings_set_autolocation)
+        qs("#autolocate").addEventListener("input", allow_weather_refresh)
+        config["autolocate"] = result["autolocate"]
+        if (result["autolocate"] === undefined || result["autolocate"]) {
+            set_autolocation(true)
+            qs("#autolocate").setAttribute("checked", "checked")
+        } else {
+            set_autolocation(false)
+        }
+
+
+        // init weather refresh button
+        let sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
+        let timetowait = 60 * 10;
+
+        if (timetowait > sincelastdownload) {
+            // disable button if used in last 10 mins
+            qs("#refresh-weather").setAttribute("disabled", "disabled")
+            weather_refresh_timeout = setTimeout(_ => {
+                allow_weather_refresh()
+            }, (timetowait - sincelastdownload) * 1000)
+        }
+        qs("#refresh-weather").addEventListener("click", _ => {
+            if (qs("#refresh-weather").getAttribute("disabled")) {
+                return
+            }
+            qs("#refresh-weather").setAttribute("disabled", "disabled")
+            qs("#refresh-progress").innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i>`
+            fetch_weather().then(_ => {
+                qs("#refresh-progress").innerHTML = `<i class="fa-solid fa-check"></i>`
+                if (weather_refresh_timeout) {
+                    clearTimeout(weather_refresh_timeout)
+                }
+                weather_refresh_timeout = setTimeout(_ => {
+                    allow_weather_refresh()
+                }, timetowait * 1000)
+            })
+        })
+
+        // init reverse geocode
+        qs("#submit-address").addEventListener("click", _ => {
+            if (qs("#submit-address").getAttribute("disabled")) {
+                return
+            }
+            qs("#submit-address").setAttribute("disabled", "disabled")
+            qs("#weather-address").setAttribute("disabled", "disabled")
+            qs("#submit-address").innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i>`
+            geocode(qs("#weather-address").value).then(({latitude, longitude}) => {
+                qs("#weather-latitude").value = latitude
+                qs("#weather-longitude").value = longitude
+                settings_set_location()
+                qs("#submit-address").removeAttribute("disabled")
+                qs("#weather-address").removeAttribute("disabled")
+                qs("#submit-address").innerHTML = `<i class="fa-solid fa-magnifying-glass-location"></i>`
+            })
+        })
 
         // load weather
         if (!result["lastweather"] || !result['weather']) {
@@ -567,71 +634,6 @@ function allow_weather_refresh() {
     qs("#refresh-progress").innerHTML = `<i class="fa-solid fa-arrows-rotate"></i>`
 }
 
-function init_weather_location_settings() {
-    chrome.storage.local.get(["autolocate", "weather_address", "lastweather"], function (result) {
-        config["weather_address"]["latitude"] = result["weather_address"]["latitude"]
-        config["weather_address"]["longitude"] = result["weather_address"]["longitude"]
-
-        qs("#weather-latitude").value = config["weather_address"]["latitude"]
-        qs("#weather-longitude").value = config["weather_address"]["longitude"]
-
-        let sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
-        let timetowait = 60 * 10;
-        if (timetowait > sincelastdownload) {
-            qs("#refresh-weather").setAttribute("disabled", "disabled")
-            weather_refresh_timeout = setTimeout(_ => {
-                allow_weather_refresh()
-            }, (timetowait - sincelastdownload) * 1000)
-        }
-        qs("#refresh-weather").addEventListener("click", _ => {
-            if (qs("#refresh-weather").getAttribute("disabled")) {
-                return
-            }
-            qs("#refresh-weather").setAttribute("disabled", "disabled")
-            qs("#refresh-progress").innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i>`
-            fetch_weather().then(_ => {
-                qs("#refresh-progress").innerHTML = `<i class="fa-solid fa-check"></i>`
-                if (weather_refresh_timeout) {
-                    clearTimeout(weather_refresh_timeout)
-                }
-                weather_refresh_timeout = setTimeout(_ => {
-                    allow_weather_refresh()
-                }, timetowait * 1000)
-            })
-        })
-
-        qs("#autolocate").addEventListener("input", settings_set_autolocation)
-        qs("#autolocate").addEventListener("input", allow_weather_refresh)
-        config["autolocate"] = result["autolocate"]
-        if (result["autolocate"] === undefined || result["autolocate"]) {
-            set_autolocation(true)
-            qs("#autolocate").setAttribute("checked", "checked")
-        } else {
-            set_autolocation(false)
-        }
-        document.querySelectorAll(".weather-coords").forEach(elem => {
-            elem.addEventListener("input", settings_set_location)
-        })
-
-        qs("#submit-address").addEventListener("click", _ => {
-            if (qs("#submit-address").getAttribute("disabled")) {
-                return
-            }
-            qs("#submit-address").setAttribute("disabled", "disabled")
-            qs("#weather-address").setAttribute("disabled", "disabled")
-            qs("#submit-address").innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i>`
-            geocode(qs("#weather-address").value).then(({latitude, longitude}) => {
-                qs("#weather-latitude").value = latitude
-                qs("#weather-longitude").value = longitude
-                settings_set_location()
-                qs("#submit-address").removeAttribute("disabled")
-                qs("#weather-address").removeAttribute("disabled")
-                qs("#submit-address").innerHTML = `<i class="fa-solid fa-magnifying-glass-location"></i>`
-            })
-        })
-    })
-
-}
 
 function init_background_settings() {
     // initialize background settings
@@ -683,7 +685,6 @@ function initialize_settings_menu() {
     init_timeformat()
     init_background_settings()
     init_dateformat()
-    init_weather_location_settings()
 
     // remove "saved" text when closing settings
     qs('#settings_modal').addEventListener('hidden.bs.modal', () => {
