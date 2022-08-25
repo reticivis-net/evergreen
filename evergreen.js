@@ -9,8 +9,7 @@ let config = {
     iconset: "climacons",
     autolocate: true,
     weather_address: {
-        "latitude": undefined,
-        "longitude": undefined
+        "latitude": undefined, "longitude": undefined
     }
 }
 
@@ -337,10 +336,11 @@ function settings_set_refreshtime() {
 
 function set_autolocation(enabled) {
     document.querySelectorAll(".disable-on-autolocate").forEach(elem => {
-        if (enabled)
+        if (enabled) {
             elem.setAttribute("disabled", "disabled")
-        else
+        } else {
             elem.removeAttribute("disabled")
+        }
     })
 }
 
@@ -801,8 +801,31 @@ function calendar_html() {
         </table>`;
 }
 
+function init_weather_popover_handler() {
+    // hide the weather popover when somewhere else that isnt the popover is clicked which for some reason normally isnt possible
+    const weatherpopover = qs("#weatherpopover")
+    document.addEventListener("click", event => {
+        let popover = bootstrap.Popover.getInstance(weatherpopover);
+        if (popover) {
+            // if (event.path.includes(weatherpopover)) {
+            //     console.debug("show")
+            //     popover.toggle()
+            // } else {
+            for (const elem of event.path) {
+                if (elem.classList && elem.classList.contains("dontdismisspopover")) {
+                    // console.debug("keepalive")
+                    return
+                }
+            }
+            // console.debug("hide")
+            popover.hide()
+            // }
+        }
+    })
+}
 
 function construct_weather_popover() {
+    console.debug("constructing weather popover")
     if (!(weather_info && last_weather_get)) {
         // nothing we can do if there is no weather info
         // shouldn't happen but just in case
@@ -932,7 +955,7 @@ function construct_weather_popover() {
     // make the popover!
     bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover"), {
         html: true, sanitize: false, placement: "top", // https://github.com/twbs/bootstrap/discussions/36562
-        trigger: "click", content: weather_popover_content
+        trigger: "click", content: weather_popover_content, customClass: "dontdismisspopover"
     })
 
     // set the visible icon in the bottom left
@@ -1027,13 +1050,13 @@ function invtunit(temp) {
 }
 
 function initalerttooltips() {
-
     document.querySelectorAll("#alerts a").forEach((alertp, index) => {
         console.debug(new bootstrap.Tooltip(alertp, {
             placement: "top",
             fallbackPlacements: ["top"],
             html: true,
-            title: "<div class='text-start d-grid gap-2'>" + weather_info["alerts"][index]["description"].replace(/((\*|^)[^*]+)/gim, "<p class='m-0'>$1</p>") + "</div>"
+            title: "<div class='text-start d-grid gap-2'>" + weather_info["alerts"][index]["description"].replace(/((\*|^)[^*]+)/gim, "<p class='m-0'>$1</p>") + "</div>",
+            customClass: "dontdismisspopover"
         }))
     })
 }
@@ -1631,6 +1654,7 @@ function initialize_popovers_and_modals() {
     })
 }
 
+
 function on_doc_load() {
     //popovers
     qs("#bg-change").onclick = change_background;
@@ -1647,6 +1671,7 @@ function on_doc_load() {
 
     //other stuff
     initialize_settings_menu(); //load shit from chrome (also weather)
+    init_weather_popover_handler()
 
     if (promotional) {
         every_100ms();
