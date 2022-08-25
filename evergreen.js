@@ -416,6 +416,23 @@ function init_background_blur() {// background blur
     });
 }
 
+function weather_error(...args) {
+    console.error(...args)
+    qs("#weather").innerHTML = `<i class="fa-solid fa-cloud-exclamation fa-shake" style="--fa-animation-iteration-count: 1;"></i>`
+    qs("#weatherimage").innerHTML = ""
+    const weatherpopover = qs("#weatherpopover")
+    let existing_popover = bootstrap.Popover.getInstance(weatherpopover);
+    if (existing_popover) {
+        existing_popover.dispose()
+    }
+    const html = `<h5><i class="fa-solid fa-cloud-exclamation"></i> Failed to fetch weather</h5><p class="mb-0">Check debug console for details.</p>`
+    bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover"), {
+        html: true, sanitize: false, placement: "top",
+        trigger: "click", content: html, customClass: "dontdismisspopover"
+    })
+    return Promise.reject(args)
+}
+
 function handle_weather_from_latlong(latitude, longitude, accuracy) {
     reverse_geocode(latitude, longitude, accuracy).then(geocode_response => {
         console.debug(geocode_response)
@@ -427,7 +444,7 @@ function handle_weather_from_latlong(latitude, longitude, accuracy) {
         chrome.storage.local.set({
             geocode: geocode_response
         });
-    })
+    }).catch(weather_error)
     return get_weather_from_latlong(latitude, longitude).then(weather_response => {
         console.debug(weather_response)
         chrome.storage.local.set({
@@ -437,18 +454,29 @@ function handle_weather_from_latlong(latitude, longitude, accuracy) {
         weather_info = weather_response;
         construct_weather_popover()
         return weather_info
-    })
+    }).catch(weather_error)
 }
 
 function fetch_weather() {
     if (config["autolocate"]) {
         return geolocate().then(position => {
             return handle_weather_from_latlong(position.coords.latitude, position.coords.longitude, position.coords.accuracy)
-        })
+        }).catch(weather_error)
     } else {
-        return handle_weather_from_latlong(config["weather_address"]["latitude"], config["weather_address"]["longitude"], 0)
+        let lat = config["weather_address"]["latitude"];
+        let long = config["weather_address"]["longitude"]
+        if (isNumeric(lat) && isNumeric(long)) {
+            lat = Number(lat)
+            long = Number(long)
+            if (-90 <= lat && lat <= 90 && -180 <= long && long <= 180) {
+                return handle_weather_from_latlong(config["weather_address"]["latitude"], config["weather_address"]["longitude"], 0)
+            } else {
+                return weather_error("Can't fetch weather due to out-of-bounds coordinates.", config["weather_address"])
+            }
+        } else {
+            return weather_error("Can't fetch weather due to non-numeric coordinates.", config["weather_address"])
+        }
     }
-
 }
 
 function init_weather() {
@@ -526,7 +554,7 @@ function init_weather() {
                 weather_refresh_timeout = setTimeout(_ => {
                     allow_weather_refresh()
                 }, timetowait * 1000)
-            })
+            }).catch(allow_weather_refresh)
         })
 
         // init reverse geocode
@@ -1065,12 +1093,11 @@ function initweatherchart() {
     let chart_daily = qs("#weather_chart_daily");
     let chart_hourly = qs("#weather_chart_hourly");
     if (!chart_daily || !chart_hourly) {
-        console.debug("initweatherchart() called but chart not found.")
+        console.warn("initweatherchart() called but chart not found.")
         return
     }
 
-    const {currently, daily, hourly, minutely, alerts} = weather_info;
-    let data = [];
+    const {daily, hourly} = weather_info;
 
     // https://www.chartjs.org/docs/latest/developers/api.html#setdatasetvisibility-datasetindex-visibility
 
