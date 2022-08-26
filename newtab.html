@@ -163,28 +163,37 @@
                     </div>
                 </div>
                 <div>
-                    <p><i class="fa-solid fa-location-crosshairs"></i> Weather:</p>
+                    <p><i class="fa-solid fa-cloud-sun-rain"></i> Weather:</p>
                     <div class="ms-4 d-grid gap-2">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" id="enableweather" type="checkbox">
+                            <label class="form-check-label" for="enableweather">
+                                <i class="fa-solid fa-cloud-arrow-down"></i> Enable Weather
+                            </label>
+                        </div>
                         <div>
-                            <button class="btn btn-primary" id="refresh-weather" type="button">
+                            <button class="btn btn-primary disable-if-weather-disabled" id="refresh-weather"
+                                    type="button">
                                 <span id="refresh-progress"><i class="fa-solid fa-arrows-rotate"></i></span> Refresh
                                 Weather Info
                             </button>
                         </div>
 
                         <div class="form-check form-switch">
-                            <input class="form-check-input" id="autolocate" type="checkbox">
-                            <label class="form-check-label" for="autolocate">
+                            <input class="form-check-input disable-if-weather-disabled" id="autolocate" type="checkbox">
+                            <label class="form-check-label disable-if-weather-disabled" for="autolocate">
                                 <i class="fa-solid fa-location-arrow"></i> Determine location automatically
                             </label>
                         </div>
                         <div>
                             <p><i class="fa-solid fa-map-location-dot"></i> Use this location:</p>
                             <div class="input-group">
-                                <input aria-label="Latitude" class="form-control disable-on-autolocate weather-coords"
+                                <input aria-label="Latitude"
+                                       class="form-control disable-on-autolocate weather-coords disable-if-weather-disabled"
                                        id="weather-latitude"
                                        max="90" min="-90" placeholder="Latitude" type="number">
-                                <input aria-label="Longitude" class="form-control disable-on-autolocate weather-coords"
+                                <input aria-label="Longitude"
+                                       class="form-control disable-on-autolocate weather-coords disable-if-weather-disabled"
                                        id="weather-longitude"
                                        max="180" min="-180" placeholder="Longitude" type="number">
                             </div>
@@ -193,10 +202,11 @@
                             <p><i class="fa-solid fa-location-question"></i> Get coordinates from address:</p>
                             <div class="input-group">
                                 <input aria-describedby="submit-address" aria-label="Address or city"
-                                       class="form-control disable-on-autolocate"
+                                       class="form-control disable-on-autolocate disable-if-weather-disabled"
                                        id="weather-address" placeholder="Address or city"
                                        type="text">
-                                <button class="btn btn-primary disable-on-autolocate" id="submit-address" type="button">
+                                <button class="btn btn-primary disable-on-autolocate disable-if-weather-disabled"
+                                        id="submit-address" type="button">
                                     <i class="fa-solid fa-magnifying-glass-location"></i>
                                 </button>
                             </div>
@@ -214,13 +224,15 @@
                         <span class="text-muted">(Optional)</span>:
                     </p>
                     <input class="form-control" id="bgtags" placeholder="nature,architecture" type="text">
-                    <p class="pfix"><span class="text-muted">
-                        Separate search terms by commas with no spaces. Images are randomly sourced from source.unsplash.com using these search tags. Example: forest,ocean,city</span>
+                    <p class="pfix text-muted">
+                        Separate search terms by commas with no spaces. Images are randomly sourced from
+                        source.unsplash.com using these search tags. Example: forest,ocean,city
                     </p>
                 </div>
                 <div>
-                    <p><i class="fas fa-images"></i> Time to wait before getting new image (in minutes) <span
-                            class="text-muted">(Optional)</span>:
+                    <p>
+                        <i class="fas fa-images"></i> Time to wait before getting new image (in minutes)
+                        <span class="text-muted">(Optional)</span>:
                     </p>
                     <input class="form-control" id="bgrefresh" max="1440" min="0"
                            placeholder="Time in minutes" type="number" value="0">
@@ -237,9 +249,10 @@
                     </button>
                 </div>
                 <div>
-                    <p><i class="fa-solid fa-mug-saucer"></i> If you want to support the development and upkeep of
-                        Evergreen, donate
-                        to me via Ko-fi here:</p>
+                    <p>
+                        <i class="fa-solid fa-mug-saucer"></i> If you want to support the development and upkeep of
+                        Evergreen, donate to me via Ko-fi here:
+                    </p>
 
                     <div class=btn-container>
                         <a class="kofi-button" href="https://ko-fi.com/Q5Q75US4A"
@@ -253,9 +266,11 @@
                     </div>
                 </div>
                 <div>
-                    <p><i class="fa-brands fa-github"></i> Raise an issue on
+                    <p>
+                        <i class="fa-brands fa-github"></i> Raise an issue on
                         <a class="bug-report" href="https://github.com/HexCodeFFF/evergreen">the GitHub</a>
-                        for any bug reports, feature requests, or other inquiries.</p>
+                        for any bug reports, feature requests, or other inquiries.
+                    </p>
                 </div>
                 <div>
                     <button class="btn btn-primary" data-bs-dismiss="modal" id="changelog-button" type="button">
@@ -320,12 +335,16 @@
                 <h3>Changelog v2.0.0</h3>
                 <h4>Changes</h4>
                 <ul>
+                    <li>Evergreen is now <a class="whitelink" href="https://github.com/HexCodeFFF/evergreen">open
+                        source!</a></li>
                     <li>Rewrote large parts of the extension for better performance, cleaner code, and less
                         dependencies
                     </li>
                     <li>added subtle shadows to text to aid readability on bright backgrounds</li>
                     <li>completely new weather popover UI with chart.js</li>
-                    <li>new calendar popover</li>
+                    <li>weather can now be fetched from a manually defined location</li>
+                    <li>weather fetching can now be entirely disabled</li>
+                    <li>beautified calendar popover</li>
                 </ul>
             </div>
             <div class="modal-footer">

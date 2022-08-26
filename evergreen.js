@@ -10,7 +10,8 @@ let config = {
     autolocate: true,
     weather_address: {
         "latitude": undefined, "longitude": undefined
-    }
+    },
+    weather_enabled: true
 }
 
 let promotional = false; // use the same BG for promotional purposes
@@ -344,10 +345,33 @@ function set_autolocation(enabled) {
     })
 }
 
+function weather_enable(enabled) {
+    document.querySelectorAll(".disable-if-weather-disabled").forEach(elem => {
+        if (enabled) {
+            elem.removeAttribute("disabled")
+        } else {
+            elem.setAttribute("disabled", "disabled")
+        }
+    })
+    qs("#weatherpopover").style.display = enabled ? "inline" : "none"
+}
+
 function settings_set_autolocation() {
     set_autolocation(this.checked)
     config["autolocate"] = this.checked
     save_settings()
+}
+
+function settings_set_weather() {
+    weather_enable(this.checked)
+    config["weather_enabled"] = this.checked
+    save_settings()
+
+    // weather was just enabled but we don't have any info
+    if (this.checked && !weather_info) {
+        qs("#weather").innerHTML = `<i class="fa-solid fa-sun fa-spin"></i>`
+        fetch_weather().catch(weather_error)
+    }
 }
 
 function save_settings() {
@@ -360,7 +384,8 @@ function save_settings() {
         refreshtime: config["refreshtime"],
         iconset: config["iconset"],
         autolocate: config["autolocate"],
-        weather_address: config["weather_address"]
+        weather_address: config["weather_address"],
+        weather_enabled: config["weather_enabled"]
     }).then(_ => {
         qs("#savetext").innerHTML = "Saved.";
     });
@@ -427,8 +452,12 @@ function weather_error(...args) {
     }
     const html = `<h5><i class="fa-solid fa-cloud-exclamation"></i> Failed to fetch weather</h5><p class="mb-0">Check debug console for details.</p>`
     bootstrap.Popover.getOrCreateInstance(qs("#weatherpopover"), {
-        html: true, sanitize: false, placement: "top",
-        trigger: "click", content: html, customClass: "dontdismisspopover"
+        html: true,
+        sanitize: false,
+        placement: "top",
+        trigger: "click",
+        content: html,
+        customClass: "dontdismisspopover"
     })
     return Promise.reject(args)
 }
@@ -481,7 +510,10 @@ function fetch_weather() {
 
 function init_weather() {
     // temperature unit handler AND iconset AND location settings AND weather
-    chrome.storage.local.get(['tempunit', 'lastweather', 'iconset', 'weather', "geocode", "autolocate", "weather_address", "lastweather"], function (result) {
+    chrome.storage.local.get([
+        'tempunit', 'lastweather', 'iconset', 'weather', "geocode", "autolocate",
+        "weather_address", "lastweather", "weather_enabled"
+    ], function (result) {
         // init temp unit settings options
         config["tempunit"] = result["tempunit"];
         if (config["tempunit"] === undefined) {
@@ -528,6 +560,16 @@ function init_weather() {
             set_autolocation(false)
         }
 
+        // init weather switch
+        qs("#enableweather").addEventListener("input", settings_set_weather)
+        config["weather_enabled"] = result["weather_enabled"]
+        if (result["weather_enabled"] === undefined || result["weather_enabled"]) {
+            weather_enable(true)
+            qs("#enableweather").setAttribute("checked", "checked")
+        } else {
+            weather_enable(false)
+        }
+
 
         // init weather refresh button
         let sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
@@ -540,12 +582,16 @@ function init_weather() {
                 allow_weather_refresh()
             }, (timetowait - sincelastdownload) * 1000)
         }
+        // when weather refresh requested
         qs("#refresh-weather").addEventListener("click", _ => {
+            // ignore if clicked while disabled
             if (qs("#refresh-weather").getAttribute("disabled")) {
                 return
             }
             qs("#refresh-weather").setAttribute("disabled", "disabled")
+            // loading animation
             qs("#refresh-progress").innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i>`
+            // fetch weather and change button
             fetch_weather().then(_ => {
                 qs("#refresh-progress").innerHTML = `<i class="fa-solid fa-check"></i>`
                 if (weather_refresh_timeout) {
@@ -576,28 +622,33 @@ function init_weather() {
         })
 
         // load weather
-        if (!result["lastweather"] || !result['weather']) {
-            // if no previous weather data, get weather
-            fetch_weather()
-        } else {
-            // there is a date of the last time we got the weather, check if we can use cached data
-
-            // seconds since last time we got the weather
-            let sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
-            // only get weather every hour
-            let timetowait = 60 * 60;
-            // if its been longer than an hour and we are online, get the weather again
-            if (navigator.onLine && sincelastdownload > timetowait) {
-                fetch_weather()
+        if (config["weather_enabled"]) {
+            if (!result["lastweather"] || !result['weather']) {
+                // if no previous weather data, get weather
+                fetch_weather().catch(weather_error)
             } else {
-                // we have fresh cached data that we can use for the weather info!
-                weather_info = result["weather"]
-                weather_location_string = result["geocode"]
-                last_weather_get = new Date(result["lastweather"] * 1000)
-                console.debug(weather_info)
-                construct_weather_popover();
-                console.debug("using cached weather info");
+                // there is a date of the last time we got the weather, check if we can use cached data
+
+                // seconds since last time we got the weather
+                let sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
+                // only get weather every hour
+                let timetowait = 60 * 60;
+                // if its been longer than an hour and we are online, get the weather again
+                if (navigator.onLine && sincelastdownload > timetowait) {
+                    fetch_weather().catch(weather_error)
+                } else {
+                    // we have fresh cached data that we can use for the weather info!
+                    weather_info = result["weather"]
+                    weather_location_string = result["geocode"]
+                    last_weather_get = new Date(result["lastweather"] * 1000)
+                    console.debug(weather_info)
+                    construct_weather_popover();
+                    console.debug("using cached weather info");
+                }
             }
+        } else {
+            // hide loading icon
+            qs("#weather").innerHTML = ""
         }
     });
 }
@@ -1526,24 +1577,6 @@ function initweatherchart() {
             },*/ {
                 parsing: false,
                 data: daily["data"].map(day => {
-                    return {x: day["time"] * 1000, y: ssunit(day["precipIntensity"])}
-                }),
-                label: "Avg Rain",
-                borderColor: "rgb(54,69,235)",
-                backgroundColor: "rgb(54,69,235)",
-                pointBorderColor: 'rgba(0, 0, 0, 0)',
-                cubicInterpolationMode: 'monotone',
-                yAxisID: 'precipintensity',
-                tooltip: {
-                    callbacks: {
-                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm/h" : "in/h"} (${rainintensity(context.parsed.y)})`
-                    }
-                },
-                hidden: true
-                // borderDash: [5, 15],
-            }, {
-                parsing: false,
-                data: daily["data"].map(day => {
                     return {x: day["time"] * 1000, y: ssunit(day["precipIntensityMax"])}
                 }),
                 label: "Max Rain",
@@ -1559,7 +1592,8 @@ function initweatherchart() {
                 },
                 hidden: true
                 // borderDash: [5, 15],
-            },]
+            },
+            ]
         }, options: {
             scales: {
                 x: {
