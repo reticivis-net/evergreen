@@ -126,6 +126,14 @@ function epoch_to_locale_hour_string(epoch) {
     return time;
 }
 
+function epoch_to_relative(epoch) {
+    let d = epoch_to_date(epoch);
+    let now = new Date();
+    let diff = Math.ceil((d - now) / (60 * 60 * 1000));
+    let rtf = new Intl.RelativeTimeFormat();
+    return rtf.format(diff, 'hour')
+}
+
 function dayofepoch(epoch) {
     // gets weekday of epoch
     const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -611,13 +619,23 @@ function init_weather() {
             qs("#submit-address").setAttribute("disabled", "disabled")
             qs("#weather-address").setAttribute("disabled", "disabled")
             qs("#submit-address").innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i>`
-            geocode(qs("#weather-address").value).then(({latitude, longitude}) => {
-                qs("#weather-latitude").value = latitude
-                qs("#weather-longitude").value = longitude
-                settings_set_location()
+            geocode(qs("#weather-address").value).then((addr) => {
+                if (addr) {
+                    const {latitude, longitude} = addr;
+                    qs("#weather-latitude").value = latitude
+                    qs("#weather-longitude").value = longitude
+                    settings_set_location()
+                    qs("#submit-address").innerHTML = `<i class="fa-solid fa-magnifying-glass-location"></i>`
+                } else {
+                    qs("#submit-address").innerHTML = `<i class="fa-solid fa-circle-exclamation fa-shake"></i>`
+                    setTimeout(_ => {
+                        qs("#submit-address").innerHTML = `<i class="fa-solid fa-magnifying-glass-location"></i>`
+                    }, 1000);
+                }
+
                 qs("#submit-address").removeAttribute("disabled")
                 qs("#weather-address").removeAttribute("disabled")
-                qs("#submit-address").innerHTML = `<i class="fa-solid fa-magnifying-glass-location"></i>`
+
             })
         })
 
@@ -944,7 +962,7 @@ function construct_weather_popover() {
                     icon = '<i class="fa-solid fa-triangle-exclamation"></i>'
                     break
             }
-            alerttext += `<p class="${classes}"><a href="${alert["uri"]}">${icon} ${alert["title"]} until ${dayofepoch(alert["expires"])} ${epoch_to_locale_hour_string(alert["expires"])}</a></p>`
+            alerttext += `<p class="${classes}"><a href="${alert["uri"]}">${icon} ${alert["title"]}. Expires ${epoch_to_relative(alert["expires"])}.</a></p>`
         });
         alerttext += `</div>`;
     }

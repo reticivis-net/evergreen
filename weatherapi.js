@@ -38,10 +38,15 @@ function get_weather_from_latlong(lat, long) {
 
 function geocode(addr) {
     return fetch_json(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&addressdetails=1&limit=1`).then(r => {
-        return {
-            "latitude": r[0]["lat"],
-            "longitude": r[0]["lon"]
+        if (r && r.length) {
+            return {
+                "latitude": r[0]["lat"],
+                "longitude": r[0]["lon"]
+            }
+        } else {
+            return null
         }
+
     })
 }
 
