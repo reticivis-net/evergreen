@@ -1077,9 +1077,14 @@ let weather_chart_hourly;
 
 
 // temperature in fahrenheit because easier for me
-let tempcolors = [{temp: 0, color: CHART_COLORS.purple}, {temp: 32, color: CHART_COLORS.blue}, {
-    temp: 60, color: CHART_COLORS.green
-}, {temp: 70, color: 'rgb(75,192,122)'}, {temp: 80, color: CHART_COLORS.yellow}, {temp: 100, color: CHART_COLORS.red}]
+let tempcolors = [
+    {temp: 0, color: CHART_COLORS.purple},
+    {temp: 32, color: CHART_COLORS.blue},
+    // {temp: 60, color: CHART_COLORS.green},
+    {temp: 71, color: 'rgb(100,192,75)'},
+    {temp: 80, color: CHART_COLORS.yellow},
+    {temp: 100, color: CHART_COLORS.red}
+]
 
 function coloroftemp(temp) {
     let grad = chroma
