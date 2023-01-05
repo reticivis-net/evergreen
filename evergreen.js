@@ -778,10 +778,11 @@ function initialize_settings_menu() {
     // all functions are async calls to chrome.storage.get
     // only separate functions for organization
     init_background_blur()
-    init_weather()
     init_timeformat()
     init_background_settings()
     init_dateformat()
+    init_weather()
+
 
     // remove "saved" text when closing settings
     qs('#settings_modal').addEventListener('hidden.bs.modal', () => {
@@ -968,12 +969,6 @@ function construct_weather_popover() {
     }
 
     let weather_popover_content = `
-<!-- TODO: i wanted to put this to the right of the text at the bottom but for whatever reason its mere existance expands the popover and causes weird glitches -->
-        <div style="width: 100%; text-align: right">
-            <a href="https://darksky.net/poweredby/" >
-                <img src="darksky-poweredby.png" alt="Powered by Dark Sky" style="display:inline-block;height: 1rem;">
-            </a>
-        </div>
         <canvas id="weather_chart_daily" width="600" height="250"></canvas>
         <canvas id="weather_chart_hourly" width="600" height="250"></canvas>
         <h5 class="text-center"><i class="fa-solid fa-cloud-sun-rain"></i> Current Conditions</h5>
@@ -1043,10 +1038,20 @@ function construct_weather_popover() {
             </div>
         </div>
         ${alerttext}
-        <p class="text-muted mb-0 mt-2" style="max-width: 600px">
-            Last fetched at ${Chart._adapters._date.prototype.format(last_weather_get, config["timeformat"] === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
-            ${weather_location_string ? `for ${weather_location_string}` : ""}
-        </p>
+        <div class="row">
+            <div class="col">
+                <p class="text-muted mb-0 mt-2">
+                    Last fetched at ${Chart._adapters._date.prototype.format(last_weather_get, config["timeformat"] === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
+                    ${weather_location_string ? `for ${weather_location_string}` : ""}
+                </p>
+            </div>
+            <div class="col-auto">
+                <a href="https://darksky.net/poweredby/" style="display:flex; height:100%;">
+                    <img src="darksky-poweredby.png" alt="Powered by Dark Sky" style="display:inline-block; height: 1rem; align-self: flex-end;">
+                </a>
+            </div>
+        </div>
+
     `;
 
     // make the popover!

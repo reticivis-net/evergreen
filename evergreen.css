@@ -281,6 +281,8 @@ a.popper:focus {
 .popover-body {
     max-height: 100vh;
     overflow-y: auto;
+    max-width: calc(600px + var(--bs-popover-body-padding-x) * 2);
+    overflow-x: hidden;
 }
 
 .whitelink {
