@@ -11,7 +11,8 @@ let config = {
     weather_address: {
         "latitude": undefined, "longitude": undefined
     },
-    weather_enabled: true
+    weather_enabled: true,
+    weather_provider: "darksky"
 }
 
 let promotional = false; // use the same BG for promotional purposes
@@ -343,6 +344,21 @@ function settings_set_refreshtime() {
     save_settings();
 }
 
+function settings_set_provider() {
+    switch (this.id) {
+        case "wp-darksky-radio":
+            config["weather_provider"] = "darksky";
+            break;
+        case "wp-openweathermap-radio":
+            config["weather_provider"] = "openweathermap";
+            break;
+        case "wp-openmeteo-radio":
+            config["weather_provider"] = "openmeteo";
+            break
+    }
+    save_settings();
+}
+
 function set_autolocation(enabled) {
     document.querySelectorAll(".disable-on-autolocate").forEach(elem => {
         if (enabled) {
@@ -393,7 +409,8 @@ function save_settings() {
         iconset: config["iconset"],
         autolocate: config["autolocate"],
         weather_address: config["weather_address"],
-        weather_enabled: config["weather_enabled"]
+        weather_enabled: config["weather_enabled"],
+        weather_provider: config["weather_provider"]
     }).then(_ => {
         qs("#savetext").innerHTML = "Saved.";
     });
@@ -516,11 +533,12 @@ function fetch_weather() {
     }
 }
 
+
 function init_weather() {
     // temperature unit handler AND iconset AND location settings AND weather
     chrome.storage.local.get([
         'tempunit', 'lastweather', 'iconset', 'weather', "geocode", "autolocate",
-        "weather_address", "lastweather", "weather_enabled"
+        "weather_address", "lastweather", "weather_enabled", "weather_provider"
     ], function (result) {
         // init temp unit settings options
         config["tempunit"] = result["tempunit"];
@@ -547,6 +565,41 @@ function init_weather() {
         }
         qs('#cradio').addEventListener('input', settings_set_iconset);
         qs('#faradio').addEventListener('input', settings_set_iconset);
+        bootstrap.Tooltip.getOrCreateInstance(qs("#cradio").parentElement, {
+            html: true, placement: "top", trigger: "hover", title: `<span aria-hidden="true" class="popover-climacon climacon sun"></span>
+                            <span aria-hidden="true" class="popover-climacon climacon cloud sun"></span>
+                            <span aria-hidden="true" class="popover-climacon climacon cloud"></span>`
+        })
+        bootstrap.Tooltip.getOrCreateInstance(qs("#faradio").parentElement, {
+            html: true,
+            placement: "top",
+            trigger: "hover",
+            title: `<i class='fas fa-sun'></i> <i class='fas fa-cloud-sun'></i> <i class='fas fa-cloud'></i>`
+        })
+
+        // init weather provider
+        config["weather_provider"] = result['weather_provider'];
+        if (config["weather_provider"] === undefined) {
+            config["weather_provider"] = "darksky";
+        }
+        switch (config["weather_provider"]) {
+            case "darksky":
+                qs("#wp-darksky-radio").setAttribute("checked", "checked");
+                break;
+            case "openweathermap":
+                qs("#wp-openweathermap-radio").setAttribute("checked", "checked");
+                break;
+            case "openmeteo":
+                qs("#wp-openmeteo-radio").setAttribute("checked", "checked");
+                break;
+        }
+        qs('#wp-darksky-radio').addEventListener('input', settings_set_provider);
+        qs('#wp-openweathermap-radio').addEventListener('input', settings_set_provider);
+        qs('#wp-openmeteo-radio').addEventListener('input', settings_set_provider);
+
+        bootstrap.Tooltip.getOrCreateInstance(qs("#wp-darksky-radio").parentElement, {
+            placement: "top", trigger: "hover", title: `Support for the Dark Sky API will end on March 31, 2023.`
+        })
 
         // init saved weather address
         config["weather_address"]["latitude"] = result["weather_address"]["latitude"]
