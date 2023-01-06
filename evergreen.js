@@ -148,26 +148,26 @@ function roundton(num, n) {
 
 function tunit(temp, round = false) {
     // converts temperature unit if needed
-    if (config["tempunit"] === "c") {
-        temp = f_to_c(temp);
+    if (config["tempunit"] === "f") {
+        temp = c_to_f(temp);
     }
     return round ? Math.round(temp) : temp;
 }
 
-function sunit(speed) {
-    // converts speed unit if needed
-    if (config["tempunit"] === "c") {
+function vunit(speed) {
+    // converts velocity unit if needed
+    if (config["tempunit"] === "f") {
         // meters per second
-        speed = speed * 0.44704;
+        speed /= 0.44704;
     }
     return speed;
 }
 
-function ssunit(size) {
+function sunit(size) {
     // converts size units if needed
-    if (config["tempunit"] === "c") {
+    if (config["tempunit"] === "f") {
         // inch to mm
-        size = roundton(size * 25.4, 5);
+        size /= 25.4
     }
     return size;
 }
@@ -177,15 +177,15 @@ function rainintensity(rainfall) {
     // https://glossary.ametsoc.org/wiki/Rain
     if (rainfall <= 0) {
         return "none"
-    } else if (0 < rainfall && rainfall < ssunit(0.01)) {
+    } else if (0 < rainfall && rainfall < sunit(0.01)) {
         return "trace"
-    } else if (ssunit(0.01) <= rainfall && rainfall < ssunit(0.1)) {
+    } else if (sunit(0.01) <= rainfall && rainfall < sunit(0.1)) {
         return "light"
-    } else if (ssunit(0.1) <= rainfall && rainfall <= ssunit(0.3)) {
+    } else if (sunit(0.1) <= rainfall && rainfall <= sunit(0.3)) {
         return "moderate"
-    } else if (ssunit(0.3) < rainfall && rainfall < ssunit(2)) {
+    } else if (sunit(0.3) < rainfall && rainfall < sunit(2)) {
         return "heavy"
-    } else if (rainfall >= ssunit(2)) {
+    } else if (rainfall >= sunit(2)) {
         return "violent"
     } else {
         return "invalid"
@@ -499,7 +499,7 @@ function handle_weather_from_latlong(latitude, longitude, accuracy) {
             geocode: geocode_response
         });
     }).catch(weather_error)
-    return get_weather_from_latlong(latitude, longitude).then(weather_response => {
+    return get_weather_from_latlong(latitude, longitude, config["weather_provider"]).then(weather_response => {
         console.debug(weather_response)
         chrome.storage.local.set({
             lastweather: new Date().getTime() / 1000, weather: weather_response
@@ -1021,6 +1021,13 @@ function construct_weather_popover() {
         alerttext += `</div>`;
     }
 
+    let poweredby = "";
+    if(config["weather_provider"] === "darksky") {
+        poweredby = `<a href="https://darksky.net/poweredby/" style="display:flex; height:100%;">
+                    <img src="darksky-poweredby.png" alt="Powered by Dark Sky" style="display:inline-block; height: 1rem; align-self: flex-end;">
+                </a>`
+    }
+
     let weather_popover_content = `
         <canvas id="weather_chart_daily" width="600" height="250"></canvas>
         <canvas id="weather_chart_hourly" width="600" height="250"></canvas>
@@ -1099,9 +1106,7 @@ function construct_weather_popover() {
                 </p>
             </div>
             <div class="col-auto">
-                <a href="https://darksky.net/poweredby/" style="display:flex; height:100%;">
-                    <img src="darksky-poweredby.png" alt="Powered by Dark Sky" style="display:inline-block; height: 1rem; align-self: flex-end;">
-                </a>
+                ${poweredby}
             </div>
         </div>
 
@@ -1134,14 +1139,13 @@ let weather_chart_daily;
 let weather_chart_hourly;
 
 
-// temperature in fahrenheit because easier for me
 let tempcolors = [
-    {temp: 0, color: CHART_COLORS.purple},
-    {temp: 32, color: CHART_COLORS.blue},
+    {temp: -20, color: CHART_COLORS.purple},
+    {temp: 0, color: CHART_COLORS.blue},
     // {temp: 60, color: CHART_COLORS.green},
-    {temp: 71, color: 'rgb(100,192,75)'},
-    {temp: 80, color: CHART_COLORS.yellow},
-    {temp: 100, color: CHART_COLORS.red}
+    {temp: 22, color: 'rgb(100,192,75)'},
+    {temp: 27, color: CHART_COLORS.yellow},
+    {temp: 40, color: CHART_COLORS.red}
 ]
 
 function coloroftemp(temp) {
@@ -1202,8 +1206,8 @@ function context_to_gradient(context) {
 }
 
 function invtunit(temp) {
-    if (config["tempunit"] === "c") {
-        return c_to_f(temp)
+    if (config["tempunit"] === "f") {
+        return f_to_c(temp)
     } else {
         return temp
     }
@@ -1378,7 +1382,7 @@ function initweatherchart() {
                 },*/{
                     parsing: false,
                     data: hourly["data"].map(day => {
-                        return {x: day["time"] * 1000, y: ssunit(day["precipIntensity"])}
+                        return {x: day["time"] * 1000, y: sunit(day["precipIntensity"])}
                     }),
                     label: "Rainfall",
                     borderColor: "rgb(54,69,235)",
@@ -1428,7 +1432,7 @@ function initweatherchart() {
                         callback: (value) => `${value} ${config["tempunit"] === "c" ? "m/s" : "mph"}`
                     }
                 }, precipintensity: {
-                    position: 'right', min: 0, display: 'auto', suggestedMin: 0, suggestedMax: ssunit(0.098), ticks: {
+                    position: 'right', min: 0, display: 'auto', suggestedMin: 0, suggestedMax: sunit(0.098), ticks: {
                         // callback: (value) => `${stripzeropoint(value)}${config["tempunit"] === "c" ? "mm/h" : "in/h"}`,
                         callback: (value) => `${rainintensity(value)}`, // without this it cuts off on the right side idfk
                         padding: 0
@@ -1658,7 +1662,7 @@ function initweatherchart() {
             },*/ {
                 parsing: false,
                 data: daily["data"].map(day => {
-                    return {x: day["time"] * 1000, y: ssunit(day["precipIntensityMax"])}
+                    return {x: day["time"] * 1000, y: sunit(day["precipIntensityMax"])}
                 }),
                 label: "Max Rain",
                 borderColor: "rgb(35,53,162)",
@@ -1700,7 +1704,7 @@ function initweatherchart() {
                         callback: (value) => `${value} ${config["tempunit"] === "c" ? "m/s" : "mph"}`
                     }
                 }, precipintensity: {
-                    position: 'right', min: 0, display: 'auto', suggestedMax: ssunit(0.098), ticks: {
+                    position: 'right', min: 0, display: 'auto', suggestedMax: sunit(0.098), ticks: {
                         // callback: (value) => `${stripzeropoint(value)}${config["tempunit"] === "c" ? "mm/h" : "in/h"}`
                         callback: (value) => `${rainintensity(value)}`, padding: 0
                     },
