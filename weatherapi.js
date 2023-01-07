@@ -155,7 +155,7 @@ function parse_openweathermap(data) {
             "precipitation_intensity": openweathermap_sum_precip_over_hour(data["current"])
         },
         "hourly": {
-            "summary": data["daily"][0]["weather"]["description"],
+            "summary": data["daily"][0]["weather"][0]["description"],
             "temperature": zip_openweathermap(data["hourly"], "temp"),
             "apparent_temperature": zip_openweathermap(data["hourly"], "feels_like"),
             "humidity": zip_openweathermap(data["hourly"], "humidity"),
