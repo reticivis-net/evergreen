@@ -30,7 +30,7 @@ function darksky_api_request(lat, long) {
 }
 
 function openweathermap_api_request(lat, long) {
-    return fetch_json(`https://api.openweathermap.org/data/3.0/onecall?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(long)}&appid=74b014b3526434e435b0b553d9f673e1`)
+    return fetch_json(`https://api.openweathermap.org/data/3.0/onecall?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(long)}&appid=74b014b3526434e435b0b553d9f673e1&units=metric`)
 }
 
 function openmeteo_api_request(lat, long) {
@@ -76,13 +76,23 @@ const generic_template = {
     "source": "darksky", // darksky,openweathermap,openmeteo, etc
 }
 
-function zip_darksky(data, property, multiply_x_by = 1, multiply_y_by = null) {
+function zip_darksky(data, property, multiply_y_by = null) {
     return data.map(data_point => {
         let y = data_point[property];
         if (multiply_y_by) {
             y *= multiply_y_by
         }
-        return {x: data_point["time"] * multiply_x_by, y: y}
+        return {x: data_point["time"] * 1000, y: y}
+    })
+}
+
+function zip_openweathermap(data, property, multiply_y_by = null) {
+    return data.map(data_point => {
+        let y = data_point[property] ?? 0;
+        if (multiply_y_by) {
+            y *= multiply_y_by
+        }
+        return {x: data_point["dt"] * 1000, y: y}
     })
 }
 
@@ -94,34 +104,34 @@ function parse_darksky(data) {
             "apparent_temperature": data["currently"]["apparentTemperature"],
             "humidity": data["currently"]["humidity"] * 100,
             "cloud_cover": data["currently"]["cloudCover"] * 100,
-            "precipitation_probability": data["currently"]["precipProbability"] * 100,
             "precipitation_intensity": data["currently"]["precipIntensity"]
         },
         "hourly": {
             "summary": data["hourly"]["summary"],
-            "temperature": zip_darksky(data["hourly"]["data"], "temperature", 1000),
-            "apparent_temperature": zip_darksky(data["hourly"]["data"], "apparentTemperature", 1000),
-            "humidity": zip_darksky(data["hourly"]["data"], "humidity", 1000, 100),
-            "cloud_cover": zip_darksky(data["hourly"]["data"], "cloudCover", 1000, 100),
-            "precipitation_probability": zip_darksky(data["hourly"]["data"], "precipProbability", 1000, 100),
-            "precipitation_intensity": zip_darksky(data["hourly"]["data"], "precipIntensity", 1000),
+            "temperature": zip_darksky(data["hourly"]["data"], "temperature"),
+            "apparent_temperature": zip_darksky(data["hourly"]["data"], "apparentTemperature"),
+            "humidity": zip_darksky(data["hourly"]["data"], "humidity", 100),
+            "cloud_cover": zip_darksky(data["hourly"]["data"], "cloudCover", 100),
+            "precipitation_probability": zip_darksky(data["hourly"]["data"], "precipProbability", 100),
+            "precipitation_intensity": zip_darksky(data["hourly"]["data"], "precipIntensity"),
         },
         "daily": {
             "summary": data["daily"]["summary"],
-            "high": zip_darksky(data["daily"]["data"], "temperatureHigh", 1000),
-            "apparent_high": zip_darksky(data["daily"]["data"], "apparentTemperatureHigh", 1000),
-            "low": zip_darksky(data["daily"]["data"], "temperatureLow", 1000),
-            "apparent_low": zip_darksky(data["daily"]["data"], "apparentTemperatureLow", 1000),
-            "humidity": zip_darksky(data["daily"]["data"], "humidity", 1000, 100),
-            "cloud_cover": zip_darksky(data["daily"]["data"], "cloudCover", 1000, 100),
-            "precipitation_probability": zip_darksky(data["daily"]["data"], "precipProbability", 1000, 100),
-            "precipitation_intensity": zip_darksky(data["daily"]["data"], "precipIntensity", 1000, 24),
+            "high": zip_darksky(data["daily"]["data"], "temperatureHigh"),
+            "apparent_high": zip_darksky(data["daily"]["data"], "apparentTemperatureHigh"),
+            "low": zip_darksky(data["daily"]["data"], "temperatureLow"),
+            "apparent_low": zip_darksky(data["daily"]["data"], "apparentTemperatureLow"),
+            "humidity": zip_darksky(data["daily"]["data"], "humidity", 100),
+            "cloud_cover": zip_darksky(data["daily"]["data"], "cloudCover", 100),
+            "precipitation_probability": zip_darksky(data["daily"]["data"], "precipProbability", 100),
+            "precipitation_intensity": zip_darksky(data["daily"]["data"], "precipIntensity", 24),
         },
-        "alerts": (data["alerts"] || []).map(alert => {
+        "alerts": (data["alerts"] ?? []).map(alert => {
             return {
                 "severity": alert["severity"], // advisory, watch, warning
                 "url": alert["url"],
                 "title": alert["title"],
+                "description": alert["description"],
                 "expires": alert["expires"],
             }
         }),
@@ -130,7 +140,47 @@ function parse_darksky(data) {
 }
 
 function parse_openweathermap(data) {
-    return data
+        return {
+        "currently": {
+            "summary": data["current"]["weather"][0]["description"],
+            "temperature": data["current"]["temperature"],
+            "apparent_temperature": data["current"]["feels_like"],
+            "humidity": data["current"]["humidity"],
+            "cloud_cover": data["current"]["clouds"],
+            "precipitation_intensity": (data["current"]["rain"] ? data["current"]["rain"]["1h"] : 0) +
+                (data["current"]["snow"] ? data["current"]["snow"]["1h"] : 0)
+        },
+        "hourly": {
+            "summary": data["daily"][0]["weather"]["description"],
+            "temperature": zip_openweathermap(data["hourly"], "temp"),
+            "apparent_temperature": zip_openweathermap(data["hourly"], "temp"),
+            "humidity": zip_openweathermap(data["hourly"], "temp"),
+            "cloud_cover": zip_openweathermap(data["hourly"], "temp"),
+            "precipitation_probability": zip_openweathermap(data["hourly"], "temp"),
+            "precipitation_intensity": zip_openweathermap(data["hourly"], "temp"),
+        },
+        "daily": {
+            "summary": "",
+            "high": zip_darksky(data["daily"]["data"], "temperatureHigh"),
+            "apparent_high": zip_darksky(data["daily"]["data"], "apparentTemperatureHigh"),
+            "low": zip_darksky(data["daily"]["data"], "temperatureLow"),
+            "apparent_low": zip_darksky(data["daily"]["data"], "apparentTemperatureLow"),
+            "humidity": zip_darksky(data["daily"]["data"], "humidity", 100),
+            "cloud_cover": zip_darksky(data["daily"]["data"], "cloudCover", 100),
+            "precipitation_probability": zip_darksky(data["daily"]["data"], "precipProbability", 100),
+            "precipitation_intensity": zip_darksky(data["daily"]["data"], "precipIntensity", 24),
+        },
+        "alerts": (data["alerts"] ?? []).map(alert => {
+            return {
+                "severity": alert["severity"], // advisory, watch, warning
+                "url": "",
+                "title": alert["event"],
+                "description": alert["description"],
+                "expires": alert["ends"],
+            }
+        }),
+        "source": "openweathermap", // darksky,openweathermap,openmeteo, etc
+    }
 }
 
 function parse_openmeteo(data) {
