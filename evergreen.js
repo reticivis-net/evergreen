@@ -1482,7 +1482,7 @@ function initweatherchart() {
                     },
 
                 }, title: {
-                    display: true, text: "Weather Over 48 Hours", color: "#fff"
+                    display: true, text: "Hourly Weather", color: "#fff"
                 }
             }, responsive: false
         }, plugins: [{
@@ -1721,7 +1721,7 @@ function initweatherchart() {
                 intersect: false, mode: 'index', axis: 'x'
             }, plugins: {
                 title: {
-                    display: true, text: "Weather This Week", color: "#fff"
+                    display: true, text: "Daily Weather", color: "#fff"
                 }, legend: {
                     onClick: (event, legendItem, legend) => {
                         // reimplimenting default behavior that gets overridden

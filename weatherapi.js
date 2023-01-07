@@ -139,36 +139,51 @@ function parse_darksky(data) {
     }
 }
 
+function openweathermap_sum_precip_over_hour(hour) {
+    return (hour["rain"] ? hour["rain"]["1h"] : 0) +
+        (hour["snow"] ? hour["snow"]["1h"] : 0)
+}
+
 function parse_openweathermap(data) {
-        return {
+    return {
         "currently": {
             "summary": data["current"]["weather"][0]["description"],
-            "temperature": data["current"]["temperature"],
+            "temperature": data["current"]["temp"],
             "apparent_temperature": data["current"]["feels_like"],
             "humidity": data["current"]["humidity"],
             "cloud_cover": data["current"]["clouds"],
-            "precipitation_intensity": (data["current"]["rain"] ? data["current"]["rain"]["1h"] : 0) +
-                (data["current"]["snow"] ? data["current"]["snow"]["1h"] : 0)
+            "precipitation_intensity": openweathermap_sum_precip_over_hour(data["current"])
         },
         "hourly": {
             "summary": data["daily"][0]["weather"]["description"],
             "temperature": zip_openweathermap(data["hourly"], "temp"),
-            "apparent_temperature": zip_openweathermap(data["hourly"], "temp"),
-            "humidity": zip_openweathermap(data["hourly"], "temp"),
-            "cloud_cover": zip_openweathermap(data["hourly"], "temp"),
-            "precipitation_probability": zip_openweathermap(data["hourly"], "temp"),
-            "precipitation_intensity": zip_openweathermap(data["hourly"], "temp"),
+            "apparent_temperature": zip_openweathermap(data["hourly"], "feels_like"),
+            "humidity": zip_openweathermap(data["hourly"], "humidity"),
+            "cloud_cover": zip_openweathermap(data["hourly"], "clouds"),
+            "precipitation_probability": zip_openweathermap(data["hourly"], "pop", 100),
+            "precipitation_intensity": data["hourly"].map(hour => {
+                return {x: hour["dt"] * 1000, y: openweathermap_sum_precip_over_hour(hour)}
+            }),
         },
         "daily": {
             "summary": "",
-            "high": zip_darksky(data["daily"]["data"], "temperatureHigh"),
-            "apparent_high": zip_darksky(data["daily"]["data"], "apparentTemperatureHigh"),
-            "low": zip_darksky(data["daily"]["data"], "temperatureLow"),
-            "apparent_low": zip_darksky(data["daily"]["data"], "apparentTemperatureLow"),
-            "humidity": zip_darksky(data["daily"]["data"], "humidity", 100),
-            "cloud_cover": zip_darksky(data["daily"]["data"], "cloudCover", 100),
-            "precipitation_probability": zip_darksky(data["daily"]["data"], "precipProbability", 100),
-            "precipitation_intensity": zip_darksky(data["daily"]["data"], "precipIntensity", 24),
+            "high": data["daily"].map(data_point => {
+                return {x: data_point["dt"] * 1000, y: data_point["temp"]["max"]}
+            }),
+            "apparent_high": data["daily"].map(data_point => {
+                // ugh why
+                return {x: data_point["dt"] * 1000, y: Math.max(...Object.values(data_point["feels_like"]))}
+            }),
+            "low": data["daily"].map(data_point => {
+                return {x: data_point["dt"] * 1000, y: data_point["temp"]["min"]}
+            }),
+            "apparent_low": data["daily"].map(data_point => {
+                return {x: data_point["dt"] * 1000, y: Math.min(...Object.values(data_point["feels_like"]))}
+            }),
+            "humidity": zip_openweathermap(data["daily"], "humidity"),
+            "cloud_cover": zip_openweathermap(data["daily"], "clouds"),
+            "precipitation_probability": zip_openweathermap(data["daily"], "pop", 100),
+            "precipitation_intensity": zip_openweathermap(data["daily"], "rain"),
         },
         "alerts": (data["alerts"] ?? []).map(alert => {
             return {
