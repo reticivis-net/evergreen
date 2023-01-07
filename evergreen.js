@@ -1007,9 +1007,12 @@ function construct_weather_popover() {
     const tempnow = currently["temperature"]
     const hightoday = Math.max(daily["high"][0]["y"], tempnow)
     const lowtoday = Math.min(daily["low"][0]["y"], tempnow)
+    const apptempnow = currently["apparent_temperature"]
+    const apphightoday = Math.max(daily["apparent_high"][0]["y"], tempnow)
+    const applowtoday = Math.min(daily["apparent_low"][0]["y"], tempnow)
 
     let alerttext = "";
-    if (alerts) {
+    if (alerts && alerts.length) {
         alerttext += `<div class="d-grid gap-1 mt-3 h5" id="alerts">`;
         alerts.forEach(function (alert, i) {
             let classes = "";
@@ -1068,6 +1071,31 @@ function construct_weather_popover() {
             </div>
         </div>
         <div class="row">
+            <div class="col">
+                <h6 class="text-center"><i class="fa-solid fa-temperature-list"></i> Apparent Temperature</h6>
+                <div class="row mb-2" style="align-items: stretch; --bs-gutter-x: .5rem;">
+                <div class="col-auto" style="color:${coloroftemp(lowtoday)}">
+                ${tunit(applowtoday, true)}°
+                </div>
+                <div class="col">
+                    <div class="progress" style="position:relative">
+                        <div class="progress-bar" 
+                        role="progressbar" 
+                        style="width: ${Math.max(((apptempnow - applowtoday) / (apphightoday - applowtoday)) * 100, 1)}%;
+                        background: ${temps_to_css_gradient(applowtoday, apptempnow)};
+                        " 
+                        aria-valuenow="${tunit(apptempnow)}" 
+                        aria-valuemin="${tunit(applowtoday)}" 
+                        aria-valuemax="${tunit(apphightoday)}">
+                        </div>
+                        <div class="progress-text-center"><span>${tunit(apptempnow, true)}°</span></div>
+                    </div>
+                </div>
+                <div class="col-auto" style="color:${coloroftemp(apphightoday)}">
+                ${tunit(apphightoday, true)}°
+                </div>
+            </div>
+            </div>
             <div class="col">
                 <h6 class="text-center"><i class="fa-solid fa-droplet-percent"></i> Humidity</h6>
                 <div class="progress" style=" position:relative">
