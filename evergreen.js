@@ -154,6 +154,14 @@ function tunit(temp, round = false) {
     return round ? Math.round(temp) : temp;
 }
 
+function invtunit(temp) {
+    if (config["tempunit"] === "f") {
+        return f_to_c(temp)
+    } else {
+        return temp
+    }
+}
+
 function vunit(speed) {
     // converts velocity unit if needed
     if (config["tempunit"] === "f") {
@@ -172,20 +180,23 @@ function sunit(size) {
     return size;
 }
 
-function rainintensity(rainfall) {
+function rainintensity(rainfall, over_whole_day=false) {
+    if(over_whole_day) {
+        rainfall /= 24
+    }
     // https://en.wikipedia.org/wiki/Rain#Intensity
     // https://glossary.ametsoc.org/wiki/Rain
     if (rainfall <= 0) {
         return "none"
-    } else if (0 < rainfall && rainfall < sunit(0.01)) {
+    } else if (0 < rainfall && rainfall < sunit(0.254)) {
         return "trace"
-    } else if (sunit(0.01) <= rainfall && rainfall < sunit(0.1)) {
+    } else if (sunit(0.254) <= rainfall && rainfall < sunit(2.54)) {
         return "light"
-    } else if (sunit(0.1) <= rainfall && rainfall <= sunit(0.3)) {
+    } else if (sunit(2.54) <= rainfall && rainfall <= sunit(7.62)) {
         return "moderate"
-    } else if (sunit(0.3) < rainfall && rainfall < sunit(2)) {
+    } else if (sunit(7.62) < rainfall && rainfall < sunit(50.8)) {
         return "heavy"
-    } else if (rainfall >= sunit(2)) {
+    } else if (rainfall >= sunit(50.8)) {
         return "violent"
     } else {
         return "invalid"
@@ -488,6 +499,7 @@ function weather_error(...args) {
 }
 
 function handle_weather_from_latlong(latitude, longitude, accuracy) {
+    weather_info = null;
     reverse_geocode(latitude, longitude, accuracy).then(geocode_response => {
         console.debug(geocode_response)
         weather_location_string = geocode_response;
@@ -990,11 +1002,11 @@ function construct_weather_popover() {
     }
 
     // deconstruct the info into better objects
-    const {currently, daily, hourly, minutely, alerts} = weather_info;
+    const {currently, daily, hourly, alerts, source} = weather_info;
 
     const tempnow = currently["temperature"]
-    const hightoday = Math.max(daily["data"][0]["temperatureHigh"], tempnow)
-    const lowtoday = Math.min(daily["data"][0]["temperatureLow"], tempnow)
+    const hightoday = Math.max(daily["high"][0]["y"], tempnow)
+    const lowtoday = Math.min(daily["low"][0]["y"], tempnow)
 
     let alerttext = "";
     if (alerts) {
@@ -1016,13 +1028,13 @@ function construct_weather_popover() {
                     icon = '<i class="fa-solid fa-triangle-exclamation"></i>'
                     break
             }
-            alerttext += `<p class="${classes}"><a href="${alert["uri"]}">${icon} ${alert["title"]}. Expires ${epoch_to_relative(alert["expires"])}.</a></p>`
+            alerttext += `<p class="${classes}"><a href="${alert["url"]}">${icon} ${alert["title"]}. Expires ${epoch_to_relative(alert["expires"])}.</a></p>`
         });
         alerttext += `</div>`;
     }
 
     let poweredby = "";
-    if(config["weather_provider"] === "darksky") {
+    if (source === "darksky") {
         poweredby = `<a href="https://darksky.net/poweredby/" style="display:flex; height:100%;">
                     <img src="darksky-poweredby.png" alt="Powered by Dark Sky" style="display:inline-block; height: 1rem; align-self: flex-end;">
                 </a>`
@@ -1061,12 +1073,12 @@ function construct_weather_popover() {
                 <div class="progress" style=" position:relative">
                     <div class="progress-bar bg-info" 
                     role="progressbar" 
-                    style="width: ${Math.max(currently["humidity"] * 100, 1)}%;" 
-                    aria-valuenow="${Math.round(currently["humidity"] * 100)}" 
+                    style="width: ${Math.max(currently["humidity"], 1)}%;" 
+                    aria-valuenow="${Math.round(currently["humidity"])}" 
                     aria-valuemin="0" 
                     aria-valuemax="100">
                     </div>
-                    <div class="progress-text-center"><span>${Math.round(currently["humidity"] * 100)}%</span></div>
+                    <div class="progress-text-center"><span>${Math.round(currently["humidity"])}%</span></div>
                 </div>
             </div>
             <div class="col">
@@ -1074,26 +1086,12 @@ function construct_weather_popover() {
                 <div class="progress" style=" position:relative">
                     <div class="progress-bar bg-light" 
                     role="progressbar" 
-                    style="width: ${Math.max(currently["cloudCover"] * 100, 1)}%;" 
-                    aria-valuenow="${Math.round(currently["cloudCover"] * 100)}" 
+                    style="width: ${Math.max(currently["cloud_cover"], 1)}%;" 
+                    aria-valuenow="${Math.round(currently["cloud_cover"])}" 
                     aria-valuemin="0" 
                     aria-valuemax="100">
                     </div>
-                    <div class="progress-text-center"><span>${Math.round(currently["cloudCover"] * 100)}%</span></div>
-                </div>
-            </div>
-            <div class="col">
-                <h6 class="text-center"><i class="fa-solid fa-sun"></i> UV Index</h6>
-                <div class="progress" style=" position:relative">
-                    <div class="progress-bar" 
-                    role="progressbar" 
-                    style="width: ${Math.max(currently["uvIndex"] * 10, 1)}%;
-                    background-color: var(--bs-purple)" 
-                    aria-valuenow="${Math.round(currently["uvIndex"])}" 
-                    aria-valuemin="0" 
-                    aria-valuemax="${Math.max(10, currently["uvIndex"] * 10)}">
-                    </div>
-                    <div class="progress-text-center"><span>${currently["uvIndex"]}</span></div>
+                    <div class="progress-text-center"><span>${Math.round(currently["cloud_cover"])}%</span></div>
                 </div>
             </div>
         </div>
@@ -1205,13 +1203,7 @@ function context_to_gradient(context) {
     return gradient
 }
 
-function invtunit(temp) {
-    if (config["tempunit"] === "f") {
-        return f_to_c(temp)
-    } else {
-        return temp
-    }
-}
+
 
 function initalerttooltips() {
     document.querySelectorAll("#alerts a").forEach((alertp, index) => {
@@ -1252,9 +1244,7 @@ function initweatherchart() {
         type: 'line', data: {
             datasets: [{
                 parsing: false,
-                data: hourly["data"].map(hour => {
-                    return {x: hour["time"] * 1000, y: tunit(hour["temperature"])}
-                }), // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
+                data: hourly["temperature"], // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
                 //     return {x: val * 1000 * 60 * 60 * 24, y: tunit(val)}
                 // }), {x: 1000 * 60 * 60 * 24 * 10000, y: tunit(100)}],
                 label: "Temperature",
@@ -1278,9 +1268,7 @@ function initweatherchart() {
 
                 {
                     parsing: false,
-                    data: hourly["data"].map(hour => {
-                        return {x: hour["time"] * 1000, y: Math.round(hour["precipProbability"] * 100)}
-                    }),
+                    data: hourly["precipitation_probability"],
                     label: "Precip %",
                     borderColor: 'rgba(54, 162, 235, 0.5)',
                     backgroundColor: 'rgba(54, 162, 235, 0.5)',
@@ -1295,9 +1283,7 @@ function initweatherchart() {
                     // borderDash: [5, 15],
                 }, {
                     parsing: false,
-                    data: hourly["data"].map(hour => {
-                        return {x: hour["time"] * 1000, y: tunit(hour["apparentTemperature"])}
-                    }),
+                    data: hourly["apparent_temperature"],
                     label: "Feels Like",
                     borderColor: gen_hourly_chart_gradient,
                     backgroundColor: gen_hourly_chart_gradient,
@@ -1315,7 +1301,7 @@ function initweatherchart() {
                             },
                         }
                     }
-                }, {
+                },/* {
                     data: hourly["data"].map(hour => {
                         return {x: hour["time"] * 1000, y: hour["uvIndex"]}
                     }),
@@ -1325,11 +1311,9 @@ function initweatherchart() {
                     cubicInterpolationMode: 'monotone',
                     hidden: true,
                     yAxisID: "uv"
-                }, {
+                },*/ {
                     parsing: false,
-                    data: hourly["data"].map(hour => {
-                        return {x: hour["time"] * 1000, y: Math.round(hour["humidity"] * 100)}
-                    }),
+                    data: hourly["humidity"],
                     label: "Humidity %",
                     borderColor: CHART_COLORS.blue,
                     backgroundColor: CHART_COLORS.blue,
@@ -1345,9 +1329,7 @@ function initweatherchart() {
                     // borderDash: [5, 15],
                 }, {
                     parsing: false,
-                    data: hourly["data"].map(hour => {
-                        return {x: hour["time"] * 1000, y: Math.round(hour["cloudCover"] * 100)}
-                    }),
+                    data: hourly["cloud_cover"],
                     label: "Cloud Cover %",
                     borderColor: CHART_COLORS.white,
                     backgroundColor: CHART_COLORS.white,
@@ -1381,10 +1363,8 @@ function initweatherchart() {
                     // borderDash: [5, 15],
                 },*/{
                     parsing: false,
-                    data: hourly["data"].map(day => {
-                        return {x: day["time"] * 1000, y: sunit(day["precipIntensity"])}
-                    }),
-                    label: "Rainfall",
+                    data: hourly["precipitation_intensity"],
+                    label: "Precipitation",
                     borderColor: "rgb(54,69,235)",
                     backgroundColor: "rgb(54,69,235)",
                     pointBorderColor: 'rgba(0, 0, 0, 0)',
@@ -1392,7 +1372,7 @@ function initweatherchart() {
                     yAxisID: 'precipintensity',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm/h" : "in/h"} (${rainintensity(context.parsed.y)})`
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm" : "in"} (${rainintensity(context.parsed.y)})`
                         }
                     },
                     hidden: true
@@ -1432,7 +1412,7 @@ function initweatherchart() {
                         callback: (value) => `${value} ${config["tempunit"] === "c" ? "m/s" : "mph"}`
                     }
                 }, precipintensity: {
-                    position: 'right', min: 0, display: 'auto', suggestedMin: 0, suggestedMax: sunit(0.098), ticks: {
+                    position: 'right', min: 0, display: 'auto', suggestedMin: 0, suggestedMax: sunit(2.54), ticks: {
                         // callback: (value) => `${stripzeropoint(value)}${config["tempunit"] === "c" ? "mm/h" : "in/h"}`,
                         callback: (value) => `${rainintensity(value)}`, // without this it cuts off on the right side idfk
                         padding: 0
@@ -1490,9 +1470,7 @@ function initweatherchart() {
         type: 'line', data: {
             datasets: [{
                 parsing: false,
-                data: daily["data"].map(day => {
-                    return {x: day["time"] * 1000, y: tunit(day["temperatureHigh"])}
-                }),
+                data: daily["high"],
                 label: "High",
                 backgroundColor: CHART_COLORS.red,
                 pointBorderColor: CHART_COLORS.red,
@@ -1512,9 +1490,7 @@ function initweatherchart() {
                 }
             }, {
                 parsing: false,
-                data: daily["data"].map(day => {
-                    return {x: day["time"] * 1000, y: tunit(day["apparentTemperatureHigh"])}
-                }),
+                data: daily["apparent_high"],
                 label: "Apparent High",
                 backgroundColor: CHART_COLORS.red,
                 pointBorderColor: CHART_COLORS.red,
@@ -1535,9 +1511,7 @@ function initweatherchart() {
                 }
             }, {
                 parsing: false,
-                data: daily["data"].map(day => {
-                    return {x: day["time"] * 1000, y: tunit(day["temperatureLow"])}
-                }),
+                data: daily["low"],
                 label: "Low",
                 backgroundColor: CHART_COLORS.blue,
                 pointBorderColor: CHART_COLORS.blue,
@@ -1557,9 +1531,7 @@ function initweatherchart() {
                 }
             }, {
                 parsing: false,
-                data: daily["data"].map(day => {
-                    return {x: day["time"] * 1000, y: tunit(day["apparentTemperatureLow"])}
-                }),
+                data: daily["apparent_low"],
                 label: "Apparent Low",
                 backgroundColor: CHART_COLORS.blue,
                 pointBorderColor: CHART_COLORS.blue,
@@ -1580,9 +1552,7 @@ function initweatherchart() {
                 }
             }, {
                 parsing: false,
-                data: daily["data"].map(day => {
-                    return {x: day["time"] * 1000, y: Math.round(day["precipProbability"] * 100)}
-                }),
+                data: daily["precipitation_probability"],
                 label: "Precip %",
                 borderColor: 'rgba(54, 162, 235, 0.5)',
                 backgroundColor: 'rgba(54, 162, 235, 0.5)',
@@ -1595,7 +1565,7 @@ function initweatherchart() {
                     }
                 }
                 // borderDash: [5, 15],
-            }, {
+            }, /*{
                 data: daily["data"].map(hour => {
                     return {x: hour["time"] * 1000, y: hour["uvIndex"]}
                 }),
@@ -1605,11 +1575,9 @@ function initweatherchart() {
                 cubicInterpolationMode: 'monotone',
                 hidden: true,
                 yAxisID: "uv"
-            }, {
+            },*/ {
                 parsing: false,
-                data: daily["data"].map(hour => {
-                    return {x: hour["time"] * 1000, y: Math.round(hour["humidity"] * 100)}
-                }),
+                data: daily["humidity"],
                 label: "Humidity %",
                 borderColor: CHART_COLORS.blue,
                 backgroundColor: CHART_COLORS.blue,
@@ -1625,9 +1593,7 @@ function initweatherchart() {
                 // borderDash: [5, 15],
             }, {
                 parsing: false,
-                data: daily["data"].map(hour => {
-                    return {x: hour["time"] * 1000, y: Math.round(hour["cloudCover"] * 100)}
-                }),
+                data: daily["cloud_cover"],
                 label: "Cloud Cover %",
                 borderColor: CHART_COLORS.white,
                 backgroundColor: CHART_COLORS.white,
@@ -1661,10 +1627,8 @@ function initweatherchart() {
                 // borderDash: [5, 15],
             },*/ {
                 parsing: false,
-                data: daily["data"].map(day => {
-                    return {x: day["time"] * 1000, y: sunit(day["precipIntensityMax"])}
-                }),
-                label: "Max Rain",
+                data: daily["precipitation_intensity"],
+                label: "Precipitation",
                 borderColor: "rgb(35,53,162)",
                 backgroundColor: "rgb(35,53,162)",
                 pointBorderColor: 'rgba(0, 0, 0, 0)',
@@ -1672,7 +1636,7 @@ function initweatherchart() {
                 yAxisID: 'precipintensity',
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm/h" : "in/h"} (${rainintensity(context.parsed.y)})`
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm" : "in"} (${rainintensity(context.parsed.y, true)})`
                     }
                 },
                 hidden: true
@@ -1704,9 +1668,9 @@ function initweatherchart() {
                         callback: (value) => `${value} ${config["tempunit"] === "c" ? "m/s" : "mph"}`
                     }
                 }, precipintensity: {
-                    position: 'right', min: 0, display: 'auto', suggestedMax: sunit(0.098), ticks: {
+                    position: 'right', min: 0, display: 'auto', suggestedMax: sunit(2.54*24), ticks: {
                         // callback: (value) => `${stripzeropoint(value)}${config["tempunit"] === "c" ? "mm/h" : "in/h"}`
-                        callback: (value) => `${rainintensity(value)}`, padding: 0
+                        callback: (value) => `${rainintensity(value, true)}`, padding: 0
                     },
                 }
             }, color: "#fff", interaction: {
