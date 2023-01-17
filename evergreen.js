@@ -209,44 +209,22 @@ function stripzeropoint(val) {
     return val
 }
 
-function climacon(prop) {
-    // converts DarkSky icon prop to HTML icon based on user settings
+function climacon(icon) {
+    // converts icon prop to HTML icon based on user settings
     if (config["iconset"] === "climacons") {
-        // conversion from darksky to climacon
-        let climacons = {
-            "clear-day": "sun",
-            "clear-night": "moon",
-            "rain": "rain",
-            "snow": "snow",
-            "sleet": "sleet",
-            "wind": "wind",
-            "cloudy": "cloud",
-            "partly-cloudy-day": "cloud sun",
-            "partly-cloudy-night": "cloud moon"
-        };
-        if (climacons[prop] !== undefined) {
-            return `<span aria-hidden="true" class="climacon ${climacons[prop]}"></span>`;
+        if (icon && icon["climacon"]) {
+            return `<span aria-hidden="true" class="climacon ${icon["climacon"]}"></span>`;
         } else {
             // sensible default
+            console.warn("no weather icon available, choosing default.")
             return `<span aria-hidden="true" class="climacon cloud"></span>`
         }
     } else {
-        // conversions from darksky to fontawesome icons
-        let climacons = {
-            "clear-day": "sun",
-            "clear-night": "moon",
-            "rain": "cloud-rain",
-            "snow": "snowflake",
-            "sleet": "cloud-meatball",
-            "wind": "wind",
-            "cloudy": "cloud",
-            "partly-cloudy-day": "cloud-sun",
-            "partly-cloudy-night": "cloud-moon"
-        };
-        if (climacons[prop] !== undefined) {
-            return `<i class="fas fa-${climacons[prop]}"></i>`
+        if (icon && icon["fontawesome"]) {
+            return `<i class="fas fa-${icon["fontawesome"]}"></i>`
         } else {
             // sensible default
+            console.warn("no weather icon available, choosing default.")
             return `<i class="fas fa-cloud"></i>`
         }
     }
@@ -363,8 +341,8 @@ function settings_set_provider() {
         case "wp-openweathermap-radio":
             config["weather_provider"] = "openweathermap";
             break;
-        case "wp-openmeteo-radio":
-            config["weather_provider"] = "openmeteo";
+        case "wp-noaa-radio":
+            config["weather_provider"] = "noaa";
             break
     }
     save_settings();
@@ -601,13 +579,13 @@ function init_weather() {
             case "openweathermap":
                 qs("#wp-openweathermap-radio").setAttribute("checked", "checked");
                 break;
-            case "openmeteo":
-                qs("#wp-openmeteo-radio").setAttribute("checked", "checked");
+            case "noaa":
+                qs("#wp-noaa-radio").setAttribute("checked", "checked");
                 break;
         }
         qs('#wp-darksky-radio').addEventListener('input', settings_set_provider);
         qs('#wp-openweathermap-radio').addEventListener('input', settings_set_provider);
-        qs('#wp-openmeteo-radio').addEventListener('input', settings_set_provider);
+        qs('#wp-noaa-radio').addEventListener('input', settings_set_provider);
 
         bootstrap.Tooltip.getOrCreateInstance(qs("#wp-darksky-radio").parentElement, {
             placement: "top", trigger: "hover", title: `Support for the Dark Sky API will end on March 31, 2023.`
@@ -974,7 +952,7 @@ function init_weather_popover_handler() {
             //     console.debug("show")
             //     popover.toggle()
             // } else {
-            for (const elem of event.path) {
+            for (const elem of event.composedPath()) {
                 if (elem.classList && elem.classList.contains("dontdismisspopover")) {
                     // console.debug("keepalive")
                     return
@@ -1046,15 +1024,6 @@ function construct_weather_popover() {
         case "openweathermap":
             poweredby = `<a href="https://openweathermap.org/" style="display:flex; height:100%;">
                             <img src="weather_provider_icons/openweathermap.png" alt="Powered by OpenWeatherMap" style="display:inline-block; height: 1rem; align-self: flex-end;">
-                        </a>`;
-            break;
-        case "open-meteo":
-            poweredby = `<a href="https://open-meteo.com/" style="display:flex; height:100%;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="#ffffff" viewBox="0 0 16 16">
-                                <path d="M7 8a3.5 3.5 0 0 1 3.5 3.555.5.5 0 0 0 .624.492A1.503 1.503 0 0 1 13 13.5a1.5 1.5 0 0 1-1.5 1.5H3a2 2 0 1 1 .1-3.998.5.5 0 0 0 .51-.375A3.502 3.502 0 0 1 7 8zm4.473 3a4.5 4.5 0 0 0-8.72-.99A3 3 0 0 0 3 16h8.5a2.5 2.5 0 0 0 0-5h-.027z"></path>
-                                <path d="M10.5 1.5a.5.5 0 0 0-1 0v1a.5.5 0 0 0 1 0v-1zm3.743 1.964a.5.5 0 1 0-.707-.707l-.708.707a.5.5 0 0 0 .708.708l.707-.708zm-7.779-.707a.5.5 0 0 0-.707.707l.707.708a.5.5 0 1 0 .708-.708l-.708-.707zm1.734 3.374a2 2 0 1 1 3.296 2.198c.199.281.372.582.516.898a3 3 0 1 0-4.84-3.225c.352.011.696.055 1.028.129zm4.484 4.074c.6.215 1.125.59 1.522 1.072a.5.5 0 0 0 .039-.742l-.707-.707a.5.5 0 0 0-.854.377zM14.5 6.5a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1h-1z"></path>
-                            </svg>
-                            Powered by Open-Meteo
                         </a>`;
             break;
     }

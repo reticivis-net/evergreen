@@ -34,7 +34,7 @@ function openweathermap_api_request(lat, long) {
 }
 
 function openmeteo_api_request(lat, long) {
-    return fetch_json(`https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(long)}&hourly=temperature_2m,relativehumidity_2m,apparent_temperature,precipitation,cloudcover&current_weather=true&timeformat=unixtime`)
+    return fetch_json(`https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(long)}&hourly=temperature_2m,relativehumidity_2m,apparent_temperature,precipitation,weathercode,cloudcover,windspeed_10m&daily=weathercode,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,windspeed_10m_max,windgusts_10m_max&current_weather=true&timeformat=unixtime&timezone=auto`)
 }
 
 const generic_template = {
@@ -76,24 +76,62 @@ const generic_template = {
     "source": "darksky", // darksky,openweathermap,openmeteo, etc
 }
 
-function zip_darksky(data, property, multiply_y_by = null) {
+function zip_darksky(data, property, multiply_y_by = 1) {
     return data.map(data_point => {
         let y = data_point[property];
-        if (multiply_y_by) {
-            y *= multiply_y_by
-        }
+        y *= multiply_y_by
         return {x: data_point["time"] * 1000, y: y}
     })
 }
 
-function zip_openweathermap(data, property, multiply_y_by = null) {
+function zip_openweathermap(data, property, multiply_y_by = 1) {
     return data.map(data_point => {
         let y = data_point[property] ?? 0;
-        if (multiply_y_by) {
-            y *= multiply_y_by
-        }
+        y *= multiply_y_by
         return {x: data_point["dt"] * 1000, y: y}
     })
+}
+
+const darksky_icons = {
+    "clear-day": {"climacon": "sun", "fontawesome": "sun"},
+    "clear-night": {"climacon": "moon", "fontawesome": "moon"},
+    "rain": {"climacon": "rain", "fontawesome": "cloud-rain"},
+    "snow": {"climacon": "snow", "fontawesome": "snowflake"},
+    "sleet": {"climacon": "sleet", "fontawesome": "cloud-sleet"},
+    "wind": {"climacon": "wind", "fontawesome": "wind"},
+    "cloudy": {"climacon": "cloud", "fontawesome": "cloud"},
+    "partly-cloudy-day": {"climacon": "sun cloud", "fontawesome": "cloud-sun"},
+    "partly-cloudy-night": {"climacon": "moon cloud", "fontawesome": "cloud-moon"},
+}
+
+const openweathermap_icons = {
+    // clear sky
+    "01d": {"climacon": "sun", "fontawesome": "sun"},
+    "01n": {"climacon": "moon", "fontawesome": "moon"},
+    // few clouds
+    "02d": {"climacon": "sun cloud", "fontawesome": "cloud-sun"},
+    "02n": {"climacon": "moon cloud", "fontawesome": "cloud-moon"},
+    // scattered clouds
+    "03d": {"climacon": "cloud", "fontawesome": "cloud"},
+    "03n": {"climacon": "cloud", "fontawesome": "cloud"},
+    // broken clouds
+    "04d": {"climacon": "cloud", "fontawesome": "clouds"},
+    "04n": {"climacon": "cloud", "fontawesome": "clouds"},
+    // shower rain
+    "09d": {"climacon": "drizzle", "fontawesome": "cloud-showers"},
+    "09n": {"climacon": "drizzle", "fontawesome": "cloud-showers"},
+    // rain
+    "10d": {"climacon": "rain", "fontawesome": "cloud-showers-heavy"},
+    "10n": {"climacon": "rain", "fontawesome": "cloud-showers-heavy"},
+    // thunderstorm
+    "11d": {"climacon": "lightning", "fontawesome": "cloud-bolt"},
+    "11n": {"climacon": "lightning", "fontawesome": "cloud-bolt"},
+    // snow
+    "13d": {"climacon": "snowflake", "fontawesome": "snowflake"},
+    "13n": {"climacon": "snowflake", "fontawesome": "snowflake"},
+    // mist
+    "50d": {"climacon": "fog", "fontawesome": "cloud-fog"},
+    "50n": {"climacon": "fog", "fontawesome": "cloud-fog"},
 }
 
 function parse_darksky(data) {
@@ -104,7 +142,8 @@ function parse_darksky(data) {
             "apparent_temperature": data["currently"]["apparentTemperature"],
             "humidity": data["currently"]["humidity"] * 100,
             "cloud_cover": data["currently"]["cloudCover"] * 100,
-            "precipitation_intensity": data["currently"]["precipIntensity"]
+            "precipitation_intensity": data["currently"]["precipIntensity"],
+            "icon": darksky_icons[data["currently"]["icon"]]
         },
         "hourly": {
             "summary": data["hourly"]["summary"],
@@ -152,7 +191,8 @@ function parse_openweathermap(data) {
             "apparent_temperature": data["current"]["feels_like"],
             "humidity": data["current"]["humidity"],
             "cloud_cover": data["current"]["clouds"],
-            "precipitation_intensity": openweathermap_sum_precip_over_hour(data["current"])
+            "precipitation_intensity": openweathermap_sum_precip_over_hour(data["current"]),
+            "icon": openweathermap_icons[data["current"]["weather"][0]["icon"]]
         },
         "hourly": {
             "summary": data["daily"][0]["weather"][0]["description"],
