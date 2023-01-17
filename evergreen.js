@@ -20,9 +20,22 @@ let promotional = false; // use the same BG for promotional purposes
 let version = chrome.runtime.getManifest().version;
 let devmode = undefined;
 
-let weather_info;
+let weather_info = {
+    "darksky": {
+        "fetched": 0,
+        "data": null
+    },
+    "openweathermap": {
+        "fetched": 0,
+        "data": null
+    },
+    "nws": {
+        "fetched": 0,
+        "data": null
+    },
+};
 let weather_location_string;
-let last_weather_get;
+
 
 chrome.management.getSelf(function (result) {
     devmode = result.installType === "development";
@@ -180,8 +193,8 @@ function sunit(size) {
     return size;
 }
 
-function rainintensity(rainfall, over_whole_day=false) {
-    if(over_whole_day) {
+function rainintensity(rainfall, over_whole_day = false) {
+    if (over_whole_day) {
         rainfall /= 24
     }
     // https://en.wikipedia.org/wiki/Rain#Intensity
@@ -341,11 +354,12 @@ function settings_set_provider() {
         case "wp-openweathermap-radio":
             config["weather_provider"] = "openweathermap";
             break;
-        case "wp-noaa-radio":
-            config["weather_provider"] = "noaa";
+        case "wp-nws-radio":
+            config["weather_provider"] = "nws";
             break
     }
     save_settings();
+    fetch_weather_using_cache();
 }
 
 function set_autolocation(enabled) {
@@ -381,9 +395,9 @@ function settings_set_weather() {
     save_settings()
 
     // weather was just enabled but we don't have any info
-    if (this.checked && !weather_info) {
+    if (this.checked) {
         qs("#weather").innerHTML = `<i class="fa-solid fa-sun fa-spin"></i>`
-        fetch_weather().catch(weather_error)
+        fetch_weather_using_cache()
     }
 }
 
@@ -477,12 +491,12 @@ function weather_error(...args) {
 }
 
 function handle_weather_from_latlong(latitude, longitude, accuracy) {
-    weather_info = null;
+    weather_info[config["weather_provider"]]["data"] = null;
     reverse_geocode(latitude, longitude, accuracy).then(geocode_response => {
         console.debug(geocode_response)
         weather_location_string = geocode_response;
         // reconstruct if needed
-        if (weather_info) {
+        if (weather_info[config["weather_provider"]]["data"]) {
             construct_weather_popover()
         }
         chrome.storage.local.set({
@@ -491,14 +505,48 @@ function handle_weather_from_latlong(latitude, longitude, accuracy) {
     }).catch(weather_error)
     return get_weather_from_latlong(latitude, longitude, config["weather_provider"]).then(weather_response => {
         console.debug(weather_response)
+        weather_info[config["weather_provider"]] = {
+            "fetched": new Date().getTime(),
+            "data": weather_response
+        }
         chrome.storage.local.set({
-            lastweather: new Date().getTime() / 1000, weather: weather_response
+            weather: weather_info
         });
-        last_weather_get = new Date();
-        weather_info = weather_response;
         construct_weather_popover()
         return weather_info
     }).catch(weather_error)
+}
+
+function fetch_weather_using_cache() {
+    // refreshes weather given current provider & data
+
+    // no weather info, we have to fetch
+    let data = null;
+    try {
+        data = weather_info[config["weather_provider"]]["data"];
+    } catch (e) {
+    }
+
+    if (!data) {
+        console.debug("no weather info found, fetching new info.")
+        return fetch_weather().catch(weather_error)
+    }
+    let lastfetched = 0;
+    try {
+        lastfetched = weather_info[config["weather_provider"]]["fetched"];
+    } catch (e) {
+
+    }
+    let sincelastdownload = new Date().getTime() - lastfetched;
+    let timetowait = 60 * 10 * 1000;
+    if (navigator.onLine && sincelastdownload > timetowait) {
+        console.debug("weather info is stale, fetching new info.")
+        return fetch_weather().catch(weather_error)
+    } else {
+        console.debug("using cached weather info");
+        console.debug(weather_info)
+        construct_weather_popover();
+    }
 }
 
 function fetch_weather() {
@@ -527,8 +575,8 @@ function fetch_weather() {
 function init_weather() {
     // temperature unit handler AND iconset AND location settings AND weather
     chrome.storage.local.get([
-        'tempunit', 'lastweather', 'iconset', 'weather', "geocode", "autolocate",
-        "weather_address", "lastweather", "weather_enabled", "weather_provider"
+        'tempunit', 'iconset', 'weather', "geocode", "autolocate",
+        "weather_address", "weather_enabled", "weather_provider",
     ], function (result) {
         // init temp unit settings options
         config["tempunit"] = result["tempunit"];
@@ -579,16 +627,22 @@ function init_weather() {
             case "openweathermap":
                 qs("#wp-openweathermap-radio").setAttribute("checked", "checked");
                 break;
-            case "noaa":
-                qs("#wp-noaa-radio").setAttribute("checked", "checked");
+            case "nws":
+                qs("#wp-nws-radio").setAttribute("checked", "checked");
                 break;
         }
         qs('#wp-darksky-radio').addEventListener('input', settings_set_provider);
         qs('#wp-openweathermap-radio').addEventListener('input', settings_set_provider);
-        qs('#wp-noaa-radio').addEventListener('input', settings_set_provider);
+        qs('#wp-nws-radio').addEventListener('input', settings_set_provider);
 
         bootstrap.Tooltip.getOrCreateInstance(qs("#wp-darksky-radio").parentElement, {
             placement: "top", trigger: "hover", title: `Support for the Dark Sky API will end on March 31, 2023.`
+        })
+
+        bootstrap.Tooltip.getOrCreateInstance(qs("#wp-nws-radio").parentElement, {
+            placement: "top",
+            trigger: "hover",
+            title: `The National Weather Service     only provides weather for The United States.`
         })
 
         // init saved weather address
@@ -623,8 +677,14 @@ function init_weather() {
 
 
         // init weather refresh button
-        let sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
-        let timetowait = 60 * 10;
+        let lastfetched = 0;
+        try {
+            lastfetched = result["weather"][config["weather_provider"]]["fetched"];
+        } catch (e) {
+
+        }
+        let sincelastdownload = new Date().getTime() - lastfetched;
+        let timetowait = 60 * 10 * 1000;
 
         if (timetowait > sincelastdownload) {
             // disable button if used in last 10 mins
@@ -683,30 +743,13 @@ function init_weather() {
         })
 
         // load weather
-        if (config["weather_enabled"]) {
-            if (!result["lastweather"] || !result['weather']) {
-                // if no previous weather data, get weather
-                fetch_weather().catch(weather_error)
-            } else {
-                // there is a date of the last time we got the weather, check if we can use cached data
+        if (result["weather"]) {
+            weather_info = result["weather"];
+        }
+        weather_location_string = result["geocode"]
 
-                // seconds since last time we got the weather
-                let sincelastdownload = (new Date().getTime() / 1000) - result["lastweather"];
-                // only get weather every hour
-                let timetowait = 60 * 60;
-                // if its been longer than an hour and we are online, get the weather again
-                if (navigator.onLine && sincelastdownload > timetowait) {
-                    fetch_weather().catch(weather_error)
-                } else {
-                    // we have fresh cached data that we can use for the weather info!
-                    weather_info = result["weather"]
-                    weather_location_string = result["geocode"]
-                    last_weather_get = new Date(result["lastweather"] * 1000)
-                    console.debug(weather_info)
-                    construct_weather_popover();
-                    console.debug("using cached weather info");
-                }
-            }
+        if (config["weather_enabled"]) {
+            fetch_weather_using_cache();
         } else {
             // hide loading icon
             qs("#weather").innerHTML = ""
@@ -967,10 +1010,10 @@ function init_weather_popover_handler() {
 
 function construct_weather_popover() {
     console.debug("constructing weather popover")
-    if (!(weather_info && last_weather_get)) {
+    if (!(weather_info[config["weather_provider"]]["data"] && weather_info[config["weather_provider"]]["fetched"])) {
         // nothing we can do if there is no weather info
         // shouldn't happen but just in case
-        console.warn("asked to construct weather popup without proper data", weather_info, last_weather_get, weather_location_string)
+        console.warn("asked to construct weather popup without proper data", weather_info, weather_location_string)
         return
     }
     const weatherpopover = qs("#weatherpopover")
@@ -980,7 +1023,7 @@ function construct_weather_popover() {
     }
 
     // deconstruct the info into better objects
-    const {currently, daily, hourly, alerts, source} = weather_info;
+    const {currently, daily, hourly, alerts, source} = weather_info[config["weather_provider"]]["data"];
 
     const tempnow = currently["temperature"]
     const hightoday = Math.max(daily["high"][0]["y"], tempnow)
@@ -1014,19 +1057,9 @@ function construct_weather_popover() {
         alerttext += `</div>`;
     }
 
-    let poweredby = "";
-    switch (source) {
-        case "darksky":
-            poweredby = `<a href="https://darksky.net/poweredby/" style="display:flex; height:100%;">
-                            <img src="weather_provider_icons/darksky.png" alt="Powered by Dark Sky" style="display:inline-block; height: 1rem; align-self: flex-end;">
+    let poweredby = `<a href="https://openweathermap.org/" style="display:flex; height:100%;">
+                            <img src="weather_provider_icons/${source}.png" alt="Powered by ${source}" style="display:inline-block; height: 1rem; align-self: flex-end;">
                         </a>`;
-            break;
-        case "openweathermap":
-            poweredby = `<a href="https://openweathermap.org/" style="display:flex; height:100%;">
-                            <img src="weather_provider_icons/openweathermap.png" alt="Powered by OpenWeatherMap" style="display:inline-block; height: 1rem; align-self: flex-end;">
-                        </a>`;
-            break;
-    }
 
     let weather_popover_content = `
         <canvas id="weather_chart_daily" width="600" height="250"></canvas>
@@ -1112,7 +1145,7 @@ function construct_weather_popover() {
         <div class="row">
             <div class="col">
                 <p class="text-muted mb-0 mt-2">
-                    Last fetched at ${Chart._adapters._date.prototype.format(last_weather_get, config["timeformat"] === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
+                    Last fetched at ${Chart._adapters._date.prototype.format(weather_info[config["weather_provider"]]["fetched"], config["timeformat"] === "12" ? 'h:mm a LLL do' : "HH:mm LLL do")}
                     ${weather_location_string ? `for ${weather_location_string}` : ""}
                 </p>
             </div>
@@ -1217,14 +1250,13 @@ function context_to_gradient(context) {
 }
 
 
-
 function initalerttooltips() {
     document.querySelectorAll("#alerts a").forEach((alertp, index) => {
         console.debug(new bootstrap.Tooltip(alertp, {
             placement: "top",
             fallbackPlacements: ["top"],
             html: true,
-            title: "<div class='text-start d-grid gap-2'>" + weather_info["alerts"][index]["description"].replace(/((\*|^)[^*]+)/gim, "<p class='m-0'>$1</p>") + "</div>",
+            title: "<div class='text-start d-grid gap-2'>" + weather_info[config["weather_provider"]]["data"]["alerts"][index]["description"].replace(/((\*|^)[^*]+)/gim, "<p class='m-0'>$1</p>") + "</div>",
             customClass: "dontdismisspopover"
         }))
     })
@@ -1238,7 +1270,7 @@ function initweatherchart() {
         return
     }
 
-    const {daily, hourly} = weather_info;
+    const {daily, hourly} = weather_info[config["weather_provider"]]["data"];
 
     // https://www.chartjs.org/docs/latest/developers/api.html#setdatasetvisibility-datasetindex-visibility
 
@@ -1681,7 +1713,7 @@ function initweatherchart() {
                         callback: (value) => `${value} ${config["tempunit"] === "c" ? "m/s" : "mph"}`
                     }
                 }, precipintensity: {
-                    position: 'right', min: 0, display: 'auto', suggestedMax: sunit(2.54*24), ticks: {
+                    position: 'right', min: 0, display: 'auto', suggestedMax: sunit(2.54 * 24), ticks: {
                         // callback: (value) => `${stripzeropoint(value)}${config["tempunit"] === "c" ? "mm/h" : "in/h"}`
                         callback: (value) => `${rainintensity(value, true)}`, padding: 0
                     },
