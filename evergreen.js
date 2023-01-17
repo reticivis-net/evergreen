@@ -1044,6 +1044,7 @@ function construct_weather_popover() {
                     icon = '<i class="fa-solid fa-circle-info"></i>'
                     break
                 case "watch":
+                default:
                     classes = "text-warning"
                     icon = '<i class="fa-solid fa-circle-exclamation"></i>'
                     break

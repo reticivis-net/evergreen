@@ -33,8 +33,23 @@ function openweathermap_api_request(lat, long) {
     return fetch_json(`https://api.openweathermap.org/data/3.0/onecall?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(long)}&appid=74b014b3526434e435b0b553d9f673e1&units=metric`)
 }
 
-function openmeteo_api_request(lat, long) {
-    return fetch_json(`https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(long)}&hourly=temperature_2m,relativehumidity_2m,apparent_temperature,precipitation,weathercode,cloudcover,windspeed_10m&daily=weathercode,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,windspeed_10m_max,windgusts_10m_max&current_weather=true&timeformat=unixtime&timezone=auto`)
+function nws_api_forecast(lat, long) {
+    return fetch_json(`https://api.weather.gov/points/${encodeURIComponent(lat)},${encodeURIComponent(long)}`).then(points => {
+        return fetch_json(points["properties"]["forecastGridData"])
+    })
+}
+
+function nws_api_request(lat, long) {
+    // nws is weird so this has to be done weirdly
+    return Promise.all([
+        nws_api_forecast(lat, long),
+        fetch_json(`https://api.weather.gov/alerts/active?status=actual&message_type=alert,update,cancel&point=${encodeURIComponent(lat)},${encodeURIComponent(long)}`)
+    ]).then(resp => {
+        return {
+            "forecast": resp[0],
+            "alerts": resp[1]
+        }
+    })
 }
 
 const generic_template = {
@@ -73,7 +88,7 @@ const generic_template = {
             "expires": 0,
         }//, ...
     ],
-    "source": "darksky", // darksky,openweathermap,openmeteo, etc
+    "source": "darksky", // darksky,openweathermap, etc
 }
 
 function zip_darksky(data, property, multiply_y_by = 1) {
@@ -231,14 +246,17 @@ function parse_openweathermap(data) {
                 "url": "",
                 "title": alert["event"],
                 "description": alert["description"],
-                "expires": alert["ends"],
+                "expires": alert["end"],
             }
         }),
         "source": "openweathermap", // darksky,openweathermap,openmeteo, etc
     }
 }
 
-function parse_openmeteo(data) {
+
+
+function parse_nws(data) {
+    debugger
     return data
 }
 
@@ -248,8 +266,8 @@ function get_weather_from_latlong(lat, long, provider) {
             return darksky_api_request(lat, long).then(parse_darksky)
         case "openweathermap":
             return openweathermap_api_request(lat, long).then(parse_openweathermap)
-        case "openmeteo":
-            return openmeteo_api_request(lat, long).then(parse_openmeteo)
+        case "nws":
+            return nws_api_request(lat, long).then(parse_nws)
     }
 
 }
