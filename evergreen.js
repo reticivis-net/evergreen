@@ -1053,12 +1053,17 @@ function construct_weather_popover() {
                     icon = '<i class="fa-solid fa-triangle-exclamation"></i>'
                     break
             }
-            alerttext += `<p class="${classes}"><a href="${alert["url"]}">${icon} ${alert["title"]}. Expires ${epoch_to_relative(alert["expires"])}.</a></p>`
+            alerttext += `<p class="${classes}"><a ${alert["url"] ? `href="${alert["url"]}"` : ""}>${icon} ${alert["title"]}. Expires ${epoch_to_relative(alert["expires"])}.</a></p>`
         });
         alerttext += `</div>`;
     }
+    const urls = {
+        "darksky": "https://darksky.net/poweredby",
+        "openweathermap": "https://openweathermap.org/",
+        "nws": "https://www.weather.gov/"
+    }
 
-    let poweredby = `<a href="https://openweathermap.org/" style="display:flex; height:100%;">
+    let poweredby = `<a href="${urls[source]}" style="display:flex; height:100%;">
                             <img src="weather_provider_icons/${source}.png" alt="Powered by ${source}" style="display:inline-block; height: 1rem; align-self: flex-end;">
                         </a>`;
 
@@ -1323,7 +1328,7 @@ function initweatherchart() {
                     yAxisID: 'percent',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                            label: (context) => `${context.dataset.label}: ${Math.round(context.parsed.y)}%`
                         }
                     }
                     // borderDash: [5, 15],
@@ -1368,7 +1373,7 @@ function initweatherchart() {
                     yAxisID: 'percent',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                            label: (context) => `${context.dataset.label}: ${Math.round(context.parsed.y)}%`
                         }
                     },
                     hidden: true
@@ -1384,7 +1389,7 @@ function initweatherchart() {
                     yAxisID: 'percent',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                            label: (context) => `${context.dataset.label}: ${Math.round(context.parsed.y)}%`
                         }
                     },
                     hidden: true
@@ -1607,7 +1612,7 @@ function initweatherchart() {
                 yAxisID: 'percent',
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                        label: (context) => `${context.dataset.label}: ${Math.round(context.parsed.y)}%`
                     }
                 }
                 // borderDash: [5, 15],
@@ -1632,7 +1637,7 @@ function initweatherchart() {
                 yAxisID: 'percent',
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                        label: (context) => `${context.dataset.label}: ${Math.round(context.parsed.y)}%`
                     }
                 },
                 hidden: true
@@ -1648,7 +1653,7 @@ function initweatherchart() {
                 yAxisID: 'percent',
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+                        label: (context) => `${context.dataset.label}: ${Math.round(context.parsed.y)}%`
                     }
                 },
                 hidden: true

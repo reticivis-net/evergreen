@@ -183,7 +183,7 @@ function parse_darksky(data) {
         "alerts": (data["alerts"] ?? []).map(alert => {
             return {
                 "severity": alert["severity"], // advisory, watch, warning
-                "url": alert["url"],
+                "url": alert["uri"],
                 "title": alert["title"],
                 "description": alert["description"],
                 "expires": alert["expires"],
