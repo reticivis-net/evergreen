@@ -12,7 +12,7 @@ let config = {
         "latitude": undefined, "longitude": undefined
     },
     weather_enabled: true,
-    weather_provider: "darksky"
+    weather_provider: "openweathermap"
 }
 
 let promotional = false; // use the same BG for promotional purposes
@@ -642,7 +642,8 @@ function init_weather() {
         bootstrap.Tooltip.getOrCreateInstance(qs("#wp-nws-radio").parentElement, {
             placement: "top",
             trigger: "hover",
-            title: `The National Weather Service     only provides weather for The United States.`
+            html: true,
+            title: `NWS weather data has not yet been implemented. Check back on a later date.<br>The National Weather Service only provides weather for The United States.`
         })
 
         // init saved weather address
