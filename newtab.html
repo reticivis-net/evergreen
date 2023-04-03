@@ -159,11 +159,6 @@
                                 <label class="form-check-label" for="wp-openweathermap-radio">OpenWeatherMap</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="wp-darksky-radio" name="weatherprovider"
-                                       type="radio">
-                                <label class="form-check-label" for="wp-darksky-radio">Dark Sky <i class="fa-solid fa-triangle-exclamation text-warning"></i></label>
-                            </div>
-                            <div class="form-check form-check-inline">
                                 <input class="form-check-input" id="wp-nws-radio" name="weatherprovider"
                                        type="radio" disabled>
                                 <label class="form-check-label" for="wp-nws-radio">NWS <i class="fa-solid fa-triangle-exclamation text-warning"></i></label>
@@ -348,11 +343,12 @@
                 <ul>
                     <li>Evergreen is now <a class="whitelink" href="https://github.com/HexCodeFFF/evergreen">open
                         source!</a></li>
+                    <li>Replaced DarkSky with OpenWeatherMap and the framework to add new weather providers (NWS is planned)</li>
                     <li>Rewrote large parts of the extension for better performance, cleaner code, and less
                         dependencies
                     </li>
                     <li>added subtle shadows to text to aid readability on bright backgrounds</li>
-                    <li>completely new weather popover UI with chart.js</li>
+                    <li>completely new weather popover UI with chart.js and other nice visuals</li>
                     <li>weather can now be fetched from a manually defined location</li>
                     <li>weather fetching can now be entirely disabled</li>
                     <li>beautified calendar popover</li>

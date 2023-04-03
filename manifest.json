@@ -8,9 +8,6 @@
     "storage",
     "geolocation"
   ],
-  "host_permissions": [
-    "https://api.darksky.net/forecast/"
-  ],
   "chrome_url_overrides": {
     "newtab": "newtab.html"
   },

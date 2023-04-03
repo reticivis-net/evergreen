@@ -24,11 +24,6 @@ function c_to_f(c) {
     return (c * (9 / 5)) + 32
 }
 
-
-function darksky_api_request(lat, long) {
-    return fetch_json(`https://api.darksky.net/forecast/9b844f9ec461fb26f16bb808550c5aca/${encodeURIComponent(lat)},${encodeURIComponent(long)}?units=si`)
-}
-
 function openweathermap_api_request(lat, long) {
     return fetch_json(`https://api.openweathermap.org/data/3.0/onecall?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(long)}&appid=74b014b3526434e435b0b553d9f673e1&units=metric`)
 }
@@ -50,6 +45,61 @@ function nws_api_request(lat, long) {
             "alerts": resp[1]
         }
     })
+}
+
+
+function parse_iso8601_date(date) {
+    if (date === "NOW") {
+        return new Date();
+    } else {
+        return date.parse(date)
+    }
+}
+
+function parse_iso8601_duration(duration) {
+    let match = iso8601_duration_regex.exec(duration);
+    let years = match[1] || 0;
+    let months = match[2] || 0;
+    let days = match[3] || 0;
+    let hours = match[4] || 0;
+    let minutes = match[5] || 0;
+    let seconds = match[6] || 0;
+    return years * (1000 * 60 * 60 * 24 * 365) +
+        months * (1000 * 60 * 60 * 24 * 30) +
+        days * (1000 * 60 * 60 * 24) +
+        hours * (1000 * 60 * 60) +
+        minutes * (1000 * 60) +
+        seconds * 1000;
+}
+
+// lightly modified from nws docs
+const iso8601_start_and_end_regex = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:?\d{2}?)|NOW)\/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:?\d{2}?)|NOW)$/
+const iso8601_start_and_duration_regex = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:?\d{2}?)|NOW)\/(P(\d+Y)?(\d+M)?(\d+D)?(?:T(\d+H)?(\d+M)?(\d+S)?)?)$/;
+const iso8601_duration_and_end_regex = /^(P(\d+Y)?(\d+M)?(\d+D)?(?:T(\d+H)?(\d+M)?(\d+S)?)?)\/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:?\d{2}?)|NOW)$/
+const iso8601_duration_regex = /P(?<years>\d+Y)?(\d+M)?(\d+D)?(?:T(\d+H)?(\d+M)?(\d+S)?)?/;
+
+function parse_iso8601_interval(interval) {
+    // nws only appears to use start + duration but docs say it can be any of these 3 so
+    if (iso8601_start_and_end_regex.test(interval)) {
+        let match = iso8601_start_and_end_regex.exec(interval);
+        let start = parse_iso8601_date(match[1]);
+        let end = parse_iso8601_date(match[2]);
+        return [start, end - start];
+    } else if (iso8601_start_and_duration_regex.test(interval)) {
+        let match = iso8601_start_and_duration_regex.exec(interval);
+        let start = parse_iso8601_date(match[1]);
+        let duration = parse_iso8601_duration(match[2]);
+        return [start, duration];
+    }
+    if (iso8601_duration_and_end_regex.test(interval)) {
+        let match = iso8601_duration_and_end_regex.exec(interval);
+        let duration = parse_iso8601_duration(match[1]);
+        let end = parse_iso8601_date(match[2]);
+        let start = new Date(end.getTime() - duration);
+        return [start, duration];
+    } else {
+        throw new Error("Unable to parse " + interval);
+    }
 }
 
 const generic_template = {
@@ -88,16 +138,9 @@ const generic_template = {
             "expires": 0,
         }//, ...
     ],
-    "source": "darksky", // darksky,openweathermap, etc
+    "source": "openweathermap", // openweathermap, etc
 }
 
-function zip_darksky(data, property, multiply_y_by = 1) {
-    return data.map(data_point => {
-        let y = data_point[property];
-        y *= multiply_y_by
-        return {x: data_point["time"] * 1000, y: y}
-    })
-}
 
 function zip_openweathermap(data, property, multiply_y_by = 1) {
     return data.map(data_point => {
@@ -107,17 +150,6 @@ function zip_openweathermap(data, property, multiply_y_by = 1) {
     })
 }
 
-const darksky_icons = {
-    "clear-day": {"climacon": "sun", "fontawesome": "sun"},
-    "clear-night": {"climacon": "moon", "fontawesome": "moon"},
-    "rain": {"climacon": "rain", "fontawesome": "cloud-rain"},
-    "snow": {"climacon": "snow", "fontawesome": "snowflake"},
-    "sleet": {"climacon": "sleet", "fontawesome": "cloud-sleet"},
-    "wind": {"climacon": "wind", "fontawesome": "wind"},
-    "cloudy": {"climacon": "cloud", "fontawesome": "cloud"},
-    "partly-cloudy-day": {"climacon": "sun cloud", "fontawesome": "cloud-sun"},
-    "partly-cloudy-night": {"climacon": "moon cloud", "fontawesome": "cloud-moon"},
-}
 
 const openweathermap_icons = {
     // clear sky
@@ -147,50 +179,6 @@ const openweathermap_icons = {
     // mist
     "50d": {"climacon": "fog", "fontawesome": "cloud-fog"},
     "50n": {"climacon": "fog", "fontawesome": "cloud-fog"},
-}
-
-function parse_darksky(data) {
-    return {
-        "currently": {
-            "summary": data["currently"]["summary"],
-            "temperature": data["currently"]["temperature"],
-            "apparent_temperature": data["currently"]["apparentTemperature"],
-            "humidity": data["currently"]["humidity"] * 100,
-            "cloud_cover": data["currently"]["cloudCover"] * 100,
-            "precipitation_intensity": data["currently"]["precipIntensity"],
-            "icon": darksky_icons[data["currently"]["icon"]]
-        },
-        "hourly": {
-            "summary": data["hourly"]["summary"],
-            "temperature": zip_darksky(data["hourly"]["data"], "temperature"),
-            "apparent_temperature": zip_darksky(data["hourly"]["data"], "apparentTemperature"),
-            "humidity": zip_darksky(data["hourly"]["data"], "humidity", 100),
-            "cloud_cover": zip_darksky(data["hourly"]["data"], "cloudCover", 100),
-            "precipitation_probability": zip_darksky(data["hourly"]["data"], "precipProbability", 100),
-            "precipitation_intensity": zip_darksky(data["hourly"]["data"], "precipIntensity"),
-        },
-        "daily": {
-            "summary": data["daily"]["summary"],
-            "high": zip_darksky(data["daily"]["data"], "temperatureHigh"),
-            "apparent_high": zip_darksky(data["daily"]["data"], "apparentTemperatureHigh"),
-            "low": zip_darksky(data["daily"]["data"], "temperatureLow"),
-            "apparent_low": zip_darksky(data["daily"]["data"], "apparentTemperatureLow"),
-            "humidity": zip_darksky(data["daily"]["data"], "humidity", 100),
-            "cloud_cover": zip_darksky(data["daily"]["data"], "cloudCover", 100),
-            "precipitation_probability": zip_darksky(data["daily"]["data"], "precipProbability", 100),
-            "precipitation_intensity": zip_darksky(data["daily"]["data"], "precipIntensity", 24),
-        },
-        "alerts": (data["alerts"] ?? []).map(alert => {
-            return {
-                "severity": alert["severity"], // advisory, watch, warning
-                "url": alert["uri"],
-                "title": alert["title"],
-                "description": alert["description"],
-                "expires": alert["expires"],
-            }
-        }),
-        "source": "darksky", // darksky,openweathermap,openmeteo, etc
-    }
 }
 
 function openweathermap_sum_precip_over_hour(hour) {
@@ -254,16 +242,49 @@ function parse_openweathermap(data) {
 }
 
 
-
 function parse_nws(data) {
-    debugger
-    return data
+    return {
+        "currently": {
+            "summary": "Lorem ipsum",
+            "temperature": 0,
+            "apparent_temperature": 0,
+            "humidity": 0,
+            "cloud_cover": 0,
+            "precipitation": 0
+        },
+        "hourly": {
+            "summary": "Lorem ipsum",
+            "temperature": [{x: 0, y: 0}/*, ...*/],
+            "apparent_temperature": [{x: 0, y: 0}/*, ...*/],
+            "humidity": [{x: 0, y: 0}/*, ...*/],
+            "cloud_cover": [{x: 0, y: 0}/*, ...*/],
+            "precipitation": [{x: 0, y: 0}/*, ...*/],
+        },
+        "daily": {
+            "summary": "Lorem ipsum",
+            "high": [{x: 0, y: 0}/*, ...*/],
+            "apparent_high": [{x: 0, y: 0}/*, ...*/],
+            "low": [{x: 0, y: 0}/*, ...*/],
+            "apparent_low": [{x: 0, y: 0}/*, ...*/],
+            "feels_like": [{x: 0, y: 0}/*, ...*/],
+            "humidity": [{x: 0, y: 0}/*, ...*/],
+            "cloud_cover": [{x: 0, y: 0}/*, ...*/],
+            "precipitation": [{x: 0, y: 0}/*, ...*/],
+        },
+        "alerts": [
+            {
+                "severity": "advisory", // advisory, watch, warning
+                "url": "https://example.com",
+                "title": "Lorem ipsum",
+                "expires": 0,
+            }//, ...
+        ],
+        "source": "nws", // darksky,openweathermap, etc
+    }
 }
 
 function get_weather_from_latlong(lat, long, provider) {
     switch (provider) {
-        case "darksky":
-            return darksky_api_request(lat, long).then(parse_darksky)
         case "openweathermap":
             return openweathermap_api_request(lat, long).then(parse_openweathermap)
         case "nws":

@@ -21,10 +21,6 @@ let version = chrome.runtime.getManifest().version;
 let devmode = undefined;
 
 let weather_info = {
-    "darksky": {
-        "fetched": 0,
-        "data": null
-    },
     "openweathermap": {
         "fetched": 0,
         "data": null
@@ -348,9 +344,6 @@ function settings_set_refreshtime() {
 
 function settings_set_provider() {
     switch (this.id) {
-        case "wp-darksky-radio":
-            config["weather_provider"] = "darksky";
-            break;
         case "wp-openweathermap-radio":
             config["weather_provider"] = "openweathermap";
             break;
@@ -617,13 +610,10 @@ function init_weather() {
 
         // init weather provider
         config["weather_provider"] = result['weather_provider'];
-        if (config["weather_provider"] === undefined) {
-            config["weather_provider"] = "darksky";
+        if (config["weather_provider"] === undefined || config["weather_provider"] === "darksky") {
+            config["weather_provider"] = "openweathermap";
         }
         switch (config["weather_provider"]) {
-            case "darksky":
-                qs("#wp-darksky-radio").setAttribute("checked", "checked");
-                break;
             case "openweathermap":
                 qs("#wp-openweathermap-radio").setAttribute("checked", "checked");
                 break;
@@ -631,13 +621,8 @@ function init_weather() {
                 qs("#wp-nws-radio").setAttribute("checked", "checked");
                 break;
         }
-        qs('#wp-darksky-radio').addEventListener('input', settings_set_provider);
         qs('#wp-openweathermap-radio').addEventListener('input', settings_set_provider);
         qs('#wp-nws-radio').addEventListener('input', settings_set_provider);
-
-        bootstrap.Tooltip.getOrCreateInstance(qs("#wp-darksky-radio").parentElement, {
-            placement: "top", trigger: "hover", title: `Support for the Dark Sky API will end on March 31, 2023.`
-        })
 
         bootstrap.Tooltip.getOrCreateInstance(qs("#wp-nws-radio").parentElement, {
             placement: "top",
@@ -1059,7 +1044,6 @@ function construct_weather_popover() {
         alerttext += `</div>`;
     }
     const urls = {
-        "darksky": "https://darksky.net/poweredby",
         "openweathermap": "https://openweathermap.org/",
         "nws": "https://www.weather.gov/"
     }
