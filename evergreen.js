@@ -632,10 +632,18 @@ function init_weather() {
         })
 
         // init saved weather address
-        config["weather_address"]["latitude"] = result["weather_address"]["latitude"]
-        config["weather_address"]["longitude"] = result["weather_address"]["longitude"]
-        qs("#weather-latitude").value = config["weather_address"]["latitude"]
-        qs("#weather-longitude").value = config["weather_address"]["longitude"]
+        if (result["weather_address"] === undefined) {
+            config["weather_address"] = {
+                "longitude": null,
+                "latitude": null
+            }
+        } else {
+            config["weather_address"]["latitude"] = result["weather_address"]["latitude"]
+            config["weather_address"]["longitude"] = result["weather_address"]["longitude"]
+            qs("#weather-latitude").value = config["weather_address"]["latitude"]
+            qs("#weather-longitude").value = config["weather_address"]["longitude"]
+        }
+
         document.querySelectorAll(".weather-coords").forEach(elem => {
             elem.addEventListener("input", settings_set_location)
         })
@@ -645,6 +653,7 @@ function init_weather() {
         qs("#autolocate").addEventListener("input", allow_weather_refresh)
         config["autolocate"] = result["autolocate"]
         if (result["autolocate"] === undefined || result["autolocate"]) {
+            config["autolocate"] = true;
             set_autolocation(true)
             qs("#autolocate").setAttribute("checked", "checked")
         } else {
@@ -655,6 +664,7 @@ function init_weather() {
         qs("#enableweather").addEventListener("input", settings_set_weather)
         config["weather_enabled"] = result["weather_enabled"]
         if (result["weather_enabled"] === undefined || result["weather_enabled"]) {
+            config["weather_enabled"] = true;
             weather_enable(true)
             qs("#enableweather").setAttribute("checked", "checked")
         } else {
@@ -1280,7 +1290,7 @@ function initweatherchart() {
         type: 'line', data: {
             datasets: [{
                 parsing: false,
-                data: hourly["temperature"], // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
+                data: hourly["temperature"].map(({x,y})=> ({x:x, y:tunit(y)})), // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
                 //     return {x: val * 1000 * 60 * 60 * 24, y: tunit(val)}
                 // }), {x: 1000 * 60 * 60 * 24 * 10000, y: tunit(100)}],
                 label: "Temperature",
@@ -1319,7 +1329,7 @@ function initweatherchart() {
                     // borderDash: [5, 15],
                 }, {
                     parsing: false,
-                    data: hourly["apparent_temperature"],
+                    data: hourly["apparent_temperature"].map(({x,y})=> ({x:x, y:tunit(y)})),
                     label: "Feels Like",
                     borderColor: gen_hourly_chart_gradient,
                     backgroundColor: gen_hourly_chart_gradient,
@@ -1506,7 +1516,7 @@ function initweatherchart() {
         type: 'line', data: {
             datasets: [{
                 parsing: false,
-                data: daily["high"],
+                data: daily["high"].map(({x,y})=> ({x:x, y:tunit(y)})),
                 label: "High",
                 backgroundColor: CHART_COLORS.red,
                 pointBorderColor: CHART_COLORS.red,
@@ -1526,7 +1536,7 @@ function initweatherchart() {
                 }
             }, {
                 parsing: false,
-                data: daily["apparent_high"],
+                data: daily["apparent_high"].map(({x,y})=> ({x:x, y:tunit(y)})),
                 label: "Apparent High",
                 backgroundColor: CHART_COLORS.red,
                 pointBorderColor: CHART_COLORS.red,
@@ -1547,7 +1557,7 @@ function initweatherchart() {
                 }
             }, {
                 parsing: false,
-                data: daily["low"],
+                data: daily["low"].map(({x,y})=> ({x:x, y:tunit(y)})),
                 label: "Low",
                 backgroundColor: CHART_COLORS.blue,
                 pointBorderColor: CHART_COLORS.blue,
@@ -1567,7 +1577,7 @@ function initweatherchart() {
                 }
             }, {
                 parsing: false,
-                data: daily["apparent_low"],
+                data: daily["apparent_low"].map(({x,y})=> ({x:x, y:tunit(y)})),
                 label: "Apparent Low",
                 backgroundColor: CHART_COLORS.blue,
                 pointBorderColor: CHART_COLORS.blue,
