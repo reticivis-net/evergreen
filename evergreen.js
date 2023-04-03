@@ -1290,7 +1290,7 @@ function initweatherchart() {
         type: 'line', data: {
             datasets: [{
                 parsing: false,
-                data: hourly["temperature"].map(({x,y})=> ({x:x, y:tunit(y)})), // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
+                data: hourly["temperature"].map(({x, y}) => ({x: x, y: tunit(y)})), // data: [...Array.from({length: 100}, (x, i) => i).map(val => {
                 //     return {x: val * 1000 * 60 * 60 * 24, y: tunit(val)}
                 // }), {x: 1000 * 60 * 60 * 24 * 10000, y: tunit(100)}],
                 label: "Temperature",
@@ -1329,7 +1329,7 @@ function initweatherchart() {
                     // borderDash: [5, 15],
                 }, {
                     parsing: false,
-                    data: hourly["apparent_temperature"].map(({x,y})=> ({x:x, y:tunit(y)})),
+                    data: hourly["apparent_temperature"].map(({x, y}) => ({x: x, y: tunit(y)})),
                     label: "Feels Like",
                     borderColor: gen_hourly_chart_gradient,
                     backgroundColor: gen_hourly_chart_gradient,
@@ -1516,7 +1516,7 @@ function initweatherchart() {
         type: 'line', data: {
             datasets: [{
                 parsing: false,
-                data: daily["high"].map(({x,y})=> ({x:x, y:tunit(y)})),
+                data: daily["high"].map(({x, y}) => ({x: x, y: tunit(y)})),
                 label: "High",
                 backgroundColor: CHART_COLORS.red,
                 pointBorderColor: CHART_COLORS.red,
@@ -1536,7 +1536,7 @@ function initweatherchart() {
                 }
             }, {
                 parsing: false,
-                data: daily["apparent_high"].map(({x,y})=> ({x:x, y:tunit(y)})),
+                data: daily["apparent_high"].map(({x, y}) => ({x: x, y: tunit(y)})),
                 label: "Apparent High",
                 backgroundColor: CHART_COLORS.red,
                 pointBorderColor: CHART_COLORS.red,
@@ -1557,7 +1557,7 @@ function initweatherchart() {
                 }
             }, {
                 parsing: false,
-                data: daily["low"].map(({x,y})=> ({x:x, y:tunit(y)})),
+                data: daily["low"].map(({x, y}) => ({x: x, y: tunit(y)})),
                 label: "Low",
                 backgroundColor: CHART_COLORS.blue,
                 pointBorderColor: CHART_COLORS.blue,
@@ -1577,7 +1577,7 @@ function initweatherchart() {
                 }
             }, {
                 parsing: false,
-                data: daily["apparent_low"].map(({x,y})=> ({x:x, y:tunit(y)})),
+                data: daily["apparent_low"].map(({x, y}) => ({x: x, y: tunit(y)})),
                 label: "Apparent Low",
                 backgroundColor: CHART_COLORS.blue,
                 pointBorderColor: CHART_COLORS.blue,
