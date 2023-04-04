@@ -744,7 +744,10 @@ function init_weather() {
 
         // load weather
         if (result["weather"]) {
-            weather_info = result["weather"];
+            if (result["openweathermap"] && result["nws"]) {
+                weather_info = result["weather"];
+            }
+            // don't set weather info if the previous info is invalid such as from previous version
         }
         weather_location_string = result["geocode"]
 
