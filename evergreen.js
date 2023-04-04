@@ -100,8 +100,10 @@ function update_newtab_datetime() {
     let da;
     if (config["dateformat"] === "md") {
         da = `${mo}/${d}/${y}`;
-    } else {
+    } else if (config["dateformat"] === "dm") {
         da = `${d}/${mo}/${y}`;
+    } else if (config["dateformat"] === "ymd") {
+        da = `${y}-${mo.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
     }
     set_html_if_needed(qs("#date"), da);
 }
@@ -308,8 +310,10 @@ function settings_set_timeformat() {
 function settings_set_dateformat() {
     if (this.id === "mdradio") {
         config["dateformat"] = "md";
-    } else {
+    } else if (this.id === "dmradio") {
         config["dateformat"] = "dm";
+    } else if (this.id === "ymdradio") {
+        config["dateformat"] = "ymd";
     }
     save_settings();
 }
@@ -846,11 +850,14 @@ function init_dateformat() {
         }
         if (config["dateformat"] === "md") {
             qs("#mdradio").setAttribute("checked", "checked");
-        } else {
+        } else if (config["dateformat"] === "dm") {
             qs("#dmradio").setAttribute("checked", "checked");
+        } else if (config["dateformat"] === "ymd") {
+            qs("#ymdradio").setAttribute("checked", "checked");
         }
         qs('#mdradio').addEventListener('input', settings_set_dateformat);
         qs('#dmradio').addEventListener('input', settings_set_dateformat);
+        qs('#ymdradio').addEventListener('input', settings_set_dateformat);
     });
 }
 
