@@ -3,3 +3,4 @@ libs/chartjs/chartjs-adapter-date-fns.bundle.js
 libs/bootstrap/bootstrap.bundle.js
 libs/bootstrap/bootstrap.bundle.js.map
 *_ex.json
+evergreen*.zip

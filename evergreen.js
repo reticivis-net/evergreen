@@ -827,7 +827,7 @@ function init_background_settings() {
         // search tags options
         config["searchtags"] = result["searchtags"];
         if (config["searchtags"] === undefined) {
-            config["searchtags"] = "nature,ocean,city,space";
+            config["searchtags"] = "wallpapers";
         }
         qs("#bgrefresh").setAttribute("value", config["refreshtime"]);
         qs('#bgrefresh').addEventListener('change', settings_set_refreshtime);
