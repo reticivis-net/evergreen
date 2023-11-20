@@ -1419,7 +1419,7 @@ function initweatherchart() {
                     // borderDash: [5, 15],
                 },*/{
                     parsing: false,
-                    data: hourly["precipitation_intensity"],
+                    data: hourly["precipitation_intensity"].map(({x, y}) => ({x: x, y: sunit(y)})),
                     label: "Precipitation",
                     borderColor: "rgb(54,69,235)",
                     backgroundColor: "rgb(54,69,235)",
@@ -1428,7 +1428,7 @@ function initweatherchart() {
                     yAxisID: 'precipintensity',
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm" : "in"} (${rainintensity(context.parsed.y)})`
+                            label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)} ${config["tempunit"] === "c" ? "mm" : "in"} (${rainintensity(context.parsed.y)})`
                         }
                     },
                     hidden: true
@@ -1683,7 +1683,7 @@ function initweatherchart() {
                 // borderDash: [5, 15],
             },*/ {
                 parsing: false,
-                data: daily["precipitation_intensity"],
+                data: daily["precipitation_intensity"].map(({x, y}) => ({x: x, y: sunit(y)})),
                 label: "Precipitation",
                 borderColor: "rgb(35,53,162)",
                 backgroundColor: "rgb(35,53,162)",
@@ -1692,7 +1692,7 @@ function initweatherchart() {
                 yAxisID: 'precipintensity',
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${context.parsed.y} ${config["tempunit"] === "c" ? "mm" : "in"} (${rainintensity(context.parsed.y, true)})`
+                        label: (context) => `${context.dataset.label}: ${roundton(context.parsed.y, 2)} ${config["tempunit"] === "c" ? "mm" : "in"} (${rainintensity(context.parsed.y, true)})`
                     }
                 },
                 hidden: true
