@@ -33,9 +33,7 @@ let weather_info = {
 let weather_location_string;
 
 
-chrome.management.getSelf(function (result) {
-    devmode = result.installType === "development";
-});
+
 
 const qs = document.querySelector.bind(document);
 
@@ -1792,8 +1790,10 @@ function initweatherchart() {
 
 function initialize_popovers_and_modals() {
     // top left ("Evergreen")
-    bootstrap.Popover.getOrCreateInstance(qs("#evergreenpopover"), {
-        html: true, placement: "bottom", trigger: "focus", content: `
+    chrome.management.getSelf(function (result) {
+        devmode = result.installType === "development";
+        bootstrap.Popover.getOrCreateInstance(qs("#evergreenpopover"), {
+            html: true, placement: "bottom", trigger: "focus", content: `
             <h2 class="display-4">
                 <img class="logoimg" alt="" src="icons/evergreen${devmode ? "dev" : ""}128.png"/>
                 Evergreen${devmode ? " Dev" : ""}
@@ -1801,7 +1801,9 @@ function initialize_popovers_and_modals() {
             <h4>New Tab for Chrome</h4>
             <h4>Version ${version}</h4>
             <h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`
-    })
+        })
+    });
+
 
     // top middle (clock)
     bootstrap.Popover.getOrCreateInstance(qs("#clockpopover"), {
