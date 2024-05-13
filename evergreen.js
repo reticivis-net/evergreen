@@ -359,36 +359,46 @@ function settings_set_provider() {
     fetch_weather_using_cache();
 }
 
-function set_autolocation(enabled) {
-    document.querySelectorAll(".disable-on-autolocate").forEach(elem => {
-        if (enabled) {
-            elem.setAttribute("disabled", "disabled")
-        } else {
+function handle_disabling_weather_options(autolocation, weatherenable) {
+    // all .disable-on-autolocate have .disable-if-weather-disabled
+    // also my brain hurts after this
+    if (weatherenable) {
+        // if weather is enabled, enable everything
+        document.querySelectorAll(".disable-if-weather-disabled").forEach(elem => {
             elem.removeAttribute("disabled")
+        })
+        // after enabling everything, then if autolocate is on, disable relevant options
+        if (autolocation) {
+            document.querySelectorAll(".disable-on-autolocate").forEach(elem => {
+                elem.setAttribute("disabled", "disabled")
+            })
         }
-    })
+    } else {
+        // if weather is disabled, it doesnt matter what state autolocate is in, we disable it
+        document.querySelectorAll(".disable-if-weather-disabled").forEach(elem => {
+            elem.setAttribute("disabled", "disabled")
+        })
+    }
+}
+
+function set_autolocation(enabled) {
+    handle_disabling_weather_options(enabled, config["weather_enabled"])
 }
 
 function weather_enable(enabled) {
-    document.querySelectorAll(".disable-if-weather-disabled").forEach(elem => {
-        if (enabled) {
-            elem.removeAttribute("disabled")
-        } else {
-            elem.setAttribute("disabled", "disabled")
-        }
-    })
+    handle_disabling_weather_options(config["autolocate"], enabled)
     qs("#weatherpopover").style.display = enabled ? "inline" : "none"
 }
 
 function settings_set_autolocation() {
-    set_autolocation(this.checked)
     config["autolocate"] = this.checked
+    set_autolocation(this.checked)
     save_settings()
 }
 
 function settings_set_weather() {
-    weather_enable(this.checked)
     config["weather_enabled"] = this.checked
+    weather_enable(this.checked)
     save_settings()
 
     // weather was just enabled but we don't have any info
@@ -487,9 +497,9 @@ function weather_error(...args) {
     return Promise.reject(args)
 }
 
-function handle_weather_from_latlong(latitude, longitude, accuracy) {
+function handle_weather_from_latlong(latitude, longitude) {
     weather_info[config["weather_provider"]]["data"] = null;
-    reverse_geocode(latitude, longitude, accuracy).then(geocode_response => {
+    reverse_geocode(latitude, longitude).then(geocode_response => {
         console.debug(geocode_response)
         weather_location_string = geocode_response;
         // reconstruct if needed
@@ -499,7 +509,18 @@ function handle_weather_from_latlong(latitude, longitude, accuracy) {
         chrome.storage.local.set({
             geocode: geocode_response
         });
-    }).catch(weather_error)
+    }).catch(r => {
+        // do not error if this fails, who fucking cares lmao
+        console.error(r);
+        weather_location_string = null;
+        // reconstruct if needed
+        if (weather_info[config["weather_provider"]]["data"]) {
+            construct_weather_popover()
+        }
+        chrome.storage.local.set({
+            geocode: null
+        });
+    })
     return get_weather_from_latlong(latitude, longitude, config["weather_provider"]).then(weather_response => {
         console.debug(weather_response)
         weather_info[config["weather_provider"]] = {
@@ -549,7 +570,7 @@ function fetch_weather_using_cache() {
 function fetch_weather() {
     if (config["autolocate"]) {
         return geolocate().then(position => {
-            return handle_weather_from_latlong(position.coords.latitude, position.coords.longitude, position.coords.accuracy)
+            return handle_weather_from_latlong(position.coords.latitude, position.coords.longitude)
         }).catch(weather_error)
     } else {
         let lat = config["weather_address"]["latitude"];
@@ -558,7 +579,7 @@ function fetch_weather() {
             lat = Number(lat)
             long = Number(long)
             if (-90 <= lat && lat <= 90 && -180 <= long && long <= 180) {
-                return handle_weather_from_latlong(config["weather_address"]["latitude"], config["weather_address"]["longitude"], 0)
+                return handle_weather_from_latlong(config["weather_address"]["latitude"], config["weather_address"]["longitude"])
             } else {
                 return weather_error("Can't fetch weather due to out-of-bounds coordinates.", config["weather_address"])
             }

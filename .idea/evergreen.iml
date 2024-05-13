@@ -14,5 +14,6 @@
     <orderEntry type="library" name="@types/chroma-js" level="application" />
     <orderEntry type="library" name="@types/chart.js" level="application" />
     <orderEntry type="library" name="@types/bootstrap" level="application" />
+    <orderEntry type="library" name="@types/chrome" level="application" />
   </component>
 </module>

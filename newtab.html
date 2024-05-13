@@ -17,8 +17,6 @@
     <script src="libs/chartjs/chart.min.js"></script>
     <script src="libs/chartjs/chartjs-adapter-date-fns.bundle.min.js"></script>
     <!--    <script src="libs/skycons.min.js"></script>-->
-    <script src="weatherapi.js"></script>
-    <script src="evergreen.js"></script>
     <link href="libs/kofi/kofi.min.css" rel="stylesheet">
     <link href="calendar.css" rel="stylesheet">
     <link href="evergreen.css" rel="stylesheet">
@@ -158,27 +156,27 @@
                         <div>
                             <p><i class="fa-solid fa-satellite-dish"></i> Weather Provider:</p>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="wp-openweathermap-radio" name="weatherprovider"
+                                <input class="form-check-input disable-if-weather-disabled" id="wp-openweathermap-radio" name="weatherprovider"
                                        type="radio">
-                                <label class="form-check-label" for="wp-openweathermap-radio">OpenWeatherMap</label>
+                                <label class="form-check-label disable-if-weather-disabled" for="wp-openweathermap-radio">OpenWeatherMap</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="wp-nws-radio" name="weatherprovider"
+                                <input class="form-check-input disable-if-weather-disabled" id="wp-nws-radio" name="weatherprovider"
                                        type="radio" disabled>
-                                <label class="form-check-label" for="wp-nws-radio">NWS <i class="fa-solid fa-triangle-exclamation text-warning"></i></label>
+                                <label class="form-check-label disable-if-weather-disabled" for="wp-nws-radio">NWS <i class="fa-solid fa-triangle-exclamation text-warning"></i></label>
                             </div>
                         </div>
                         <div>
                             <p><i class="fa-solid fa-icons"></i> Icon Set:</p>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="cradio" name="weatherform" type="radio">
-                                <label class="form-check-label" data-bs-html="true" data-bs-toggle="tooltip"
+                                <input class="form-check-input disable-if-weather-disabled" id="cradio" name="weatherform" type="radio">
+                                <label class="form-check-label disable-if-weather-disabled" data-bs-html="true" data-bs-toggle="tooltip"
                                        for="cradio"
                                        title="">Climacons</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="faradio" name="weatherform" type="radio">
-                                <label class="form-check-label" for="faradio">FontAwesome</label>
+                                <input class="form-check-input disable-if-weather-disabled" id="faradio" name="weatherform" type="radio">
+                                <label class="form-check-label disable-if-weather-disabled" for="faradio">FontAwesome</label>
                             </div>
                         </div>
                         <div>
@@ -209,22 +207,22 @@
                             </div>
                         </div>
                         <div>
-                            <p><i class="fa-solid fa-location-question"></i> Get coordinates from address:</p>
+                            <p><i class="fa-solid fa-location-question"></i> Get coordinates from city:</p>
                             <div class="input-group">
-                                <input aria-describedby="submit-address" aria-label="Address or city"
+                                <input aria-describedby="submit-address" aria-label="City"
                                        class="form-control disable-on-autolocate disable-if-weather-disabled"
-                                       id="weather-address" placeholder="Address or city"
+                                       id="weather-address" placeholder="City"
                                        type="text">
                                 <button class="btn btn-primary disable-on-autolocate disable-if-weather-disabled"
                                         id="submit-address" type="button">
                                     <i class="fa-solid fa-magnifying-glass-location"></i>
                                 </button>
                             </div>
-                            <p class="text-muted">
+                            <!--<p class="text-muted">
                                 <a class="whitelink" href="https://openstreetmap.org/copyright">
                                     Data © OpenStreetMap contributors
                                 </a>
-                            </p>
+                            </p>-->
                         </div>
                     </div>
                 </div>
@@ -342,10 +340,18 @@
             </div>
             <div class="modal-body">
                 <!--TODO: changelog-->
-                <h3>Changelog v2.1.1</h3>
-                <h4>Bug Fixes</h4>
+                <h3>Changelog v2.2.0</h3>
+                <h4>Changes</h4>
                 <ul>
-                    <li>Fixed precipitation intensity not being converted to inches correctly</li>
+                    <li>The weather popover now takes advantage of OpenWeatherMap's more human-readable "summary" field to provide an overview of the weather for the day.</li>
+                    <li>Changed (reverse) geocoding provider from OpenStreetMap to OpenWeatherMap.<ul>
+                        <li>Geocoding is determining coordinates from a place name. This is used in the settings menu for location lookup/</li>
+                        <li>Reverse geocoding is determining the place name of coordinates. This is used in the weather popover to show you the name of the city you got your weather for.</li>
+                        <li>This should fix all issues with OpenStreetMap ratelimiting.</li>
+                    </ul></li>
+                    <li>If reverse geocoding fails, the weather will now be displayed regardless.</li>
+                    <li>Manual location inputs are now properly disabled on page load when autolocate is on.</li>
+                    <li>Weather options are now properly disabled when weather is off.</li>
                 </ul>
             </div>
             <div class="modal-footer">
@@ -354,3 +360,5 @@
         </div>
     </div>
 </div>
+<script src="weatherapi.js"></script>
+<script src="evergreen.js"></script>

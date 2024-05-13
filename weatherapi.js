@@ -3,6 +3,8 @@ async function fetch_json(url) {
     return await response.json()
 }
 
+
+
 function geolocate() {
     return new Promise((resolve, reject) => {
         if ("geolocation" in navigator) {
@@ -187,6 +189,7 @@ function openweathermap_sum_precip_over_hour(hour) {
 }
 
 function parse_openweathermap(data) {
+    console.debug(data);
     return {
         "currently": {
             "summary": data["current"]["weather"][0]["description"],
@@ -198,7 +201,7 @@ function parse_openweathermap(data) {
             "icon": openweathermap_icons[data["current"]["weather"][0]["icon"]]
         },
         "hourly": {
-            "summary": data["daily"][0]["weather"][0]["description"],
+            "summary": data["daily"][0]["summary"],
             "temperature": zip_openweathermap(data["hourly"], "temp"),
             "apparent_temperature": zip_openweathermap(data["hourly"], "feels_like"),
             "humidity": zip_openweathermap(data["hourly"], "humidity"),
@@ -294,7 +297,7 @@ function get_weather_from_latlong(lat, long, provider) {
 }
 
 function geocode(addr) {
-    return fetch_json(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&addressdetails=1&limit=1`).then(r => {
+    return fetch_json(`https://api.openweathermap.org/geo/1.0/direct?q=${addr}&limit=1&appid=74b014b3526434e435b0b553d9f673e1`).then(r => {
         if (r && r.length) {
             return {
                 "latitude": r[0]["lat"],
@@ -303,16 +306,13 @@ function geocode(addr) {
         } else {
             return null
         }
-
     })
 }
 
-function reverse_geocode(lat, long, accuracy) {
-    // accuracy of GPS is in meters, need to convert to OSM tiles https://wiki.openstreetmap.org/wiki/Zoom_levels
-    accuracy = Math.min(Math.ceil(-Math.log2((accuracy * 2) / 40075017)), 12)
-
-    return fetch_json(`https://nominatim.openstreetmap.org/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(long)}&format=json&zoom=${encodeURIComponent(accuracy)}`).then(r => {
-        return r["display_name"]
+function reverse_geocode(lat, long) {
+    return fetch_json(`https://api.openweathermap.org/geo/1.0/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(long)}&appid=74b014b3526434e435b0b553d9f673e1&limit=1`).then(r => {
+        // name(, state), country
+        return `${r[0]["name"]}${r[0]["state"] ? `, ${r[0]["state"]}` : ""}, ${r[0]["country"]}`;
     })
 }
 
