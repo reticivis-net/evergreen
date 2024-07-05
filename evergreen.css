@@ -8,6 +8,7 @@
     /*filter:blur(8px);*/
     transition: background 0.25s linear;
 }
+
 .bg {
     height: 100%;
     position: absolute;

@@ -4,7 +4,6 @@ async function fetch_json(url) {
 }
 
 
-
 function geolocate() {
     return new Promise((resolve, reject) => {
         if ("geolocation" in navigator) {

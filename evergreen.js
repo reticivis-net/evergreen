@@ -34,8 +34,6 @@ let weather_info = {
 let weather_location_string;
 
 
-
-
 const qs = document.querySelector.bind(document);
 
 console.debug("Evergreen New Tab for chrome");
