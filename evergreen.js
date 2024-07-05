@@ -19,6 +19,7 @@ let promotional = false; // use the same BG for promotional purposes
 
 let version = chrome.runtime.getManifest().version;
 let devmode = undefined;
+let download_url = undefined;
 
 let weather_info = {
     "openweathermap": {
@@ -335,7 +336,7 @@ function set_blur(val) {
         qs("#bg").style["transform"] = `scale(${1 + 0.1 * (val / 15)})`;
         qs("#bg").style["filter"] = `blur(${val}px)`;
     }
-    qs("#blurval").innerHTML = `<i class="fas fa-image"></i> Background blur: ${val}px`;
+    qs("#blurval").innerHTML = `<i class="fas fa-droplet"></i> Background blur: ${val}px`;
     config["blur"] = val;
 }
 
@@ -438,8 +439,16 @@ function change_background() {
             let url = `${r["urls"]["raw"]}&fit=crop&w=${window.screen.width}&h=${window.screen.height}&dpr=${window.devicePixelRatio}`;
             preload_image(url, function () {
                 qs("#bg").style["background-image"] = `url(${url})`;
+
+                // setup download url
+                download_url = r["links"]["download_location"];
+                qs("#bg-download").removeAttribute("disabled")
+
+                // attribution
+                qs("#attribution").innerHTML = `<p><i class="fa-solid fa-message-image"></i> <a href="${r["links"]["html"]}?utm_source=evergreen_new_tab_for_chrome&utm_medium=referral">Photo</a> by <a href="${r["user"]["links"]["html"]}?utm_source=evergreen_new_tab_for_chrome&utm_medium=referral">${r["user"]["name"]}</a> on <a href="https://unsplash.com/?utm_source=evergreen_new_tab_for_chrome&utm_medium=referral">Unsplash</a></p>`;
+
                 // api requires hotlinking
-                document.querySelector("#bga").setAttribute("href", r["links"]["html"])
+                document.querySelector("#bga").setAttribute("href", r["links"]["html"] + "?utm_source=evergreen_new_tab_for_chrome&utm_medium=referral")
             });
             chrome.storage.local.set({
                 bgimage: url, lastbgrefresh: new Date().getTime() / 1000
@@ -459,11 +468,18 @@ function change_background() {
 }
 
 function settings_download_background() {
-    chrome.storage.local.get(['bgimage'], response => {
-        let url = response['bgimage'].split("?")[0];
-        console.debug(url);
-        window.location = url;
-    });
+    // unsplash requires me to hit this endpoint on download
+    fetch(download_url, {
+        headers: {
+            "Authorization": "Client-ID RlxQwIigHZSLdNPZgSC6r1BihERopYeizq4T0A-wEtw"
+        }
+    }).then(r => {
+        return r.json()
+    }).then(r => {
+        console.debug(r)
+        window.location = r["url"];
+    })
+
 }
 
 function settings_set_location() {
