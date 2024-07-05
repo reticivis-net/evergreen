@@ -427,15 +427,34 @@ function save_settings() {
 function change_background() {
     if (!promotional) {
         console.debug("changing BG...");
-        follow_redirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${config["searchtags"]}`, function (response) {
-            preload_image(response, function () {
-                qs("#bg").style["background-image"] = `url(${response})`;
+        fetch(`https://api.unsplash.com/photos/random?topics=bo8jQKTaE0Y`, {
+            headers: {
+                "Authorization": "Client-ID RlxQwIigHZSLdNPZgSC6r1BihERopYeizq4T0A-wEtw"
+            }
+        }).then(r => {
+            return r.json()
+        }).then(r => {
+            console.debug(r)
+            let url = `${r["urls"]["raw"]}&fit=crop&w=${window.screen.width}&h=${window.screen.height}&dpr=${window.devicePixelRatio}`;
+            preload_image(url, function () {
+                qs("#bg").style["background-image"] = `url(${url})`;
+                // api requires hotlinking
+                document.querySelector("#bga").setAttribute("href", r["links"]["html"])
             });
             chrome.storage.local.set({
-                bgimage: response, lastbgrefresh: new Date().getTime() / 1000
+                bgimage: url, lastbgrefresh: new Date().getTime() / 1000
             });
             console.debug("BG changed");
-        });
+        })
+        // follow_redirects(`https://source.unsplash.com/${window.screen.width}x${window.screen.height}/?${config["searchtags"]}`, function (response) {
+        //     preload_image(response, function () {
+        //         qs("#bg").style["background-image"] = `url(${response})`;
+        //     });
+        //     chrome.storage.local.set({
+        //         bgimage: response, lastbgrefresh: new Date().getTime() / 1000
+        //     });
+        //     console.debug("BG changed");
+        // });
     }
 }
 

@@ -24,7 +24,8 @@
 </head>
 
 <body>
-<div id="bg"></div>
+<div id="bg" class="bg"></div>
+<a id="bga" class="bg"></a>
 <!--<div id="preloadimg" style="display:none;"></div>-->
 <div id="caltemp" style="display:none;"></div>
 <div id="tooltipmargin"></div>
@@ -228,13 +229,13 @@
                 </div>
                 <div>
                     <p>
-                        <i class="fas fa-image"></i> Background image search tags
+                        <i class="fas fa-image"></i> Background image search topics
                         <span class="text-muted">(Optional)</span>:
                     </p>
                     <input class="form-control" id="bgtags" placeholder="nature,architecture" type="text">
                     <p class="pfix text-muted">
                         Separate search terms by commas with no spaces. Images are randomly sourced from
-                        source.unsplash.com using these search tags. Example: forest,ocean,city
+                        unsplash.com using these search tags. Example: forest,ocean,city
                     </p>
                 </div>
                 <div>
@@ -340,20 +341,10 @@
             </div>
             <div class="modal-body">
                 <!--TODO: changelog-->
-                <h3>Changelog v2.2.0</h3>
+                <h3>Changelog v2.2.1</h3>
                 <h4>Changes</h4>
                 <ul>
-                    <li>The weather popover now takes advantage of OpenWeatherMap's more human-readable "summary" field to provide an overview of the weather for the day.</li>
-                    <li>Changed (reverse) geocoding provider from OpenStreetMap to OpenWeatherMap.<ul>
-                        <li>Geocoding is determining coordinates from a place name. This is used in the settings menu for location lookup.</li>
-                        <li>Reverse geocoding is determining the place name of coordinates. This is used in the weather popover to show you the name of the city you got your weather for.</li>
-                        <li>This should fix all issues with OpenStreetMap ratelimiting.</li>
-                    </ul></li>
-                    <li>If reverse geocoding fails, the weather will now be displayed regardless.</li>
-                    <li>Manual location inputs are now properly disabled on page load when autolocate is on.</li>
-                    <li>Weather options are now properly disabled when weather is off.</li>
-                    <li>The evergreen logo popover now correctly shows "Dev" when Evergreen is loaded in unpacked mode.</li>
-                    <li>Updated dependencies</li>
+                    <li>Background images are fixed! Unsplash completely changed their API so I had to update to match it.</li>
                 </ul>
             </div>
             <div class="modal-footer">

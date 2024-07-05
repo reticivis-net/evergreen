@@ -3,16 +3,18 @@
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center center;
+    z-index: -10;
+    /*transform: scale(1.1);*/
+    /*filter:blur(8px);*/
+    transition: background 0.25s linear;
+}
+.bg {
     height: 100%;
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: -10;
-    /*transform: scale(1.1);*/
-    /*filter:blur(8px);*/
-    transition: background 0.25s linear;
 }
 
 body, html {
@@ -43,6 +45,8 @@ body, html {
 
 #body {
     padding: 15px;
+    position: relative;
+    z-index: 2;
 }
 
 .footer {
