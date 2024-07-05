@@ -3,7 +3,7 @@ let config = {
     blur: 0,
     timeformat: "12",
     dateformat: "md",
-    searchtags: "wallpapers",
+    // searchtags: "wallpapers",
     refreshtime: 0,
     tempunit: "f",
     iconset: "climacons",
@@ -316,10 +316,10 @@ function settings_set_dateformat() {
     save_settings();
 }
 
-function settings_set_searchtags() {
-    config["searchtags"] = this.value;
-    save_settings();
-}
+// function settings_set_searchtags() {
+//     config["searchtags"] = this.value;
+//     save_settings();
+// }
 
 function settings_set_blur() {
     set_blur(this.value);
@@ -412,7 +412,7 @@ function save_settings() {
         tempunit: config["tempunit"],
         timeformat: config["timeformat"],
         dateformat: config["dateformat"],
-        searchtags: config["searchtags"],
+        // searchtags: config["searchtags"],
         refreshtime: config["refreshtime"],
         iconset: config["iconset"],
         autolocate: config["autolocate"],
@@ -861,12 +861,12 @@ function allow_weather_refresh() {
 
 function init_background_settings() {
     // initialize background settings
-    chrome.storage.local.get(['searchtags', "lastbgrefresh", "refreshtime"], function (result) {
+    chrome.storage.local.get([/*'searchtags',*/ "lastbgrefresh", "refreshtime"], function (result) {
         // search tags options
-        config["searchtags"] = result["searchtags"];
-        if (config["searchtags"] === undefined) {
-            config["searchtags"] = "wallpapers";
-        }
+        // config["searchtags"] = result["searchtags"];
+        // if (config["searchtags"] === undefined) {
+        //     config["searchtags"] = "wallpapers";
+        // }
         qs("#bgrefresh").setAttribute("value", config["refreshtime"]);
         qs('#bgrefresh').addEventListener('change', settings_set_refreshtime);
 
@@ -875,8 +875,8 @@ function init_background_settings() {
         if (config["refreshtime"] === undefined) {
             config["refreshtime"] = 0;
         }
-        qs("#bgtags").setAttribute("value", config["searchtags"]);
-        qs('#bgtags').addEventListener('change', settings_set_searchtags);
+        // qs("#bgtags").setAttribute("value", config["searchtags"]);
+        // qs('#bgtags').addEventListener('change', settings_set_searchtags);
 
         init_background(result["lastbgrefresh"])
     });
