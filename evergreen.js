@@ -1831,7 +1831,7 @@ function initialize_popovers_and_modals() {
                 <img class="logoimg" alt="" src="icons/evergreen${devmode ? "dev" : ""}128.png"/>
                 Evergreen${devmode ? " Dev" : ""}
             </h2>
-            <h4>New Tab for Chrome</h4>
+            <h4>New Tab</h4>
             <h4>Version ${version}</h4>
             <h5>Created by <a href="https://reticivis.net/">Reticivis</a></h5>`
         })

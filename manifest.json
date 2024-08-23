@@ -1,9 +1,14 @@
 {
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "evergreen@reticivis.net"
+    }
+  },
   "manifest_version": 3,
   "name": "Evergreen New Tab",
   "short_name": "Evergreen",
-  "description": "A minimalistic, functional, and beautiful new tab extension for Chrome",
-  "version": "2.2.1",
+  "description": "A minimalistic, functional, and beautiful new tab extension.",
+  "version": "2.2.2",
   "permissions": [
     "storage",
     "geolocation"
